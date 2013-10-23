@@ -1,0 +1,37 @@
+
+module cqtkernel;
+
+{ pow, round, nextPowerOfTwo } = load may.mathmisc;
+
+fs = 48000;
+
+fmax = fs/2;
+
+bins = 24;
+
+q = 1;
+
+atomHopFactor = 0.25;
+
+thresh = 0.0005;
+
+fmin = (fmax/2) * (pow 2 (1/bins));
+
+bigQ = q / ((pow 2 (1/bins)) - 1);
+
+nk_max = round(bigQ * fs / fmin);
+
+nk_min = round(bigQ * fs / (fmin * (pow 2 ((bins-1)/bins))));
+
+atomHop = round(nk_min * atomHopFactor);
+
+first_center = atomHop * Math#ceil(Math#ceil(nk_max/2) / atomHop);
+
+fftLen = nextPowerOfTwo (first_center + Math#ceil(nk_max/2));
+
+println "fs = \(fs), fmax = \(fmax), bins = \(bins), q = \(q), atomHopFactor = \(atomHopFactor), thresh = \(thresh)";
+
+println "fmin = \(fmin), bigQ = \(bigQ), nk_max = \(nk_max), nk_min = \(nk_min), atomHop = \(atomHop), first_center = \(first_center), fftLen = \(fftLen)";
+
+();
+
