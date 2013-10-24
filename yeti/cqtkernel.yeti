@@ -1,6 +1,12 @@
 
 module cqtkernel;
 
+vec = load may.vector;
+bf = load may.vector.blockfuncs;
+complex = load may.complex;
+window = load may.signal.window;
+fft = load may.transform.fft;
+
 { pow, round, floor, ceil, nextPowerOfTwo } = load may.mathmisc;
 
 fs = 48000;
@@ -43,8 +49,49 @@ fftOverlap = ((fftLen - fftHop) / fftLen) * 100; // as % -- why? just for diagno
 
 println "winNr = \(winNr), last_center = \(last_center), fftHop = \(fftHop), fftOverlap = \(fftOverlap)%";
 
+fftFunc = fft.forward fftLen;
 
+// Note the MATLAB uses exp(2*pi*1i*x) for a complex generating
+// function. We can't do that here; we need to generate real and imag
+// parts separately as real = cos(2*pi*x), imag = sin(2*pi*x).
 
+kernels = map do k:
+
+    nk = round(bigQ * fs / (fmin * (pow 2 ((k-1)/bins))));
+    println "k = \(k) -> nk = \(nk)";
+    
+    win = bf.divideBy nk (bf.sqrt (window.blackmanHarris nk));
+    
+    fk = fmin * (pow 2 ((k-1)/bins));
+
+    println "fk = \(fk)";
+
+    genKernel f = bf.multiply win
+       (vec.fromList (map do i: f (2 * pi * fk * i / fs) done [0..nk-1]));
+
+    reals = genKernel cos;
+    imags = genKernel sin;
+
+    atomOffset = first_center - ceil(nk/2);
+
+    map do i:
+
+        shift = atomOffset + ((i-1) * atomHop);
+
+        specKernel = fftFunc
+           (complex.complexArray
+               (vec.concat [vec.zeros shift, reals])
+               (vec.concat [vec.zeros shift, imags]));
+
+        map do c:
+            if complex.magnitude c < thresh then complex.zero else c fi
+            done specKernel;
+        
+    done [1..winNr];
+
+done [1..bins];
+
+println "kernels = \(kernels)";
 
 ();
 
