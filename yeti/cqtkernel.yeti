@@ -1,7 +1,7 @@
 
 module cqtkernel;
 
-{ pow, round, nextPowerOfTwo } = load may.mathmisc;
+{ pow, round, floor, ceil, nextPowerOfTwo } = load may.mathmisc;
 
 fs = 48000;
 
@@ -32,6 +32,19 @@ fftLen = nextPowerOfTwo (first_center + Math#ceil(nk_max/2));
 println "fs = \(fs), fmax = \(fmax), bins = \(bins), q = \(q), atomHopFactor = \(atomHopFactor), thresh = \(thresh)";
 
 println "fmin = \(fmin), bigQ = \(bigQ), nk_max = \(nk_max), nk_min = \(nk_min), atomHop = \(atomHop), first_center = \(first_center), fftLen = \(fftLen)";
+
+winNr = floor((fftLen - ceil(nk_max/2) - first_center) / atomHop) + 1;
+
+last_center = first_center + (winNr - 1) * atomHop;
+
+fftHop = (last_center + atomHop) - first_center;
+
+fftOverlap = ((fftLen - fftHop) / fftLen) * 100; // as % -- why? just for diagnostics?
+
+println "winNr = \(winNr), last_center = \(last_center), fftHop = \(fftHop), fftOverlap = \(fftOverlap)%";
+
+
+
 
 ();
 
