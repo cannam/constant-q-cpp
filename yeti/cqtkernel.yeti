@@ -7,6 +7,7 @@ complex = load may.complex;
 window = load may.signal.window;
 fft = load may.transform.fft;
 pl = load may.plot;
+complexmatrix = load may.matrix.complex;
 
 { pow, round, floor, ceil, nextPowerOfTwo } = load may.mathmisc;
 
@@ -95,6 +96,9 @@ kernels = map do k:
 
 done [1..bins];
 
-array (map array (concat kernels));
+kmat = complexmatrix.newComplexMatrix (ColumnMajor()) (concat kernels); // or row major?
+println "density = \(complexmatrix.density kmat)";
+complexmatrix.toSparse kmat;
+
 
 
