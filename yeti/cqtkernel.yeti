@@ -6,6 +6,7 @@ bf = load may.vector.blockfuncs;
 complex = load may.complex;
 window = load may.signal.window;
 fft = load may.transform.fft;
+pl = load may.plot;
 
 { pow, round, floor, ceil, nextPowerOfTwo } = load may.mathmisc;
 
@@ -78,20 +79,22 @@ kernels = map do k:
 
         shift = atomOffset + ((i-1) * atomHop);
 
+        println "shift = \(shift)";
+
         specKernel = fftFunc
            (complex.complexArray
                (vec.concat [vec.zeros shift, reals])
                (vec.concat [vec.zeros shift, imags]));
 
         map do c:
-            if complex.magnitude c < thresh then complex.zero else c fi
+            if complex.magnitude c < thresh then complex.zero
+            else complex.scale (1/fftLen) c fi
             done specKernel;
-        
+
     done [1..winNr];
 
 done [1..bins];
 
-println "kernels = \(kernels)";
+array (map array (concat kernels));
 
-();
 
