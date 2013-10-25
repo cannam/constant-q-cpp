@@ -108,6 +108,8 @@ makeKernel { sampleRate, maxFreq, binsPerOctave } =
         fftSize,
         fftHop,
         binsPerOctave,
+        atomsPerFrame = winNr,
+        atomSpacing = atomHop,
         maxFreq,
         minFreq,
         bigQ
