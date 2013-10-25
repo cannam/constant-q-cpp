@@ -32,6 +32,8 @@ println "Here: about to calculate stuff with \(octaves)";
 
     kdata = cqtkernel.makeKernel { sampleRate, maxFreq, binsPerOctave };
 
+    println "atomsPerFrame = \(kdata.atomsPerFrame)";
+
     streams = manipulate.duplicated octaves str;
 
     //!!! can't be right!
@@ -51,6 +53,14 @@ println "Here: about to calculate stuff with \(octaves)";
                 cm.product kernel (cm.newComplexColumnVector freq);
             done frames;
         done [0..octaves-1];
+
+    // cqblocks is now a list<list<matrix>>. Each top-level list
+    // corresponds to an octave, from highest to lowest, each having
+    // twice as many elements in its list as the next octave. The
+    // sub-lists are sampled in time with an effective spacing of
+    // fftSize * 2^(octave-1) audio frames, and the matrices are row
+    // vectors with atomsPerFrame * binsPerOctave complex elements.
+
 
     //!!! The comment below isn't true -- this is based on traditional
     // cqt -- the atom hop structure for this version is different
@@ -72,7 +82,6 @@ println "Here: about to calculate stuff with \(octaves)";
     // For each frame in the lowest octave
 
     println "prepared block list";
-
     cqblocks;
 
     );
