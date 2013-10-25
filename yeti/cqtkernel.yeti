@@ -97,11 +97,22 @@ done [1..bins];
 
 kmat = cm.toSparse
    (cm.scaled (1/fftLen)
-       (cm.newComplexMatrix (ColumnMajor()) (concat kernels))); // or row major?
+       (cm.newComplexMatrix (RowMajor()) (concat kernels)));
 
 println "density = \(cm.density kmat)";
 
-kmat;
+// Normalisation
 
+wx1 = bf.maxindex (complex.magnitudes (cm.getRow 0 kmat));
+wx2 = bf.maxindex (complex.magnitudes (cm.getRow (cm.height kmat - 1) kmat));
 
+subset = cm.columnSlice kmat wx1 (wx2+1);
+square = cm.product (cm.conjugateTransposed subset) subset;
+diag = complex.magnitudes (cm.getDiagonal 0 square);
+wK = vec.slice diag (round(1/q)) (vec.length diag - round(1/q) - 2);
+
+weight = (fftHop / fftLen) / (bf.mean (bf.abs wK));
+weight = sqrt(weight);
+
+cm.scaled weight kmat;
 
