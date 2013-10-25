@@ -11,108 +11,109 @@ cm = load may.matrix.complex;
 
 { pow, round, floor, ceil, nextPowerOfTwo } = load may.mathmisc;
 
-fs = 48000;
+makeKernel { sampleRate, maxFreq, binsPerOctave } =
+   (q = 1;
+    atomHopFactor = 0.25;
+    thresh = 0.0005;
+    minFreq = (maxFreq/2) * (pow 2 (1/binsPerOctave));
+    bigQ = q / ((pow 2 (1/binsPerOctave)) - 1);
 
-fmax = fs/2;
+    maxNK = round(bigQ * sampleRate / minFreq);
+    minNK = round(bigQ * sampleRate /
+                  (minFreq * (pow 2 ((binsPerOctave-1) / binsPerOctave))));
 
-bins = 24;
-
-q = 1;
-
-atomHopFactor = 0.25;
-
-thresh = 0.0005;
-
-fmin = (fmax/2) * (pow 2 (1/bins));
-
-bigQ = q / ((pow 2 (1/bins)) - 1);
-
-nk_max = round(bigQ * fs / fmin);
-
-nk_min = round(bigQ * fs / (fmin * (pow 2 ((bins-1)/bins))));
-
-atomHop = round(nk_min * atomHopFactor);
-
-first_center = atomHop * Math#ceil(Math#ceil(nk_max/2) / atomHop);
-
-fftLen = nextPowerOfTwo (first_center + Math#ceil(nk_max/2));
-
-println "fs = \(fs), fmax = \(fmax), bins = \(bins), q = \(q), atomHopFactor = \(atomHopFactor), thresh = \(thresh)";
-
-println "fmin = \(fmin), bigQ = \(bigQ), nk_max = \(nk_max), nk_min = \(nk_min), atomHop = \(atomHop), first_center = \(first_center), fftLen = \(fftLen)";
-
-winNr = floor((fftLen - ceil(nk_max/2) - first_center) / atomHop) + 1;
-
-last_center = first_center + (winNr - 1) * atomHop;
-
-fftHop = (last_center + atomHop) - first_center;
-
-fftOverlap = ((fftLen - fftHop) / fftLen) * 100; // as % -- why? just for diagnostics?
-
-println "winNr = \(winNr), last_center = \(last_center), fftHop = \(fftHop), fftOverlap = \(fftOverlap)%";
-
-fftFunc = fft.forward fftLen;
-
-// Note the MATLAB uses exp(2*pi*1i*x) for a complex generating
-// function. We can't do that here; we need to generate real and imag
-// parts separately as real = cos(2*pi*x), imag = sin(2*pi*x).
-
-kernels = map do k:
-
-    nk = round(bigQ * fs / (fmin * (pow 2 ((k-1)/bins))));
-
-    // the cq MATLAB toolbox uses a symmetric window for
-    // blackmanharris -- which is odd because it uses a periodic one
-    // for other types. Oh well
-    win = bf.divideBy nk
-       (bf.sqrt
-           (window.windowFunction (BlackmanHarris ()) [Symmetric true] nk));
+    atomHop = round(minNK * atomHopFactor);
     
-    fk = fmin * (pow 2 ((k-1)/bins));
+    firstCentre = atomHop * (ceil ((ceil (maxNK/2)) / atomHop));
+    
+    fftSize = nextPowerOfTwo (firstCentre + ceil (maxNK/2));
+    
+    println "sampleRate = \(sampleRate), maxFreq = \(maxFreq), binsPerOctave = \(binsPerOctave), q = \(q), atomHopFactor = \(atomHopFactor), thresh = \(thresh)";
+    println "minFreq = \(minFreq), bigQ = \(bigQ), maxNK = \(maxNK), minNK = \(minNK), atomHop = \(atomHop), firstCentre = \(firstCentre), fftSize = \(fftSize)";
+    
+    winNr = floor((fftSize - ceil(maxNK/2) - firstCentre) / atomHop) + 1;
+    
+    lastCentre = firstCentre + (winNr - 1) * atomHop;
+    
+    fftHop = (lastCentre + atomHop) - firstCentre;
+    
+    println "winNr = \(winNr), lastCentre = \(lastCentre), fftHop = \(fftHop)";
+    
+    fftFunc = fft.forward fftSize;
+    
+    // Note the MATLAB uses exp(2*pi*1i*x) for a complex generating
+    // function. We can't do that here; we need to generate real and imag
+    // parts separately as real = cos(2*pi*x), imag = sin(2*pi*x).
+    
+    kernels = map do k:
+    
+        nk = round(bigQ * sampleRate / (minFreq * (pow 2 ((k-1)/binsPerOctave))));
+    
+        // the cq MATLAB toolbox uses a symmetric window for
+        // blackmanharris -- which is odd because it uses a periodic one
+        // for other types. Oh well
+        win = bf.divideBy nk
+           (bf.sqrt
+               (window.windowFunction (BlackmanHarris ()) [Symmetric true] nk));
+        
+        fk = minFreq * (pow 2 ((k-1)/binsPerOctave));
+    
+        genKernel f = bf.multiply win
+           (vec.fromList
+               (map do i: f (2 * pi * fk * i / sampleRate) done [0..nk-1]));
+    
+        reals = genKernel cos;
+        imags = genKernel sin;
+    
+        atomOffset = firstCentre - ceil(nk/2);
+    
+        map do i:
+    
+            shift = vec.zeros (atomOffset + ((i-1) * atomHop));
+    
+            specKernel = fftFunc
+               (complex.complexArray
+                   (vec.concat [shift, reals])
+                   (vec.concat [shift, imags]));
+    
+            map do c:
+                if complex.magnitude c <= thresh then complex.zero else c fi
+                done specKernel;
+    
+        done [1..winNr];
+    
+    done [1..binsPerOctave];
+    
+    kmat = cm.toSparse
+       (cm.scaled (1/fftSize)
+           (cm.newComplexMatrix (RowMajor()) (concat kernels)));
+    
+    println "density = \(cm.density kmat)";
+    
+    // Normalisation
+    
+    wx1 = bf.maxindex (complex.magnitudes (cm.getRow 0 kmat));
+    wx2 = bf.maxindex (complex.magnitudes (cm.getRow (cm.height kmat - 1) kmat));
+    
+    subset = cm.columnSlice kmat wx1 (wx2+1);
+    square = cm.product (cm.conjugateTransposed subset) subset;
+    diag = complex.magnitudes (cm.getDiagonal 0 square);
+    wK = vec.slice diag (round(1/q)) (vec.length diag - round(1/q) - 2);
+    
+    weight = (fftHop / fftSize) / (bf.mean (bf.abs wK));
+    weight = sqrt(weight);
 
-    genKernel f = bf.multiply win
-       (vec.fromList (map do i: f (2 * pi * fk * i / fs) done [0..nk-1]));
+    {
+        kernel = cm.scaled weight kmat,
+        fftSize,
+        fftHop,
+        binsPerOctave,
+        maxFreq,
+        minFreq,
+        bigQ
+    });
 
-    reals = genKernel cos;
-    imags = genKernel sin;
-
-    atomOffset = first_center - ceil(nk/2);
-
-    map do i:
-
-        shift = vec.zeros (atomOffset + ((i-1) * atomHop));
-
-        specKernel = fftFunc
-           (complex.complexArray
-               (vec.concat [shift, reals])
-               (vec.concat [shift, imags]));
-
-        map do c:
-            if complex.magnitude c <= thresh then complex.zero else c fi
-            done specKernel;
-
-    done [1..winNr];
-
-done [1..bins];
-
-kmat = cm.toSparse
-   (cm.scaled (1/fftLen)
-       (cm.newComplexMatrix (RowMajor()) (concat kernels)));
-
-println "density = \(cm.density kmat)";
-
-// Normalisation
-
-wx1 = bf.maxindex (complex.magnitudes (cm.getRow 0 kmat));
-wx2 = bf.maxindex (complex.magnitudes (cm.getRow (cm.height kmat - 1) kmat));
-
-subset = cm.columnSlice kmat wx1 (wx2+1);
-square = cm.product (cm.conjugateTransposed subset) subset;
-diag = complex.magnitudes (cm.getDiagonal 0 square);
-wK = vec.slice diag (round(1/q)) (vec.length diag - round(1/q) - 2);
-
-weight = (fftHop / fftLen) / (bf.mean (bf.abs wK));
-weight = sqrt(weight);
-
-cm.scaled weight kmat;
+{
+    makeKernel
+}
 
