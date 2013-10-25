@@ -1,0 +1,87 @@
+
+module cqt;
+
+cqtkernel = load cqtkernel;
+resample = load may.stream.resample;
+manipulate = load may.stream.manipulate;
+syn = load may.stream.syntheticstream;
+cm = load may.matrix.complex;
+mat = load may.matrix;
+framer = load may.stream.framer;
+cplx = load may.complex;
+fft = load may.transform.fft;
+vec = load may.vector;
+
+{ pow, round, floor, ceil, log2, nextPowerOfTwo } = load may.mathmisc;
+
+cqt str =
+   (sampleRate = str.sampleRate;
+    maxFreq = sampleRate/2;
+    minFreq = 40;
+    binsPerOctave = 24;
+
+println "Here";
+
+    octaves = ceil (log2 (maxFreq / minFreq));
+
+println "Here: about to calculate stuff with \(octaves)";
+
+    actualMinFreq = (maxFreq / (pow 2 octaves)) * (pow 2 (1/binsPerOctave));
+
+    println "sampleRate = \(sampleRate), maxFreq = \(maxFreq), minFreq = \(minFreq), actualMinFreq = \(actualMinFreq), octaves = \(octaves), binsPerOctave = \(binsPerOctave)";
+
+    kdata = cqtkernel.makeKernel { sampleRate, maxFreq, binsPerOctave };
+
+    streams = manipulate.duplicated octaves str;
+
+    //!!! can't be right!
+    kernel = cm.transposed (cm.conjugateTransposed kdata.kernel);
+
+    println "have kernel";
+
+    fftFunc = fft.forward kdata.fftSize;
+
+    cqblocks =
+        map do octave:
+            frames = framer.monoFrames //!!! mono for now
+                { framesize = kdata.fftSize, hop = kdata.fftHop }
+                (resample.decimated (pow 2 octave) streams[octave]);
+            map do frame:
+                freq = fftFunc (cplx.complexArray frame (vec.zeros kdata.fftSize));
+                cm.product kernel (cm.newComplexColumnVector freq);
+            done frames;
+        done [0..octaves-1];
+
+    //!!! The comment below isn't true -- this is based on traditional
+    // cqt -- the atom hop structure for this version is different
+    // though so review later on
+
+    // Each (2^(octaves-1) * fftHop) input frames gives us an output
+    // structure conceptually like this:
+    //
+    // [][][][][][][][]   <- fftHop frames per highest-octave output value
+    // [][][][][][][][]      layered as many times as binsPerOctave (here 2)
+    // [--][--][--][--]   <- fftHop*2 frames for the next lower octave
+    // [--][--][--][--]      etc
+    // [------][------]
+    // [------][------]
+    // [--------------]
+    // [--------------]
+    //
+    // Our input is as a set of lazy frame lists, one list per octave.
+    // For each frame in the lowest octave
+
+    println "prepared block list";
+
+    cqblocks;
+
+    );
+
+testStream = manipulate.withDuration 96000 (syn.sinusoid 48000 500);
+
+println "have test stream";
+
+cqt testStream;
+
+
+
