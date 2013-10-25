@@ -60,13 +60,15 @@ fftFunc = fft.forward fftLen;
 kernels = map do k:
 
     nk = round(bigQ * fs / (fmin * (pow 2 ((k-1)/bins))));
-    println "k = \(k) -> nk = \(nk)";
-    
-    win = bf.divideBy nk (bf.sqrt (window.blackmanHarris nk));
+
+    // the cq MATLAB toolbox uses a symmetric window for
+    // blackmanharris -- which is odd because it uses a periodic one
+    // for other types. Oh well
+    win = bf.divideBy nk
+       (bf.sqrt
+           (window.windowFunction (BlackmanHarris ()) [Symmetric true] nk));
     
     fk = fmin * (pow 2 ((k-1)/bins));
-
-    println "fk = \(fk)";
 
     genKernel f = bf.multiply win
        (vec.fromList (map do i: f (2 * pi * fk * i / fs) done [0..nk-1]));
@@ -78,23 +80,15 @@ kernels = map do k:
 
     map do i:
 
-        shift = atomOffset + ((i-1) * atomHop);
-
-        println "shift = \(shift)";
-
-        shiftedReals = vec.concat [vec.zeros shift, reals];
-        shiftedImags = vec.concat [vec.zeros shift, imags];
-
-//        println "shiftedReals = \(vec.list shiftedReals)";
-//        println "shiftedImags = \(vec.list shiftedImags)";
+        shift = vec.zeros (atomOffset + ((i-1) * atomHop));
 
         specKernel = fftFunc
            (complex.complexArray
-               (vec.concat [vec.zeros shift, reals])
-               (vec.concat [vec.zeros shift, imags]));
+               (vec.concat [shift, reals])
+               (vec.concat [shift, imags]));
 
         map do c:
-            if complex.magnitude c < thresh then complex.zero else c fi
+            if complex.magnitude c <= thresh then complex.zero else c fi
             done specKernel;
 
     done [1..winNr];
