@@ -110,6 +110,7 @@ makeKernel { sampleRate, maxFreq, binsPerOctave } =
         binsPerOctave,
         atomsPerFrame = winNr,
         atomSpacing = atomHop,
+        firstCentre,
         maxFreq,
         minFreq,
         bigQ

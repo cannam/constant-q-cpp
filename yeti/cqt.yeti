@@ -54,20 +54,18 @@ println "Here: about to calculate stuff with \(octaves)";
             done frames;
         done [0..octaves-1];
 
-    // cqblocks is now a list<list<matrix>>. Each top-level list
+    // The cqblocks list is a list<list<matrix>>. Each top-level list
     // corresponds to an octave, from highest to lowest, each having
     // twice as many elements in its list as the next octave. The
     // sub-lists are sampled in time with an effective spacing of
     // fftSize * 2^(octave-1) audio frames, and the matrices are row
     // vectors with atomsPerFrame * binsPerOctave complex elements.
-
-
-    //!!! The comment below isn't true -- this is based on traditional
-    // cqt -- the atom hop structure for this version is different
-    // though so review later on
-
-    // Each (2^(octaves-1) * fftHop) input frames gives us an output
-    // structure conceptually like this:
+    //
+    // ***
+    // 
+    // In a typical constant-Q structure, each (2^(octaves-1) *
+    // fftHop) input frames gives us an output structure conceptually
+    // like this:
     //
     // [][][][][][][][]   <- fftHop frames per highest-octave output value
     // [][][][][][][][]      layered as many times as binsPerOctave (here 2)
@@ -78,12 +76,17 @@ println "Here: about to calculate stuff with \(octaves)";
     // [--------------]
     // [--------------]
     //
-    // Our input is as a set of lazy frame lists, one list per octave.
-    // For each frame in the lowest octave
+    // ***
+    //
+    // But the kernel we're using here has more than one temporally
+    // spaced atom; each individual cell is a row vector with
+    // atomsPerFrame * binsPerOctave elements, but that actually
+    // represents a rectangular matrix of result cells with width
+    // atomsPerFrame and height binsPerOctave. The columns of this
+    // matrix (the atoms) then need to be spaced by 2^(octave-1)
+    // relative to those from the highest octave.
 
-    println "prepared block list";
-    cqblocks;
-
+    cqblocks
     );
 
 testStream = manipulate.withDuration 96000 (syn.sinusoid 48000 500);
