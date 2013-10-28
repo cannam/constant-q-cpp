@@ -86,7 +86,21 @@ println "Here: about to calculate stuff with \(octaves)";
     // matrix (the atoms) then need to be spaced by 2^(octave-1)
     // relative to those from the highest octave.
 
-    cqblocks
+    // Probably a better way to do this somehow... Reshape each row
+    // vector into the appropriate rectangular matrix
+    map2 do octlist octave:
+        map do rv:
+            cv = cm.getColumn 0 rv;
+            reals = cplx.reals cv;
+            imags = cplx.imaginaries cv;
+            reshape v = mat.newMatrix (ColumnMajor ())
+               (map do n:
+                    vec.slice v (n * kdata.atomsPerFrame) ((n+1) * kdata.atomsPerFrame) 
+                    done [0..kdata.binsPerOctave-1]);
+            cm.complex (reshape reals) (reshape imags);
+        done octlist
+    done cqblocks [0..octaves-1];
+
     );
 
 testStream = manipulate.withDuration 96000 (syn.sinusoid 48000 500);
