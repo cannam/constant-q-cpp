@@ -86,21 +86,50 @@ println "Here: about to calculate stuff with \(octaves)";
     // matrix (the atoms) then need to be spaced by 2^(octave-1)
     // relative to those from the highest octave.
 
-    // Probably a better way to do this somehow... Reshape each row
-    // vector into the appropriate rectangular matrix
-    map2 do octlist octave:
+    // Reshape each row vector into the appropriate rectangular matrix
+    cqblocks = map do octlist:
         map do rv:
-            cv = cm.getColumn 0 rv;
-            reals = cplx.reals cv;
-            imags = cplx.imaginaries cv;
-            reshape v = mat.newMatrix (ColumnMajor ())
-               (map do n:
-                    vec.slice v (n * kdata.atomsPerFrame) ((n+1) * kdata.atomsPerFrame) 
-                    done [0..kdata.binsPerOctave-1]);
-            cm.complex (reshape reals) (reshape imags);
+            cm.generate do row col:
+                cm.at rv ((row * kdata.atomsPerFrame) + col) 0
+            done {
+                rows = kdata.binsPerOctave,
+                columns = kdata.atomsPerFrame
+            }
         done octlist
-    done cqblocks [0..octaves-1];
+    done cqblocks;
 
+//println "lengths per oct: \(map length cqblocks)";
+
+    // Slice each octave's blocks into a list of columns with zeros
+    // interspersed. This doesn't look very elegant (?)
+
+    cqblocks = map2 do octlist octave: concat
+           (map do m: concat
+               (map do col: 
+//                    col :: map \(cplx.zeros kdata.binsPerOctave) [1..pow 2 octave - 1]
+                    map \col [0..pow 2 octave - 1]
+                done (cm.asColumns m))
+            done octlist)
+        done cqblocks [0..octaves-1];
+  
+    // Then pile up the slices into taller slices spanning all octaves
+      
+    pileOf octaves acc =
+        case (head octaves) of
+        h::t:
+           (heads = map head octaves;
+//            tall = concat (map reverse heads); // are the bpos values low->high or high->low?
+            tall = concat heads;
+            pileOf (map tail octaves) (acc ++ [tall]));
+         _: acc;
+        esac;
+
+    pileOf cqblocks [];
+
+//println "lengths per oct: \(map length cqblocks)";
+
+
+//cqblocks;
     );
 
 testStream = manipulate.withDuration 96000 (syn.sinusoid 48000 500);
