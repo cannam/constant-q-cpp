@@ -6,7 +6,6 @@ bf = load may.vector.blockfuncs;
 complex = load may.complex;
 window = load may.signal.window;
 fft = load may.transform.fft;
-pl = load may.plot;
 cm = load may.matrix.complex;
 
 { pow, round, floor, ceil, nextPowerOfTwo } = load may.mathmisc;

@@ -1,5 +1,5 @@
 
-program cqt;
+module cqt;
 
 cqtkernel = load cqtkernel;
 resample = load may.stream.resample;
@@ -11,6 +11,7 @@ framer = load may.stream.framer;
 cplx = load may.complex;
 fft = load may.transform.fft;
 vec = load may.vector;
+af = load may.stream.audiofile;
 
 { pow, round, floor, ceil, log2, nextPowerOfTwo } = load may.mathmisc;
 
@@ -87,7 +88,7 @@ eprintln "Here: about to calculate stuff with \(octaves)";
     // relative to those from the highest octave.
 
     // Reshape each row vector into the appropriate rectangular matrix
-    cqblocks = map do octlist:
+    cqblocks = array (map do octlist:
         map do rv:
             cm.generate do row col:
                 cm.at rv ((row * kdata.atomsPerFrame) + col) 0
@@ -96,46 +97,57 @@ eprintln "Here: about to calculate stuff with \(octaves)";
                 columns = kdata.atomsPerFrame
             }
         done octlist
-    done cqblocks;
+    done cqblocks);
 
-//eprintln "lengths per oct: \(map length cqblocks)";
+    assembleBlock bits =
+       (println "assembleBlock: structure of bits is:";
+        println (map length bits);
+        []);
 
-    // Slice each octave's blocks into a list of columns with zeros
-    // interspersed. This doesn't look very elegant (?)
-
-    cqblocks = map2 do octlist octave: concat
-           (map do m: concat
-               (map do col: 
-                    col :: map \(cplx.zeros kdata.binsPerOctave) [1..pow 2 octave - 1]
-//                    map \col [0..pow 2 octave - 1]
-                done (cm.asColumns m))
-            done octlist)
-        done cqblocks [0..octaves-1];
-  
-    // Then pile up the slices into taller slices spanning all octaves
-      
-    pileOf octaves acc =
-        case (head octaves) of
-        h::t:
-           (heads = map head octaves;
-//            tall = concat (map reverse heads); // are the bpos values low->high or high->low?
-            tall = concat heads;
-            pileOf (map tail octaves) (acc ++ [tall]));
-         _: acc;
+    processOctaveLists octs =
+        case octs[0] of
+        block::rest:
+           (toAssemble =
+                map do oct:
+                    n = pow 2 oct;
+                    if not empty? octs[oct] then
+                        forBlock = take n octs[oct];
+                        octs[oct] := drop n octs[oct];
+                        forBlock
+                    else
+                        []
+                    fi
+                done (keys octs);
+            assembleBlock toAssemble :. \(processOctaveLists octs));
+         _: []
         esac;
 
-    pileOf cqblocks [];
+println "cqblocks has \(length cqblocks) entries";
 
-//eprintln "lengths per oct: \(map length cqblocks)";
+    octaveLists = [:];
+    
+    for [1..octaves] do oct:
+        octaveLists[octaves - oct] := cqblocks[oct-1];
+    done;
+/*
+    \() (map2 do octlist octave:
+println "oct \(octaves) - \(octave) = \(octaves - octave)";
+             octaveLists[octaves - octave] := octlist 
+         done cqblocks [1..octaves]);
+*/
+println "octaveLists keys are: \(keys octaveLists)";
+    
+    processOctaveLists octaveLists;
 
-
-//cqblocks;
     );
 
-testStream = manipulate.withDuration 96000 (syn.sinusoid 48000 500);
+//testStream = manipulate.withDuration 96000 (syn.sinusoid 48000 500);
+//testStream = manipulate.withDuration 96000 (syn.pulseTrain 48000 4);
+testStream = af.open "sweep.wav";
 
 eprintln "have test stream";
 
+/*
 c = cqt testStream;
 
 thing = take 50 (drop 200 c);
@@ -146,7 +158,7 @@ for (mat.asColumns mm) (println . strJoin "," . vec.list);
 
 ()
 
+*/
 
-
-
+cqt testStream;
 
