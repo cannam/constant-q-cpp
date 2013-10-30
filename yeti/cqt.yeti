@@ -131,10 +131,15 @@ eprintln "Here: about to calculate stuff with \(octaves)";
             colsPerAtom = int (colsPerChunk / kdata.atomsPerFrame);
             chunkNo = int (col / colsPerChunk);
             atomNo = int ((col % colsPerChunk) / colsPerAtom);
+            atomOffset = ((col % colsPerChunk) % colsPerAtom);
 
 //            eprintln "row \(row) of \(rows), col \(col) of \(columns): oct \(oct), bin \(binNo), chunk \(chunkNo) of \(chunks), atom \(atomNo) of \(kdata.atomsPerFrame)";
 
-            cm.at bits[oct][chunkNo] (binNo * kdata.atomsPerFrame + atomNo) 0;
+            if atomOffset == 0 then
+                cm.at bits[oct][chunkNo] (binNo * kdata.atomsPerFrame + atomNo) 0;
+            else
+                cplx.zero
+            fi;
 
         done { rows, columns };
         );
