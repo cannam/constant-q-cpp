@@ -88,21 +88,30 @@ eprintln "Here: about to calculate stuff with \(octaves)";
     // relative to those from the highest octave.
 
     // Reshape each row vector into the appropriate rectangular matrix
-/*
-    cqblocks = array (map do octlist:
-        map do rv:
-            cm.generate do row col:
-                cm.at rv ((row * kdata.atomsPerFrame) + col) 0
-            done {
-                rows = kdata.binsPerOctave,
-                columns = kdata.atomsPerFrame
-            }
-        done octlist
-    done cqblocks);
-*/
+    // and split into single-atom columns
 
-//!!! how then do we arrange to drop a certain number of atoms (rather
-//than of atoms+bins chunks)?
+    emptyHops = kdata.firstCentre / kdata.atomSpacing;
+    maxDrop = emptyHops * (pow 2 (octaves-1)) - emptyHops;
+    eprintln "maxDrop = \(maxDrop)";
+
+    cqblocks = map do octlist:
+        concat
+           (map do rv:
+                cm.asColumns
+                   (cm.generate do row col:
+                        cm.at rv ((row * kdata.atomsPerFrame) + col) 0
+                    done {
+                        rows = kdata.binsPerOctave,
+                        columns = kdata.atomsPerFrame
+                    })
+            done octlist)
+    done cqblocks;
+
+    cqblocks = array (map2 do octlist octave:
+        d = emptyHops * (pow 2 (octaves-octave)) - emptyHops;
+        eprintln "dropping \(d)";
+        drop d octlist;
+    done cqblocks [1..octaves]);
 
     assembleBlock bits =
        (eprintln "assembleBlock: structure of bits is:";
@@ -123,20 +132,16 @@ eprintln "Here: about to calculate stuff with \(octaves)";
             // row is disposed with 0 at the top, highest octave (in
             // both pitch and index into bits structure)
 
-//            oct = octaves - int (row / binsPerOctave) - 1;
             oct = int (row / binsPerOctave);
             binNo = row % kdata.binsPerOctave;
+
             chunks = pow 2 oct;
-            colsPerChunk = int (columns / chunks);
-            colsPerAtom = int (colsPerChunk / kdata.atomsPerFrame);
-            chunkNo = int (col / colsPerChunk);
-            atomNo = int ((col % colsPerChunk) / colsPerAtom);
-            atomOffset = ((col % colsPerChunk) % colsPerAtom);
+            colsPerAtom = int (columns / (chunks * kdata.atomsPerFrame));
+            atomNo = int (col / colsPerAtom);
+            atomOffset = col % colsPerAtom;
 
-//            eprintln "row \(row) of \(rows), col \(col) of \(columns): oct \(oct), bin \(binNo), chunk \(chunkNo) of \(chunks), atom \(atomNo) of \(kdata.atomsPerFrame)";
-
-            if atomOffset == 0 then
-                cm.at bits[oct][chunkNo] (binNo * kdata.atomsPerFrame + atomNo) 0;
+            if atomOffset == 0 and atomNo < length bits[oct] then
+                bits[oct][atomNo][binNo];
             else
                 cplx.zero
             fi;
@@ -149,7 +154,7 @@ eprintln "Here: about to calculate stuff with \(octaves)";
         block::rest:
            (toAssemble = array 
                (map do oct:
-                    n = pow 2 oct;
+                    n = kdata.atomsPerFrame * pow 2 oct;
                     if not empty? octs[oct] then
                         forBlock = array (take n octs[oct]);
                         octs[oct] := drop n octs[oct];
@@ -184,20 +189,14 @@ eprintln "octaveLists keys are: \(keys octaveLists)";
 
 //testStream = manipulate.withDuration 96000 (syn.sinusoid 48000 500);
 //testStream = manipulate.withDuration 96000 (syn.pulseTrain 48000 4);
-testStream = af.open "sweep.wav";
+testStream = af.open "sweep-48000.wav";
 
 eprintln "have test stream";
 
-c = cqt testStream;
-
-//m = take 1 (drop 2 c);
-
-//thing = take 50 (drop 200 c);
-
-//m = cm.newComplexMatrix (ColumnMajor ()) thing;
-mm = cm.magnitudes (head c);
-
-for (mat.asColumns mm) (println . strJoin "," . vec.list);
+for (cqt testStream) do c:
+    mm = cm.magnitudes c;
+    for (mat.asColumns mm) (println . strJoin "," . vec.list);
+done;
 
 ()
 
