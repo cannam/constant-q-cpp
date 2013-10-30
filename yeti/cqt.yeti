@@ -1,5 +1,5 @@
 
-module cqt;
+program cqt;
 
 cqtkernel = load cqtkernel;
 resample = load may.stream.resample;
@@ -20,26 +20,26 @@ cqt str =
     minFreq = 40;
     binsPerOctave = 24;
 
-println "Here";
+eprintln "Here";
 
     octaves = ceil (log2 (maxFreq / minFreq));
 
-println "Here: about to calculate stuff with \(octaves)";
+eprintln "Here: about to calculate stuff with \(octaves)";
 
     actualMinFreq = (maxFreq / (pow 2 octaves)) * (pow 2 (1/binsPerOctave));
 
-    println "sampleRate = \(sampleRate), maxFreq = \(maxFreq), minFreq = \(minFreq), actualMinFreq = \(actualMinFreq), octaves = \(octaves), binsPerOctave = \(binsPerOctave)";
+    eprintln "sampleRate = \(sampleRate), maxFreq = \(maxFreq), minFreq = \(minFreq), actualMinFreq = \(actualMinFreq), octaves = \(octaves), binsPerOctave = \(binsPerOctave)";
 
     kdata = cqtkernel.makeKernel { sampleRate, maxFreq, binsPerOctave };
 
-    println "atomsPerFrame = \(kdata.atomsPerFrame)";
+    eprintln "atomsPerFrame = \(kdata.atomsPerFrame)";
 
     streams = manipulate.duplicated octaves str;
 
     //!!! can't be right!
     kernel = cm.transposed (cm.conjugateTransposed kdata.kernel);
 
-    println "have kernel";
+    eprintln "have kernel";
 
     fftFunc = fft.forward kdata.fftSize;
 
@@ -98,7 +98,7 @@ println "Here: about to calculate stuff with \(octaves)";
         done octlist
     done cqblocks;
 
-//println "lengths per oct: \(map length cqblocks)";
+//eprintln "lengths per oct: \(map length cqblocks)";
 
     // Slice each octave's blocks into a list of columns with zeros
     // interspersed. This doesn't look very elegant (?)
@@ -106,8 +106,8 @@ println "Here: about to calculate stuff with \(octaves)";
     cqblocks = map2 do octlist octave: concat
            (map do m: concat
                (map do col: 
-//                    col :: map \(cplx.zeros kdata.binsPerOctave) [1..pow 2 octave - 1]
-                    map \col [0..pow 2 octave - 1]
+                    col :: map \(cplx.zeros kdata.binsPerOctave) [1..pow 2 octave - 1]
+//                    map \col [0..pow 2 octave - 1]
                 done (cm.asColumns m))
             done octlist)
         done cqblocks [0..octaves-1];
@@ -126,7 +126,7 @@ println "Here: about to calculate stuff with \(octaves)";
 
     pileOf cqblocks [];
 
-//println "lengths per oct: \(map length cqblocks)";
+//eprintln "lengths per oct: \(map length cqblocks)";
 
 
 //cqblocks;
@@ -134,9 +134,19 @@ println "Here: about to calculate stuff with \(octaves)";
 
 testStream = manipulate.withDuration 96000 (syn.sinusoid 48000 500);
 
-println "have test stream";
+eprintln "have test stream";
 
-cqt testStream;
+c = cqt testStream;
+
+thing = take 50 (drop 200 c);
+m = cm.newComplexMatrix (ColumnMajor ()) thing;
+mm = cm.magnitudes m;
+
+for (mat.asColumns mm) (println . strJoin "," . vec.list);
+
+()
+
+
 
 
 
