@@ -102,7 +102,16 @@ eprintln "Here: about to calculate stuff with \(octaves)";
     assembleBlock bits =
        (println "assembleBlock: structure of bits is:";
         println (map length bits);
-        []);
+        cm.generate do row col:
+            oct = int (row / binsPerOctave);
+            binNo = row % binsPerOctave;
+            
+
+            cplx.zero;
+        done { 
+            rows = octaves * kdata.binsPerOctave,
+            columns = (pow 2 (octaves - 1)) * kdata.atomsPerFrame
+        });
 
     processOctaveLists octs =
         case octs[0] of
