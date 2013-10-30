@@ -1,5 +1,5 @@
 
-module cqt;
+program cqt;
 
 cqtkernel = load cqtkernel;
 resample = load may.stream.resample;
@@ -88,6 +88,7 @@ eprintln "Here: about to calculate stuff with \(octaves)";
     // relative to those from the highest octave.
 
     // Reshape each row vector into the appropriate rectangular matrix
+/*
     cqblocks = array (map do octlist:
         map do rv:
             cm.generate do row col:
@@ -98,43 +99,69 @@ eprintln "Here: about to calculate stuff with \(octaves)";
             }
         done octlist
     done cqblocks);
+*/
+
+//!!! how then do we arrange to drop a certain number of atoms (rather
+//than of atoms+bins chunks)?
 
     assembleBlock bits =
-       (println "assembleBlock: structure of bits is:";
-        println (map length bits);
-        cm.generate do row col:
-            oct = int (row / binsPerOctave);
-            binNo = row % binsPerOctave;
-            
+       (eprintln "assembleBlock: structure of bits is:";
+        eprintln (map length bits);
 
-            cplx.zero;
-        done { 
-            rows = octaves * kdata.binsPerOctave,
-            columns = (pow 2 (octaves - 1)) * kdata.atomsPerFrame
-        });
+        rows = octaves * kdata.binsPerOctave;
+        columns = (pow 2 (octaves - 1)) * kdata.atomsPerFrame;
+
+        cm.generate do row col:
+
+            // bits structure: [1,2,4,8,...]
+
+            // each elt of bits is a list of the chunks that should
+            // make up this block in that octave (lowest octave first)
+
+            // each chunk has atomsPerFrame * binsPerOctave elts in it
+
+            // row is disposed with 0 at the top, highest octave (in
+            // both pitch and index into bits structure)
+
+//            oct = octaves - int (row / binsPerOctave) - 1;
+            oct = int (row / binsPerOctave);
+            binNo = row % kdata.binsPerOctave;
+            chunks = pow 2 oct;
+            colsPerChunk = int (columns / chunks);
+            colsPerAtom = int (colsPerChunk / kdata.atomsPerFrame);
+            chunkNo = int (col / colsPerChunk);
+            atomNo = int ((col % colsPerChunk) / colsPerAtom);
+
+//            eprintln "row \(row) of \(rows), col \(col) of \(columns): oct \(oct), bin \(binNo), chunk \(chunkNo) of \(chunks), atom \(atomNo) of \(kdata.atomsPerFrame)";
+
+            cm.at bits[oct][chunkNo] (binNo * kdata.atomsPerFrame + atomNo) 0;
+
+        done { rows, columns };
+        );
 
     processOctaveLists octs =
         case octs[0] of
         block::rest:
-           (toAssemble =
-                map do oct:
+           (toAssemble = array 
+               (map do oct:
                     n = pow 2 oct;
                     if not empty? octs[oct] then
-                        forBlock = take n octs[oct];
+                        forBlock = array (take n octs[oct]);
                         octs[oct] := drop n octs[oct];
                         forBlock
                     else
-                        []
+                        array []
                     fi
-                done (keys octs);
+                done (keys octs));
             assembleBlock toAssemble :. \(processOctaveLists octs));
          _: []
         esac;
 
-println "cqblocks has \(length cqblocks) entries";
+eprintln "cqblocks has \(length cqblocks) entries";
 
     octaveLists = [:];
-    
+
+    cqblocks = array cqblocks;
     for [1..octaves] do oct:
         octaveLists[octaves - oct] := cqblocks[oct-1];
     done;
@@ -144,7 +171,7 @@ println "oct \(octaves) - \(octave) = \(octaves - octave)";
              octaveLists[octaves - octave] := octlist 
          done cqblocks [1..octaves]);
 */
-println "octaveLists keys are: \(keys octaveLists)";
+eprintln "octaveLists keys are: \(keys octaveLists)";
     
     processOctaveLists octaveLists;
 
@@ -156,18 +183,17 @@ testStream = af.open "sweep.wav";
 
 eprintln "have test stream";
 
-/*
 c = cqt testStream;
 
-thing = take 50 (drop 200 c);
-m = cm.newComplexMatrix (ColumnMajor ()) thing;
-mm = cm.magnitudes m;
+//m = take 1 (drop 2 c);
+
+//thing = take 50 (drop 200 c);
+
+//m = cm.newComplexMatrix (ColumnMajor ()) thing;
+mm = cm.magnitudes (head c);
 
 for (mat.asColumns mm) (println . strJoin "," . vec.list);
 
 ()
 
-*/
-
-cqt testStream;
 
