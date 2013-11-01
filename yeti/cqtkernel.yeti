@@ -47,16 +47,16 @@ makeKernel { sampleRate, maxFreq, binsPerOctave } =
     kernels = map do k:
     
         nk = round(bigQ * sampleRate / (minFreq * (pow 2 ((k-1)/binsPerOctave))));
-    
+
         // the cq MATLAB toolbox uses a symmetric window for
         // blackmanharris -- which is odd because it uses a periodic one
         // for other types. Oh well
         win = bf.divideBy nk
            (bf.sqrt
                (window.windowFunction (BlackmanHarris ()) [Symmetric true] nk));
-        
+
         fk = minFreq * (pow 2 ((k-1)/binsPerOctave));
-    
+
         genKernel f = bf.multiply win
            (vec.fromList
                (map do i: f (2 * pi * fk * i / sampleRate) done [0..nk-1]));
@@ -74,11 +74,11 @@ makeKernel { sampleRate, maxFreq, binsPerOctave } =
                (complex.complexArray
                    (vec.concat [shift, reals])
                    (vec.concat [shift, imags]));
-    
+
             map do c:
                 if complex.magnitude c <= thresh then complex.zero else c fi
                 done specKernel;
-    
+
         done [1..winNr];
     
     done [1..binsPerOctave];
@@ -87,7 +87,7 @@ makeKernel { sampleRate, maxFreq, binsPerOctave } =
        (cm.scaled (1/fftSize)
            (cm.newComplexMatrix (RowMajor()) (concat kernels)));
     
-    eprintln "density = \(cm.density kmat)";
+    eprintln "density = \(cm.density kmat) (\(cm.nonZeroValues kmat) of \(cm.width kmat * cm.height kmat))";
     
     // Normalisation
     
@@ -102,6 +102,8 @@ makeKernel { sampleRate, maxFreq, binsPerOctave } =
     weight = (fftHop / fftSize) / (bf.mean (bf.abs wK));
     weight = sqrt(weight);
 
+    eprintln "weight = \(weight)";
+    
     {
         kernel = cm.scaled weight kmat,
         fftSize,
