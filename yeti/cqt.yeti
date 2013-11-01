@@ -12,13 +12,14 @@ cplx = load may.complex;
 fft = load may.transform.fft;
 vec = load may.vector;
 af = load may.stream.audiofile;
+plot = load may.plot;
 
 { pow, round, floor, ceil, log2, nextPowerOfTwo } = load may.mathmisc;
 
 cqt str =
    (sampleRate = str.sampleRate;
     maxFreq = sampleRate/2;
-    minFreq = 40;
+    minFreq = 50;
     binsPerOctave = 24;
 
 eprintln "Here";
@@ -109,6 +110,9 @@ eprintln "Here: about to calculate stuff with \(octaves)";
 
     cqblocks = array (map2 do octlist octave:
         d = emptyHops * (pow 2 (octaves-octave)) - emptyHops;
+
+        d = 0; //!!!
+
         eprintln "dropping \(d)";
         drop d octlist;
     done cqblocks [1..octaves]);
@@ -140,7 +144,7 @@ eprintln "Here: about to calculate stuff with \(octaves)";
             atomNo = int (col / colsPerAtom);
             atomOffset = col % colsPerAtom;
 
-            if atomOffset == 0 and atomNo < length bits[oct] then
+            if /*!!! atomOffset == 0 and */ atomNo < length bits[oct] then
                 bits[oct][atomNo][binNo];
             else
                 cplx.zero
@@ -190,14 +194,20 @@ eprintln "octaveLists keys are: \(keys octaveLists)";
 //testStream = manipulate.withDuration 96000 (syn.sinusoid 48000 500);
 //testStream = manipulate.withDuration 96000 (syn.pulseTrain 48000 4);
 testStream = af.open "sweep-48000.wav";
+//testStream = af.open "sweep.wav";
 
 eprintln "have test stream";
 
-for (cqt testStream) do c:
+cq = cqt testStream;
+
+for cq do c:
     mm = cm.magnitudes c;
     for (mat.asColumns mm) (println . strJoin "," . vec.list);
 done;
 
-()
+bigM = mat.concat (Horizontal ()) (map cm.magnitudes cq);
 
+//\() (plot.plot [Contour bigM]);
+
+()
 
