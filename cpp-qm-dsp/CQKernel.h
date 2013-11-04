@@ -1,3 +1,4 @@
+/* -*- c-basic-offset: 4 indent-tabs-mode: nil -*-  vi:set ts=8 sts=4 sw=4: */
 
 #ifndef CQ_KERNEL_H
 #define CQ_KERNEL_H
@@ -14,16 +15,16 @@ public:
     ~CQKernel();
     
     struct Properties {
-	double sampleRate;
-	double maxFrequency;
-	double minFrequency;
-	int binsPerOctave;
-	int fftSize;
-	int fftHop;
-	int atomsPerFrame;
-	int atomSpacing;
-	int firstCentre;
-	double Q;
+        double sampleRate;
+        double maxFrequency;
+        double minFrequency;
+        int binsPerOctave;
+        int fftSize;
+        int fftHop;
+        int atomsPerFrame;
+        int atomSpacing;
+        int firstCentre;
+        double Q;
     };
 
     Properties getProperties() const { return m_p; }
@@ -33,11 +34,13 @@ private:
     FFT *m_fft;
 
     struct KernelMatrix {
-	std::vector<std::vector<std::complex<double> > > row;
+        std::vector<int> origin;
+        std::vector<std::vector<std::complex<double> > > data;
     };
     KernelMatrix m_kernel;
 
     void generateKernel();
+    void normaliseKernel();
 };
 
 #endif
