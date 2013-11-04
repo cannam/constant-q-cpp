@@ -227,15 +227,6 @@ CQKernel::normaliseKernel()
         }
     }
 
-    // diagnostic
-    int nnz = 0;
-    for (int i = 0; i < sk.data.size(); ++i) {
-        for (int j = 0; j < sk.data[i].size(); ++j) {
-            assert(sk.data[i][j] == m_kernel.data[i][sk.origin[i] + j]);
-        }
-    }
-    cerr << "nnz = " << nnz << endl;
-
     m_kernel = sk;
 }
 
