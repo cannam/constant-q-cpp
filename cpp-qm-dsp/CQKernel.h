@@ -3,6 +3,7 @@
 #define CQ_KERNEL_H
 
 #include <vector>
+#include <complex>
 
 class FFT;
 
@@ -32,9 +33,7 @@ private:
     FFT *m_fft;
 
     struct KernelMatrix {
-	std::vector<int> offsets;
-	std::vector<std::vector<double> > real;
-	std::vector<std::vector<double> > imag;
+	std::vector<std::vector<std::complex<double> > > row;
     };
     KernelMatrix m_kernel;
 

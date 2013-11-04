@@ -11,6 +11,7 @@
 #include <iostream>
 
 using std::vector;
+using std::complex;
 using std::cerr;
 using std::endl;
 
@@ -107,44 +108,28 @@ CQKernel::generateKernel()
 
 	    int firstNZ = -1, lastNZ = -1;
 
+	    vector<complex<double> > row;
+
 	    for (int j = 0; j < m_p.fftSize; ++j) {
-		if (sqrt(rout[j] * rout[j] + iout[j] * iout[j]) >= thresh) {
-		    lastNZ = j;
-		    if (firstNZ < 0) firstNZ = j;
+		if (sqrt(rout[j] * rout[j] + iout[j] * iout[j]) < thresh) {
+		    row.push_back(complex<double>(0, 0));
 		} else {
-		    rout[j] = iout[j] = 0;
+		    row.push_back(complex<double>(rout[j], iout[j]));
 		}
 	    }
 
-	    vector<double> rnz, inz;
-
-	    if (firstNZ >= 0) {
-		for (int j = firstNZ; j <= lastNZ; ++j) {
-		    rnz.push_back(rout[j] / m_p.fftSize);
-		    inz.push_back(iout[j] / m_p.fftSize);
-		}
-		m_kernel.offsets.push_back(firstNZ);
-	    } else {
-		m_kernel.offsets.push_back(0);
-	    }
-
-	    m_kernel.real.push_back(rnz);
-	    m_kernel.imag.push_back(inz);
+	    m_kernel.row.push_back(row);
 	}
     }
 
-    assert((int)m_kernel.offsets.size() == m_p.binsPerOctave * m_p.atomsPerFrame);
-    assert((int)m_kernel.real.size() == m_p.binsPerOctave * m_p.atomsPerFrame);
-    assert((int)m_kernel.imag.size() == m_p.binsPerOctave * m_p.atomsPerFrame);
+    assert((int)m_kernel.row.size() == m_p.binsPerOctave * m_p.atomsPerFrame);
 
     // print density as diagnostic
 
     int nnz = 0;
-    for (int i = 0; i < m_kernel.offsets.size(); ++i) {
-	assert(m_kernel.real[i].size() == m_kernel.imag[i].size());
-	for (int j = 0; j < m_kernel.real[i].size(); ++j) {
-	    if (m_kernel.real[i][j] != 0.0 ||
-		m_kernel.imag[i][j] != 0.0) {
+    for (int i = 0; i < m_kernel.row.size(); ++i) {
+	for (int j = 0; j < m_kernel.row[i].size(); ++j) {
+	    if (m_kernel.row[i][j] != complex<double>(0, 0)) {
 		++nnz;
 	    }
 	}
