@@ -205,7 +205,7 @@ for cq do c:
     for (mat.asColumns mm) (println . strJoin "," . vec.list);
 done;
 
-bigM = mat.concat (Horizontal ()) (map cm.magnitudes cq);
+bigM = mat.concatHorizontal (map cm.magnitudes cq);
 
 //\() (plot.plot [Contour bigM]);
 

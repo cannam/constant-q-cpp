@@ -2,7 +2,6 @@
 module cqtkernel;
 
 vec = load may.vector;
-bf = load may.vector.blockfuncs;
 complex = load may.complex;
 window = load may.signal.window;
 fft = load may.transform.fft;
@@ -51,13 +50,13 @@ makeKernel { sampleRate, maxFreq, binsPerOctave } =
         // the cq MATLAB toolbox uses a symmetric window for
         // blackmanharris -- which is odd because it uses a periodic one
         // for other types. Oh well
-        win = bf.divideBy nk
-           (bf.sqrt
+        win = vec.divideBy nk
+           (vec.sqrt
                (window.windowFunction (BlackmanHarris ()) [Symmetric true] nk));
 
         fk = minFreq * (pow 2 ((k-1)/binsPerOctave));
 
-        genKernel f = bf.multiply win
+        genKernel f = vec.multiply win
            (vec.fromList
                (map do i: f (2 * pi * fk * i / sampleRate) done [0..nk-1]));
     
@@ -91,15 +90,15 @@ makeKernel { sampleRate, maxFreq, binsPerOctave } =
     
     // Normalisation
     
-    wx1 = bf.maxindex (complex.magnitudes (cm.getRow 0 kmat));
-    wx2 = bf.maxindex (complex.magnitudes (cm.getRow (cm.height kmat - 1) kmat));
+    wx1 = vec.maxindex (complex.magnitudes (cm.getRow 0 kmat));
+    wx2 = vec.maxindex (complex.magnitudes (cm.getRow (cm.height kmat - 1) kmat));
     
     subset = cm.columnSlice kmat wx1 (wx2+1);
     square = cm.product (cm.conjugateTransposed subset) subset;
     diag = complex.magnitudes (cm.getDiagonal 0 square);
     wK = vec.slice diag (round(1/q)) (vec.length diag - round(1/q) - 2);
     
-    weight = (fftHop / fftSize) / (bf.mean (bf.abs wK));
+    weight = (fftHop / fftSize) / (vec.mean (vec.abs wK));
     weight = sqrt(weight);
 
     eprintln "weight = \(weight)";
