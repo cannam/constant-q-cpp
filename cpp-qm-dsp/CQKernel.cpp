@@ -119,7 +119,8 @@ CQKernel::generateKernel()
                 if (sqrt(rout[j] * rout[j] + iout[j] * iout[j]) < thresh) {
                     row.push_back(C(0, 0));
                 } else {
-                    row.push_back(C(rout[j], iout[j]));
+                    row.push_back(C(rout[j] / m_p.fftSize,
+                                    iout[j] / m_p.fftSize));
                 }
             }
 
@@ -171,13 +172,71 @@ CQKernel::normaliseKernel()
         }
     }
 
-    vector<vector<C> > square;
-    // conjugate transpose of subset * subset
-    for (int j = 0; j < subset[0].size(); ++j) {
+    int nrows = subset.size();
+    int ncols = subset[0].size();
+    vector<vector<C> > square(ncols); // conjugate transpose of subset * subset
 
-
+    for (int i = 0; i < nrows; ++i) {
+        assert(subset[i].size() == ncols);
     }
-        
+
+    for (int j = 0; j < ncols; ++j) {
+        for (int i = 0; i < ncols; ++i) {
+            C v(0, 0);
+            for (int k = 0; k < nrows; ++k) {
+                v += subset[k][i] * conj(subset[k][j]);
+            }
+            square[i].push_back(v);
+        }
+    }
+
+    vector<double> wK;
+    double q = 1; //!!! duplicated from constructor
+    for (int i = round(1.0/q); i < ncols - round(1.0/q) - 2; ++i) {
+        wK.push_back(abs(square[i][i]));
+    }
+
+    double weight = double(m_p.fftHop) / m_p.fftSize;
+    weight /= MathUtilities::mean(wK.data(), wK.size());
+    weight = sqrt(weight);
+    
+    cerr << "weight = " << weight << endl;
+
+    KernelMatrix sk;
+
+    for (int i = 0; i < m_kernel.data.size(); ++i) {
+
+        sk.origin.push_back(0);
+        sk.data.push_back(vector<C>());
+
+        int lastNZ = 0;
+        for (int j = m_kernel.data[i].size()-1; j >= 0; --j) {
+            if (abs(m_kernel.data[i][j]) != 0.0) {
+                lastNZ = j;
+                break;
+            }
+        }
+
+        bool haveNZ = false;
+        for (int j = 0; j <= lastNZ; ++j) {
+            if (haveNZ || abs(m_kernel.data[i][j]) != 0.0) {
+                if (!haveNZ) sk.origin[i] = j;
+                haveNZ = true;
+                sk.data[i].push_back(m_kernel.data[i][j] * weight);
+            }
+        }
+    }
+
+    // diagnostic
+    int nnz = 0;
+    for (int i = 0; i < sk.data.size(); ++i) {
+        for (int j = 0; j < sk.data[i].size(); ++j) {
+            assert(sk.data[i][j] == m_kernel.data[i][sk.origin[i] + j]);
+        }
+    }
+    cerr << "nnz = " << nnz << endl;
+
+    m_kernel = sk;
 }
 
 
