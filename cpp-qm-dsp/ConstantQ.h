@@ -32,7 +32,7 @@ private:
     int m_bigBlockSize;
 
     std::vector<Resampler *> m_decimators;
-    std::vector<std::vector<double> > m_octaveBuffers;
+    std::vector<std::vector<double> > m_buffers;
 
     int m_totalLatency;
     std::vector<int> m_extraLatencies; // per resampler, to make up to total

@@ -60,6 +60,11 @@ ConstantQ::initialise()
 
     int sourceRate = pow(2, m_octaves);
     vector<int> latencies;
+
+    // top octave, no resampling
+    latencies.push_back(0);
+    m_decimators.push_back(0);
+
     for (int oct = 1; oct < m_octaves; ++oct) {
 	Resampler *r = new Resampler(sourceRate, sourceRate / pow(2, oct));
 	latencies.push_back(r->getLatency());
@@ -73,7 +78,7 @@ ConstantQ::initialise()
     for (int i = 0; i < latencies.size(); ++i) {
 	m_extraLatencies.push_back(m_totalLatency - latencies[i]);
 	cerr << "extra latency " << i << " = " << m_extraLatencies[i] << endl;
-	m_octaveBuffers.push_back(new vector<double>(m_extraLatencies[i], 0.0));
+	m_buffers.push_back(vector<double>(m_extraLatencies[i], 0.0));
     }
 
     m_fft = new FFT(m_p.fftSize);
@@ -85,9 +90,11 @@ ConstantQ::initialise()
 vector<vector<double> > 
 ConstantQ::process(vector<double> td)
 {
+    m_buffers[0].insert(m_buffers[0].end(), td.begin(), td.end());
+
     for (int i = 1; i < m_octaves; ++i) {
 	vector<double> dec = m_decimators[i]->process(td.data(), td.size());
-	m_octaveBuffers[i].insert(m_octaveBuffers[i].end(), dec);
+	m_buffers[i].insert(m_buffers[i].end(), dec.begin(), dec.end());
     }
 
     //!!! do the work!
