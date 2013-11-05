@@ -19,7 +19,8 @@ using std::endl;
 
 typedef std::complex<double> C;
 
-CQKernel::CQKernel(double sampleRate, double maxFreq, int binsPerOctave)
+CQKernel::CQKernel(double sampleRate, double maxFreq, int binsPerOctave) :
+    m_fft(0)
 {
     m_p.sampleRate = sampleRate;
     m_p.maxFrequency = maxFreq;
@@ -144,7 +145,7 @@ CQKernel::generateKernel()
 
     cerr << "density = " << double(nnz) / double(m_p.binsPerOctave * m_p.atomsPerFrame * m_p.fftSize) << " (" << nnz << " of " << m_p.binsPerOctave * m_p.atomsPerFrame * m_p.fftSize << ")" << endl;
 
-    normaliseKernel();
+    finaliseKernel();
 }
 
 static bool ccomparator(C &c1, C &c2)
@@ -158,9 +159,9 @@ static int maxidx(vector<C> &v)
 }
 
 void
-CQKernel::normaliseKernel()
+CQKernel::finaliseKernel()
 {
-    // and normalise
+    // calculate weight for normalisation
 
     int wx1 = maxidx(m_kernel.data[0]);
     int wx2 = maxidx(m_kernel.data[m_kernel.data.size()-1]);
@@ -202,6 +203,10 @@ CQKernel::normaliseKernel()
     
     cerr << "weight = " << weight << endl;
 
+    // apply normalisation weight, make sparse, and store conjugates
+    // (our multiplication order means we will effectively be using
+    // the adjoint or conjugate transpose of the kernel matrix)
+
     KernelMatrix sk;
 
     for (int i = 0; i < m_kernel.data.size(); ++i) {
@@ -222,7 +227,7 @@ CQKernel::normaliseKernel()
             if (haveNZ || abs(m_kernel.data[i][j]) != 0.0) {
                 if (!haveNZ) sk.origin[i] = j;
                 haveNZ = true;
-                sk.data[i].push_back(m_kernel.data[i][j] * weight);
+                sk.data[i].push_back(conj(m_kernel.data[i][j]) * weight);
             }
         }
     }

@@ -13,7 +13,7 @@ LDFLAGS := $(LDFLAGS)
 LIBS 		:= ../../qm-dsp/libqm-dsp.a -lpthread
 PROGRAM_LIBS	:= -lsndfile
 
-SOURCES	:= CQKernel.cpp test.cpp
+SOURCES	:= CQKernel.cpp ConstantQ.cpp test.cpp
 
 OBJECTS := $(SOURCES:.cpp=.o)
 OBJECTS := $(OBJECTS:.c=.o)
@@ -28,3 +28,11 @@ test:	$(OBJECTS)
 clean: 
 	rm -f *.o 
 
+depend:
+	makedepend -Y $(SOURCES)
+
+# DO NOT DELETE
+
+CQKernel.o: CQKernel.h
+ConstantQ.o: ConstantQ.h CQKernel.h
+test.o: ConstantQ.h CQKernel.h

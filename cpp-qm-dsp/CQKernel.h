@@ -40,7 +40,7 @@ private:
     KernelMatrix m_kernel;
 
     void generateKernel();
-    void normaliseKernel();
+    void finaliseKernel();
 };
 
 #endif
