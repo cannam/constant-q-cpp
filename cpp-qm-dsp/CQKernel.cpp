@@ -143,6 +143,11 @@ CQKernel::generateKernel()
         }
     }
 
+    cerr << "size = " << m_kernel.data.size() << "*" << m_kernel.data[0].size() << " (fft size = " << m_p.fftSize << ")" << endl;
+
+    assert(m_kernel.data.size() == m_p.binsPerOctave * m_p.atomsPerFrame);
+    assert(m_kernel.data[0].size() == m_p.fftSize);
+
     cerr << "density = " << double(nnz) / double(m_p.binsPerOctave * m_p.atomsPerFrame * m_p.fftSize) << " (" << nnz << " of " << m_p.binsPerOctave * m_p.atomsPerFrame * m_p.fftSize << ")" << endl;
 
     finaliseKernel();
@@ -233,6 +238,26 @@ CQKernel::finaliseKernel()
     }
 
     m_kernel = sk;
+}
+
+vector<C>
+CQKernel::process(const vector<C> &cv)
+{
+    // matrix multiply m_kernel.data by in, converting in to complex
+    // as we go
+
+    int ncols = m_p.fftSize;
+    int nrows = m_p.binsPerOctave * m_p.atomsPerFrame;
+
+    vector<C> rv(nrows, C(0, 0));
+
+    for (int i = 0; i < nrows; ++i) {
+        for (int j = 0; j < m_kernel.data[i].size(); ++j) {
+            rv[i] += cv[j + m_kernel.origin[i]] * m_kernel.data[i][j];
+        }
+    }
+
+    return rv;
 }
 
 

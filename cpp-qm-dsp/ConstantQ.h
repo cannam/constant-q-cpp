@@ -8,7 +8,7 @@
 #include <vector>
 
 class Resampler;
-class FFT;
+class FFTReal;
 
 class ConstantQ
 {
@@ -37,9 +37,11 @@ private:
     int m_totalLatency;
     std::vector<int> m_extraLatencies; // per resampler, to make up to total
 
-    FFT *m_fft;
+    FFTReal *m_fft;
 
     void initialise();
+    std::vector<std::vector<double> > processBigBlock();
+    std::vector<std::vector<double> > processOctaveBlock(const double *data);
 };
 
 #endif

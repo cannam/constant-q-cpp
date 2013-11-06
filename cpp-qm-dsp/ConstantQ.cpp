@@ -17,6 +17,8 @@ using std::complex;
 using std::cerr;
 using std::endl;
 
+typedef std::complex<double> C;
+
 ConstantQ::ConstantQ(double sampleRate,
 		     double minFreq,
 		     double maxFreq,
@@ -81,7 +83,7 @@ ConstantQ::initialise()
 	m_buffers.push_back(vector<double>(m_extraLatencies[i], 0.0));
     }
 
-    m_fft = new FFT(m_p.fftSize);
+    m_fft = new FFTReal(m_p.fftSize);
     m_bigBlockSize = m_p.fftSize * pow(2, m_octaves) / 2;
 
     cerr << "m_bigBlockSize = " << m_bigBlockSize << " for " << m_octaves << " octaves" << endl;
@@ -97,9 +99,72 @@ ConstantQ::process(vector<double> td)
 	m_buffers[i].insert(m_buffers[i].end(), dec.begin(), dec.end());
     }
 
-    //!!! do the work!
-
     vector<vector<double> > out;
+
+    //!!!! need some mechanism for handling remaining samples at the end
+
+    while (m_buffers[0].size() >= m_bigBlockSize) {
+	vector<vector<double> > chunk = processBigBlock();
+	for (int i = 0; i < m_octaves; ++i) {
+	    vector<double> v;
+	    v.insert(v.end(),
+		     m_buffers[i].begin() + m_bigBlockSize/pow(2,i), m_buffers[i].end());
+	    m_buffers[i] = v;
+	}
+	out.insert(out.end(), chunk.begin(), chunk.end());
+    }
+    
     return out;
 }
+
+vector<vector<double> > 
+ConstantQ::processBigBlock()
+{
+    vector<vector<double> > out;
+
+    for (int i = 0; i < pow(2, m_octaves - 1) * m_p.atomsPerFrame; ++i) {
+	out.push_back(vector<double>());
+    }
+    cerr << "returning " << out.size() << " cols per big block" << endl;
+
+    for (int i = 0; i < m_octaves; ++i) {
+	int n = pow(2, (m_octaves - i - 1));
+	cerr << "octave " << i+1 << " of " << m_octaves << ", n = " << n << endl;
+	for (int j = 0; j < n; ++j) {
+	    int origin = j * m_p.fftSize; //!!! no -- it's the hop but how does that add up?
+	    vector<vector<double> > block = 
+		processOctaveBlock(m_buffers[i].data() + origin);
+
+	    //...
+	}
+    }
+
+    return out;
+}
+	
+vector<vector<double> >
+ConstantQ::processOctaveBlock(const double *data)
+{
+    vector<double> ro(m_p.fftSize, 0.0);
+    vector<double> io(m_p.fftSize, 0.0);
+    m_fft->forward(data, ro.data(), io.data());
+
+    vector<C> cv;
+    for (int i = 0; i < m_p.fftSize; ++i) {
+	cv.push_back(C(ro[i], io[i]));
+    }
+
+    vector<C> cqrowvec = m_kernel->process(cv);
+
+    vector<vector<double> > cqblock;
+    for (int i = 0; i < m_p.binsPerOctave; ++i) {
+	cqblock.push_back(vector<double>());
+	for (int j = 0; j < m_p.atomsPerFrame; ++j) {
+	    cqblock[i].push_back(abs(cqrowvec[i * m_p.atomsPerFrame + j]));
+	}
+    }
+
+    return cqblock;
+}
+
 

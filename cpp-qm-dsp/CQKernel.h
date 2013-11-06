@@ -29,6 +29,9 @@ public:
 
     Properties getProperties() const { return m_p; }
 
+    std::vector<std::complex<double> > process
+        (const std::vector<std::complex<double> > &);
+
 private:
     Properties m_p;
     FFT *m_fft;
