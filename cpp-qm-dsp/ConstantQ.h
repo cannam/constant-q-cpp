@@ -18,6 +18,14 @@ public:
 	      int binsPerOctave);
     ~ConstantQ();
 
+    double getSampleRate() const { return m_sampleRate; }
+    double getMaxFrequency() const { return m_p.maxFrequency; }
+    double getMinFrequency() const { return m_p.minFrequency; } // actual min, not that provided to ctor
+    int getBinsPerOctave() const { return m_binsPerOctave; }
+    int getOctaves() const { return m_octaves; }
+    int getTotalBins() const { return m_octaves * m_binsPerOctave; }
+    int getColumnHop() const { return m_p.fftHop / m_p.atomsPerFrame; }
+
     std::vector<std::vector<double> > process(std::vector<double>);
 
 private:
@@ -40,8 +48,7 @@ private:
     FFTReal *m_fft;
 
     void initialise();
-    std::vector<std::vector<double> > processBigBlock();
-    std::vector<std::vector<double> > processOctaveBlock(const double *data);
+    std::vector<std::vector<double> > processOctaveBlock(int octave);
 };
 
 #endif
