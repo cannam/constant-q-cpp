@@ -42,6 +42,7 @@ ConstantQ::~ConstantQ()
     for (int i = 0; i < m_decimators.size(); ++i) {
 	delete m_decimators[i];
     }
+    delete m_kernel;
 }
 
 void
