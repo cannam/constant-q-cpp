@@ -159,6 +159,7 @@ CQVamp::reset()
 	m_cq = new ConstantQ
 	    (m_inputSampleRate, m_minFrequency, m_maxFrequency, m_bpo);
     }
+    m_prevFeature.clear();
 }
 
 size_t
@@ -209,15 +210,36 @@ CQVamp::process(const float *const *inputBuffers,
     for (int i = 0; i < m_blockSize; ++i) data.push_back(inputBuffers[0][i]);
     
     vector<vector<double> > cqout = m_cq->process(data);
+    return convertToFeatures(cqout);
+}
 
+CQVamp::FeatureSet
+CQVamp::getRemainingFeatures()
+{
+    vector<vector<double> > cqout = m_cq->getRemainingBlocks();
+    return convertToFeatures(cqout);
+}
+
+CQVamp::FeatureSet
+CQVamp::convertToFeatures(const vector<vector<double> > &cqout)
+{
+    
     FeatureSet returnFeatures;
 
-    for (int i = 0; i < cqout.size(); ++i) {
+    for (int i = 0; i < (int)cqout.size(); ++i) {
 
 	vector<float> column(m_cq->getTotalBins(), 0.f);
-	for (int j = 0; j < cqout[i].size(); ++j) {
+
+	for (int j = 0; j < (int)cqout[i].size(); ++j) {
 	    column[j] = cqout[i][j];
 	}
+	for (int j = cqout[i].size(); j < m_cq->getTotalBins(); ++j) {
+	    if (j < (int)m_prevFeature.size()) {
+		column[j] = m_prevFeature[j];
+	    }
+	}
+
+	m_prevFeature = column;
 
 	Feature feature;
 	feature.hasTimestamp = false;
@@ -227,11 +249,5 @@ CQVamp::process(const float *const *inputBuffers,
     }
 
     return returnFeatures;
-}
-
-CQVamp::FeatureSet
-CQVamp::getRemainingFeatures()
-{
-    return FeatureSet();
 }
 

@@ -46,6 +46,9 @@ protected:
     int m_bpo;
     int m_stepSize;
     int m_blockSize;
+
+    std::vector<float> m_prevFeature;
+    FeatureSet convertToFeatures(const std::vector<std::vector<double> > &);
 };
 
 

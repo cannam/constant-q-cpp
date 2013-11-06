@@ -26,7 +26,8 @@ public:
     int getTotalBins() const { return m_octaves * m_binsPerOctave; }
     int getColumnHop() const { return m_p.fftHop / m_p.atomsPerFrame; }
 
-    std::vector<std::vector<double> > process(std::vector<double>);
+    std::vector<std::vector<double> > process(const std::vector<double> &);
+    std::vector<std::vector<double> > getRemainingBlocks();
 
 private:
     double m_sampleRate;
@@ -43,7 +44,6 @@ private:
     std::vector<std::vector<double> > m_buffers;
 
     int m_totalLatency;
-    std::vector<int> m_extraLatencies; // per resampler, to make up to total
 
     FFTReal *m_fft;
 

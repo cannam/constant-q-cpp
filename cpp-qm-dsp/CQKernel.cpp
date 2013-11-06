@@ -135,8 +135,8 @@ CQKernel::generateKernel()
     // print density as diagnostic
 
     int nnz = 0;
-    for (int i = 0; i < m_kernel.data.size(); ++i) {
-        for (int j = 0; j < m_kernel.data[i].size(); ++j) {
+    for (int i = 0; i < (int)m_kernel.data.size(); ++i) {
+        for (int j = 0; j < (int)m_kernel.data[i].size(); ++j) {
             if (m_kernel.data[i][j] != C(0, 0)) {
                 ++nnz;
             }
@@ -145,8 +145,8 @@ CQKernel::generateKernel()
 
     cerr << "size = " << m_kernel.data.size() << "*" << m_kernel.data[0].size() << " (fft size = " << m_p.fftSize << ")" << endl;
 
-    assert(m_kernel.data.size() == m_p.binsPerOctave * m_p.atomsPerFrame);
-    assert(m_kernel.data[0].size() == m_p.fftSize);
+    assert((int)m_kernel.data.size() == m_p.binsPerOctave * m_p.atomsPerFrame);
+    assert((int)m_kernel.data[0].size() == m_p.fftSize);
 
     cerr << "density = " << double(nnz) / double(m_p.binsPerOctave * m_p.atomsPerFrame * m_p.fftSize) << " (" << nnz << " of " << m_p.binsPerOctave * m_p.atomsPerFrame * m_p.fftSize << ")" << endl;
 
@@ -173,7 +173,7 @@ CQKernel::finaliseKernel()
 
     vector<vector<C> > subset(m_kernel.data.size());
     for (int j = wx1; j <= wx2; ++j) {
-        for (int i = 0; i < m_kernel.data.size(); ++i) {
+        for (int i = 0; i < (int)m_kernel.data.size(); ++i) {
             subset[i].push_back(m_kernel.data[i][j]);
         }
     }
@@ -183,7 +183,7 @@ CQKernel::finaliseKernel()
     vector<vector<C> > square(ncols); // conjugate transpose of subset * subset
 
     for (int i = 0; i < nrows; ++i) {
-        assert(subset[i].size() == ncols);
+        assert((int)subset[i].size() == ncols);
     }
 
     for (int j = 0; j < ncols; ++j) {
@@ -214,13 +214,13 @@ CQKernel::finaliseKernel()
 
     KernelMatrix sk;
 
-    for (int i = 0; i < m_kernel.data.size(); ++i) {
+    for (int i = 0; i < (int)m_kernel.data.size(); ++i) {
 
         sk.origin.push_back(0);
         sk.data.push_back(vector<C>());
 
         int lastNZ = 0;
-        for (int j = m_kernel.data[i].size()-1; j >= 0; --j) {
+        for (int j = (int)m_kernel.data[i].size()-1; j >= 0; --j) {
             if (abs(m_kernel.data[i][j]) != 0.0) {
                 lastNZ = j;
                 break;
@@ -246,13 +246,12 @@ CQKernel::process(const vector<C> &cv)
     // matrix multiply m_kernel.data by in, converting in to complex
     // as we go
 
-    int ncols = m_p.fftSize;
     int nrows = m_p.binsPerOctave * m_p.atomsPerFrame;
 
     vector<C> rv(nrows, C(0, 0));
 
     for (int i = 0; i < nrows; ++i) {
-        for (int j = 0; j < m_kernel.data[i].size(); ++j) {
+        for (int j = 0; j < (int)m_kernel.data[i].size(); ++j) {
             rv[i] += cv[j + m_kernel.origin[i]] * m_kernel.data[i][j];
         }
     }

@@ -39,7 +39,7 @@ ConstantQ::ConstantQ(double sampleRate,
 ConstantQ::~ConstantQ()
 {
     delete m_fft;
-    for (int i = 0; i < m_decimators.size(); ++i) {
+    for (int i = 0; i < (int)m_decimators.size(); ++i) {
 	delete m_decimators[i];
     }
     delete m_kernel;
@@ -79,10 +79,21 @@ ConstantQ::initialise()
     int maxLatency = *std::max_element(latencies.begin(), latencies.end());
     m_totalLatency = MathUtilities::nextPowerOfTwo(maxLatency);
     cerr << "total latency = " << m_totalLatency << endl;
-    for (int i = 0; i < latencies.size(); ++i) {
-	m_extraLatencies.push_back(m_totalLatency - latencies[i]);
-	cerr << "extra latency " << i << " = " << m_extraLatencies[i] << endl;
-	m_buffers.push_back(vector<double>(m_extraLatencies[i], 0.0));
+
+    for (int i = 0; i < m_octaves; ++i) {
+
+	int extraLatency = m_totalLatency - latencies[i];
+
+	int pad = 0;
+ //!!! quite wrong
+	for (int j = 0; j < i; ++j) {
+	    pad += m_p.fftSize/2;
+	}
+	cerr << "for octave " << i << ", pad = " << pad << endl;
+	pad = 0;
+
+	m_buffers.push_back
+	    (vector<double>(extraLatency + pad, 0.0));
     }
 
     m_fft = new FFTReal(m_p.fftSize);
@@ -92,7 +103,7 @@ ConstantQ::initialise()
 }
 
 vector<vector<double> > 
-ConstantQ::process(vector<double> td)
+ConstantQ::process(const vector<double> &td)
 {
     m_buffers[0].insert(m_buffers[0].end(), td.begin(), td.end());
 
@@ -105,7 +116,7 @@ ConstantQ::process(vector<double> td)
 
     //!!!! need some mechanism for handling remaining samples at the end
 
-    while (m_buffers[0].size() >= m_bigBlockSize) {
+    while ((int)m_buffers[0].size() >= m_bigBlockSize) {
 
 	int base = out.size();
 	int totalColumns = pow(2, m_octaves - 1) * m_p.atomsPerFrame;
@@ -136,6 +147,14 @@ ConstantQ::process(vector<double> td)
     }
     
     return out;
+}
+
+vector<vector<double> >
+ConstantQ::getRemainingBlocks()
+{
+    int n = m_bigBlockSize + m_bigBlockSize - m_buffers[0].size();
+    vector<double> pad(n, 0.0);
+    return process(pad);
 }
 
 vector<vector<double> >
