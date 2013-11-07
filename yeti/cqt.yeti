@@ -1,33 +1,20 @@
 
-program cqt;
+module cqt;
 
 cqtkernel = load cqtkernel;
 resample = load may.stream.resample;
 manipulate = load may.stream.manipulate;
-syn = load may.stream.syntheticstream;
 cm = load may.matrix.complex;
-mat = load may.matrix;
 framer = load may.stream.framer;
 cplx = load may.complex;
 fft = load may.transform.fft;
 vec = load may.vector;
-af = load may.stream.audiofile;
-plot = load may.plot;
 
 { pow, round, floor, ceil, log2, nextPowerOfTwo } = load may.mathmisc;
 
-cqt str =
+cqt { maxFreq, minFreq, binsPerOctave } str =
    (sampleRate = str.sampleRate;
-    maxFreq = sampleRate/2;
-    minFreq = 50;
-    binsPerOctave = 24;
-
-eprintln "Here";
-
     octaves = ceil (log2 (maxFreq / minFreq));
-
-eprintln "Here: about to calculate stuff with \(octaves)";
-
     actualMinFreq = (maxFreq / (pow 2 octaves)) * (pow 2 (1/binsPerOctave));
 
     eprintln "sampleRate = \(sampleRate), maxFreq = \(maxFreq), minFreq = \(minFreq), actualMinFreq = \(actualMinFreq), octaves = \(octaves), binsPerOctave = \(binsPerOctave)";
@@ -191,23 +178,5 @@ eprintln "octaveLists keys are: \(keys octaveLists)";
 
     );
 
-//testStream = manipulate.withDuration 96000 (syn.sinusoid 48000 500);
-//testStream = manipulate.withDuration 96000 (syn.pulseTrain 48000 4);
-testStream = af.open "sweep-48000.wav";
-//testStream = af.open "sweep.wav";
-
-eprintln "have test stream";
-
-cq = cqt testStream;
-
-for cq do c:
-    mm = cm.magnitudes c;
-    for (mat.asColumns mm) (println . strJoin "," . vec.list);
-done;
-
-bigM = mat.concatHorizontal (map cm.magnitudes cq);
-
-//\() (plot.plot [Contour bigM]);
-
-()
+{ cqt }
 

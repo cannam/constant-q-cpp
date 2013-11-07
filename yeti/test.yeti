@@ -1,0 +1,35 @@
+
+program test;
+
+af = load may.stream.audiofile;
+plot = load may.plot;
+cm = load may.matrix.complex;
+mat = load may.matrix;
+vec = load may.vector;
+manipulate = load may.stream.manipulate;
+syn = load may.stream.syntheticstream;
+
+{ cqt } = load cqt;
+
+//testStream = manipulate.withDuration 96000 (syn.sinusoid 48000 500);
+//testStream = manipulate.withDuration 96000 (syn.pulseTrain 48000 4);
+//testStream = af.open "sweep-48000.wav";
+//testStream = af.open "sweep.wav";
+
+testStream = manipulate.withDuration 32 (syn.sinusoid 8 2);
+
+eprintln "have test stream";
+
+cq = cqt { maxFreq = testStream.sampleRate/2, minFreq = 1, binsPerOctave = 24 } testStream;
+
+for cq do c:
+    mm = cm.magnitudes c;
+    for (mat.asColumns mm) (println . strJoin "," . vec.list);
+done;
+
+bigM = mat.concatHorizontal (map cm.magnitudes cq);
+
+\() (plot.plot [Contour bigM]);
+
+()
+
