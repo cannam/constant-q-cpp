@@ -16,11 +16,13 @@ syn = load may.stream.syntheticstream;
 //testStream = af.open "sweep-48000.wav";
 //testStream = af.open "sweep.wav";
 
-testStream = manipulate.withDuration 32 (syn.sinusoid 8 2);
+testStream = manipulate.withDuration 64 (syn.sinusoid 8 2);
+
+// So the stream is [ 0, 1, 0, -1, 0, 1, 0, -1, ... ]
 
 eprintln "have test stream";
 
-cq = cqt { maxFreq = testStream.sampleRate/2, minFreq = 1, binsPerOctave = 24 } testStream;
+cq = cqt { maxFreq = testStream.sampleRate/2, minFreq = 1, binsPerOctave = 4 } testStream;
 
 for cq do c:
     mm = cm.magnitudes c;
@@ -29,7 +31,22 @@ done;
 
 bigM = mat.concatHorizontal (map cm.magnitudes cq);
 
-\() (plot.plot [Contour bigM]);
+eprintln "overall output size = \(mat.size bigM)";
+
+for [0..mat.width bigM / 8 - 1] do b:
+    println "\nColumns \(b * 8 + 1) to \(b * 8 + 8)\n";
+    for (mat.asRows (mat.columnSlice bigM (b*8) (b*8+8))) do row:
+        for (vec.list row) do v:
+            n = int (v * 10000);
+            print (strPad ' ' 10 "\(n / 10000)");
+        done;
+        println "";
+    done
+done;
+
+
+//\() (plot.plot [Contour bigM]);
+//\() (plot.plot [Grid bigM]);
 
 ()
 
