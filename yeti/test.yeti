@@ -33,17 +33,7 @@ bigM = mat.concatHorizontal (map cm.magnitudes cq);
 
 eprintln "overall output size = \(mat.size bigM)";
 
-for [0..mat.width bigM / 8 - 1] do b:
-    println "\nColumns \(b * 8 + 1) to \(b * 8 + 8)\n";
-    for (mat.asRows (mat.columnSlice bigM (b*8) (b*8+8))) do row:
-        for (vec.list row) do v:
-            n = int (v * 10000);
-            print (strPad ' ' 10 "\(n / 10000)");
-        done;
-        println "";
-    done
-done;
-
+mat.print bigM;
 
 //\() (plot.plot [Contour bigM]);
 //\() (plot.plot [Grid bigM]);
