@@ -43,6 +43,8 @@ makeKernel { sampleRate, maxFreq, binsPerOctave } =
     // function. We can't do that here; we need to generate real and imag
     // parts separately as real = cos(2*pi*x), imag = sin(2*pi*x).
     
+    binFrequencies = array [];
+
     kernels = map do k:
     
         nk = round(bigQ * sampleRate / (minFreq * (pow 2 ((k-1)/binsPerOctave))));
@@ -55,6 +57,8 @@ makeKernel { sampleRate, maxFreq, binsPerOctave } =
                (window.windowFunction (BlackmanHarris ()) [Symmetric true] nk));
 
         fk = minFreq * (pow 2 ((k-1)/binsPerOctave));
+
+        push binFrequencies fk;
 
         genKernel f = vec.multiply win
            (vec.fromList
@@ -112,8 +116,9 @@ makeKernel { sampleRate, maxFreq, binsPerOctave } =
         atomsPerFrame = winNr,
         atomSpacing = atomHop,
         firstCentre,
-        maxFreq,
-        minFreq,
+        maxFrequency = maxFreq,
+        minFrequency = minFreq,
+        binFrequencies,
         bigQ
     });
 

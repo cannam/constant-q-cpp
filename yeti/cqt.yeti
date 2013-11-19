@@ -23,6 +23,12 @@ cqt { maxFreq, minFreq, binsPerOctave } str =
 
     eprintln "atomsPerFrame = \(kdata.atomsPerFrame)";
 
+    padding = (kdata.fftSize / 2) * (pow 2 (octaves-1));
+
+eprintln "padding = \(padding)";
+
+    str = manipulate.paddedBy padding str;
+
     streams = manipulate.duplicated octaves str;
 
     //!!! can't be right!
@@ -131,7 +137,7 @@ cqt { maxFreq, minFreq, binsPerOctave } str =
             atomNo = int (col / colsPerAtom);
             atomOffset = col % colsPerAtom;
 
-            if /*!!! atomOffset == 0 and */ atomNo < length bits[oct] then
+            if atomOffset == 0 and atomNo < length bits[oct] then
                 bits[oct][atomNo][binNo];
             else
                 cplx.zero
@@ -173,9 +179,18 @@ println "oct \(octaves) - \(octave) = \(octaves - octave)";
          done cqblocks [1..octaves]);
 */
 eprintln "octaveLists keys are: \(keys octaveLists)";
-    
-    processOctaveLists octaveLists;
 
+    {
+        kernel = kdata with {
+            binFrequencies = array (concat
+               (map do octave:
+                    map do freq:
+                        freq / (pow 2 octave);
+                    done (reverse (list kdata.binFrequencies))
+                done [0..octaves-1]))
+        },
+        output = processOctaveLists octaveLists
+    }
     );
 
 { cqt }
