@@ -17,13 +17,13 @@ cqt { maxFreq, minFreq, binsPerOctave } str =
     octaves = ceil (log2 (maxFreq / minFreq));
     actualMinFreq = (maxFreq / (pow 2 octaves)) * (pow 2 (1/binsPerOctave));
 
-    eprintln "sampleRate = \(sampleRate), maxFreq = \(maxFreq), minFreq = \(minFreq), actualMinFreq = \(actualMinFreq), octaves = \(octaves), binsPerOctave = \(binsPerOctave)";
-
     kdata = cqtkernel.makeKernel { sampleRate, maxFreq, binsPerOctave };
+
+    eprintln "sampleRate = \(sampleRate), maxFreq = \(maxFreq), minFreq = \(minFreq), actualMinFreq = \(actualMinFreq), octaves = \(octaves), binsPerOctave = \(binsPerOctave), fftSize = \(kdata.fftSize), hop = \(kdata.fftHop)";
 
     eprintln "atomsPerFrame = \(kdata.atomsPerFrame)";
 
-    padding = (kdata.fftSize / 2) * (pow 2 (octaves-1));
+    padding = (kdata.fftSize * (pow 2 (octaves-1)));
 
 eprintln "padding = \(padding)";
 
@@ -45,6 +45,8 @@ eprintln "padding = \(padding)";
                 (resample.decimated (pow 2 octave) streams[octave]);
             map do frame:
                 freq = fftFunc (cplx.complexArray frame (vec.zeros kdata.fftSize));
+ println "octave = \(octave), frame = \(vec.list frame)";
+ println "octave = \(octave), freq = \(freq)";
                 cm.product kernel (cm.newComplexColumnVector freq);
             done frames;
         done [0..octaves-1];
@@ -104,7 +106,7 @@ eprintln "padding = \(padding)";
     cqblocks = array (map2 do octlist octave:
         d = emptyHops * (pow 2 (octaves-octave)) - emptyHops;
 
-        d = 0; //!!!
+//        d = 0; //!!!
 
         eprintln "dropping \(d)";
         drop d octlist;
