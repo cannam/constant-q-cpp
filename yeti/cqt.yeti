@@ -9,6 +9,7 @@ framer = load may.stream.framer;
 cplx = load may.complex;
 fft = load may.transform.fft;
 vec = load may.vector;
+ch = load may.stream.channels;
 
 { pow, round, floor, ceil, log2, nextPowerOfTwo } = load may.mathmisc;
 
@@ -40,9 +41,9 @@ eprintln "padding = \(padding)";
 
     cqblocks =
         map do octave:
-            frames = framer.monoFrames //!!! mono for now
-                { framesize = kdata.fftSize, hop = kdata.fftHop }
-                (resample.decimated (pow 2 octave) streams[octave]);
+            frames = map ch.mixedDown //!!! mono for now
+               (framer.frames kdata.fftSize [ Hop kdata.fftHop, Padded false ]
+                   (resample.decimated (pow 2 octave) streams[octave]));
             map do frame:
                 freq = fftFunc (cplx.complexArray frame (vec.zeros kdata.fftSize));
  println "octave = \(octave), frame = \(vec.list frame)";
