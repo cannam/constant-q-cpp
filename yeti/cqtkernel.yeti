@@ -86,9 +86,7 @@ makeKernel { sampleRate, maxFreq, binsPerOctave } =
     
     done [1..binsPerOctave];
     
-    kmat = cm.toSparse
-       (cm.scaled (1/fftSize)
-           (cm.newComplexMatrix (RowMajor()) (concat kernels)));
+    kmat = cm.toSparse (cm.scaled (1/fftSize) (cm.fromRows (concat kernels)));
     
     eprintln "density = \(cm.density kmat) (\(cm.nonZeroValues kmat) of \(cm.width kmat * cm.height kmat))";
     

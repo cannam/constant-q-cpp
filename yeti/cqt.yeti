@@ -46,8 +46,8 @@ eprintln "padding = \(padding)";
                    (resample.decimated (pow 2 octave) streams[octave]));
             map do frame:
                 freq = fftFunc (cplx.complexArray frame (vec.zeros kdata.fftSize));
- println "octave = \(octave), frame = \(vec.list frame)";
- println "octave = \(octave), freq = \(freq)";
+// eprintln "octave = \(octave), frame = \(vec.list frame)";
+// eprintln "octave = \(octave), freq = \(freq)";
                 cm.product kernel (cm.newComplexColumnVector freq);
             done frames;
         done [0..octaves-1];
