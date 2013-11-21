@@ -13,17 +13,17 @@ syn = load may.stream.syntheticstream;
 
 //testStream = manipulate.withDuration 96000 (syn.sinusoid 48000 500);
 //testStream = manipulate.withDuration 96000 (syn.pulseTrain 48000 4);
-//testStream = af.open "sweep-48000.wav";
+testStream = af.open "sweep-48000.wav";
 //testStream = af.open "sweep.wav";
 
 // So the stream is [ 0, 1, 0, -1, 0, 1, 0, -1, ... ] :
-testStream = manipulate.withDuration 64 (syn.sinusoid 8 2);
+//testStream = manipulate.withDuration 64 (syn.sinusoid 8 2);
 
 //testStream = manipulate.withDuration 32 (syn.pulseTrain 8 0.001);
 
 eprintln "have test stream";
 
-cq = cqt { maxFreq = testStream.sampleRate/2, minFreq = 1, binsPerOctave = 4 } testStream;
+cq = cqt { maxFreq = testStream.sampleRate/2, minFreq = 50, binsPerOctave = 24 } testStream;
 
 eprintln "bin frequencies: \(cq.kernel.binFrequencies)";
 

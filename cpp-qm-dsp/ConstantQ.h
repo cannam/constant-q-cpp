@@ -42,6 +42,7 @@ private:
 
     std::vector<Resampler *> m_decimators;
     std::vector<std::vector<double> > m_buffers;
+    std::vector<int> m_dropHops;
 
     int m_totalLatency;
 

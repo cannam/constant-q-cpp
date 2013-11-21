@@ -87,7 +87,7 @@ eprintln "padding = \(padding)";
     // Reshape each row vector into the appropriate rectangular matrix
     // and split into single-atom columns
 
-    emptyHops = kdata.firstCentre / kdata.atomSpacing;
+    emptyHops = kdata.firstCentre / kdata.atomSpacing; //!!! int? round?
     maxDrop = emptyHops * (pow 2 (octaves-1)) - emptyHops;
     eprintln "maxDrop = \(maxDrop)";
 

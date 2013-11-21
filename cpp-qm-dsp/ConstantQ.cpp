@@ -20,9 +20,9 @@ using std::endl;
 typedef std::complex<double> C;
 
 ConstantQ::ConstantQ(double sampleRate,
-		     double minFreq,
-		     double maxFreq,
-		     int binsPerOctave) :
+                     double minFreq,
+                     double maxFreq,
+                     int binsPerOctave) :
     m_sampleRate(sampleRate),
     m_maxFrequency(maxFreq),
     m_minFrequency(minFreq),
@@ -30,7 +30,7 @@ ConstantQ::ConstantQ(double sampleRate,
     m_fft(0)
 {
     if (minFreq <= 0.0 || maxFreq <= 0.0) {
-	throw std::invalid_argument("Frequency extents must be positive");
+        throw std::invalid_argument("Frequency extents must be positive");
     }
 
     initialise();
@@ -40,7 +40,7 @@ ConstantQ::~ConstantQ()
 {
     delete m_fft;
     for (int i = 0; i < (int)m_decimators.size(); ++i) {
-	delete m_decimators[i];
+        delete m_decimators[i];
     }
     delete m_kernel;
 }
@@ -50,16 +50,18 @@ ConstantQ::initialise()
 {
     m_octaves = int(ceil(log2(m_maxFrequency / m_minFrequency)));
     double actualMinFreq =
-	(m_maxFrequency / pow(2.0, m_octaves)) * pow(2.0, 1.0/m_binsPerOctave);
+        (m_maxFrequency / pow(2.0, m_octaves)) * pow(2.0, 1.0/m_binsPerOctave);
 
     cerr << "actual min freq = " << actualMinFreq << endl;
 
     m_kernel = new CQKernel(m_sampleRate, m_maxFrequency, m_binsPerOctave);
     m_p = m_kernel->getProperties();
     
-    // use exact powers of two for resampling rates. They don't have
-    // to be related to our actual samplerate, the resampler only
-    // cares about the ratio
+    // Use exact powers of two for resampling rates. They don't have
+    // to be related to our actual samplerate: the resampler only
+    // cares about the ratio, but it only accepts integer source and
+    // target rates, and if we start from the actual samplerate we
+    // risk getting non-integer rates for lower octaves
 
     int sourceRate = pow(2, m_octaves);
     vector<int> latencies;
@@ -68,32 +70,88 @@ ConstantQ::initialise()
     latencies.push_back(0);
     m_decimators.push_back(0);
 
-    for (int oct = 1; oct < m_octaves; ++oct) {
-	Resampler *r = new Resampler
-	    (sourceRate, sourceRate / pow(2, oct), 60, 0.02);
-	latencies.push_back(r->getLatency());
-	m_decimators.push_back(r);
+    for (int i = 1; i < m_octaves; ++i) {
+
+        int factor = pow(2, i);
+
+        Resampler *r = new Resampler
+            (sourceRate, sourceRate / factor, 60, 0.02);
+
+        // We need to adapt the latencies so as to get the first input
+        // sample to be aligned, in time, at the decimator output
+        // across all octaves.
+        // 
+        // Our decimator uses a linear phase filter, but being causal
+        // it is not zero phase: it has a latency that depends on the
+        // decimation factor. Those latencies have been calculated
+        // per-octave and are available to us in the latencies
+        // array. Left to its own devices, the first input sample will
+        // appear at output sample 0 in the highest octave (where no
+        // decimation is needed), sample number latencies[1] in the
+        // next octave down, latencies[2] in the next one, etc. We get
+        // to apply some artificial per-octave latency after the
+        // decimator in the processing chain, in order to compensate
+        // for the differing latencies associated with different
+        // decimation factors. How much should we insert?
+        //
+        // The outputs of the decimators are at different rates (in
+        // terms of the relation between clock time and samples) and
+        // we want them aligned in terms of time. So, for example, a
+        // latency of 10 samples with a decimation factor of 2 is
+        // equivalent to a latency of 20 with no decimation -- they
+        // both result in the first output sample happening at the
+        // same equivalent time in milliseconds.
+	// 
+	// So here we record the latency added by the decimator, in
+	// terms of the sample rate of the undecimated signal. Then we
+	// use that to compensate in a moment, when we've discovered
+	// what the longest latency across all octaves is.
+
+        latencies.push_back(r->getLatency() * factor);
+        m_decimators.push_back(r);
     }
 
     //!!! should be multiple of the kernel fft size?
     int maxLatency = *std::max_element(latencies.begin(), latencies.end());
     m_totalLatency = MathUtilities::nextPowerOfTwo(maxLatency);
     cerr << "total latency = " << m_totalLatency << endl;
+        //!!! should also round up so that total latency is a multiple of the big block size
+
+    int emptyHops = m_p.firstCentre / m_p.atomSpacing; //!!! round?
 
     for (int i = 0; i < m_octaves; ++i) {
 
-	int extraLatency = m_totalLatency - latencies[i];
+	double factor = pow(2, i);
 
-	int pad = 0;
- //!!! quite wrong
+	// And here (see comment above) we calculate the difference
+	// between the total latency applied across all octaves, and
+	// the existing latency due to the decimator for this octave,
+	// and then convert it back into the sample rate appropriate
+	// for the output latency of this decimator.
+
+	double extraLatency = double(m_totalLatency - latencies[i]) / factor;
+
+        int pad = m_p.fftSize * pow(2, m_octaves-i-1);
+
+//!!! This appears to be about right, by visual inspection. But why?
+	int pad2 = 0;
 	for (int j = 0; j < i; ++j) {
-	    pad += m_p.fftSize/2;
+	    pad2 += 9;
 	}
-	cerr << "for octave " << i << ", pad = " << pad << endl;
-	pad = 0;
 
-	m_buffers.push_back
-	    (vector<double>(extraLatency + pad, 0.0));
+
+        int drop = emptyHops * pow(2, m_octaves-i-1) - emptyHops;
+
+
+
+	cerr << "for octave " << i << ", latency for decimator = " << extraLatency << ", fixed padding = " << pad << ", visual inspection pad = " << pad2 << ", hops to drop would be " << drop << ", 2^i = " << pow(2, i) << ", 2^o-i = " << pow(2,m_octaves-i-1) << endl;
+
+	extraLatency += pad + pad2;
+
+	cerr << "then extraLatency -> " << extraLatency << endl;
+
+        m_buffers.push_back
+            (vector<double>(int(round(extraLatency)), 0.0));
     }
 
     m_fft = new FFTReal(m_p.fftSize);
@@ -108,8 +166,8 @@ ConstantQ::process(const vector<double> &td)
     m_buffers[0].insert(m_buffers[0].end(), td.begin(), td.end());
 
     for (int i = 1; i < m_octaves; ++i) {
-	vector<double> dec = m_decimators[i]->process(td.data(), td.size());
-	m_buffers[i].insert(m_buffers[i].end(), dec.begin(), dec.end());
+        vector<double> dec = m_decimators[i]->process(td.data(), td.size());
+        m_buffers[i].insert(m_buffers[i].end(), dec.begin(), dec.end());
     }
 
     vector<vector<double> > out;
@@ -118,32 +176,38 @@ ConstantQ::process(const vector<double> &td)
 
     while ((int)m_buffers[0].size() >= m_bigBlockSize) {
 
-	int base = out.size();
-	int totalColumns = pow(2, m_octaves - 1) * m_p.atomsPerFrame;
-	cerr << "totalColumns = " << totalColumns << endl;
-	for (int i = 0; i < totalColumns; ++i) {
-	    out.push_back(vector<double>());
-	}
+        int base = out.size();
+        int totalColumns = pow(2, m_octaves - 1) * m_p.atomsPerFrame;
+        cerr << "totalColumns = " << totalColumns << endl;
+        for (int i = 0; i < totalColumns; ++i) {
+            out.push_back(vector<double>(m_p.binsPerOctave * m_octaves, 0.0));
+        }
 
-	for (int octave = 0; octave < m_octaves; ++octave) {
+        for (int octave = 0; octave < m_octaves; ++octave) {
 
-	    int blocksThisOctave = pow(2, (m_octaves - octave - 1));
-//	    cerr << "octave " << octave+1 << " of " << m_octaves << ", n = " << blocksThisOctave << endl;
+            int blocksThisOctave = pow(2, (m_octaves - octave - 1));
+//          cerr << "octave " << octave+1 << " of " << m_octaves << ", n = " << blocksThisOctave << endl;
 
-	    for (int b = 0; b < blocksThisOctave; ++b) {
-		vector<vector<double> > block = processOctaveBlock(octave);
-		
-		for (int j = 0; j < m_p.atomsPerFrame; ++j) {
-		    int target = base +
-			(b * (totalColumns / blocksThisOctave) + 
-			 (j * ((totalColumns / blocksThisOctave) / m_p.atomsPerFrame)));
-//		    cerr << "j " << j << " -> target " << target << endl;
-		    for (int i = 0; i < m_p.binsPerOctave; ++i) {
-			out[target].push_back(block[j][m_p.binsPerOctave-i-1]);
+            for (int b = 0; b < blocksThisOctave; ++b) {
+                vector<vector<double> > block = processOctaveBlock(octave);
+                
+                for (int j = 0; j < m_p.atomsPerFrame; ++j) {
+
+		    for (int k = 0; k < pow(2, octave); ++k) {
+
+			int target = base + k +
+			    (b * (totalColumns / blocksThisOctave) + 
+			     (j * ((totalColumns / blocksThisOctave) /
+				   m_p.atomsPerFrame)));
+
+			for (int i = 0; i < m_p.binsPerOctave; ++i) {
+			    out[target][m_p.binsPerOctave * octave + i] = 
+				block[j][m_p.binsPerOctave - i - 1];
+			}
 		    }
-		}
-	    }
-	}
+                }
+            }
+        }
     }
     
     return out;
@@ -167,13 +231,13 @@ ConstantQ::processOctaveBlock(int octave)
 
     vector<double> shifted;
     shifted.insert(shifted.end(), 
-		   m_buffers[octave].begin() + m_p.fftHop,
-		   m_buffers[octave].end());
+                   m_buffers[octave].begin() + m_p.fftHop,
+                   m_buffers[octave].end());
     m_buffers[octave] = shifted;
 
     vector<C> cv;
     for (int i = 0; i < m_p.fftSize; ++i) {
-	cv.push_back(C(ro[i], io[i]));
+        cv.push_back(C(ro[i], io[i]));
     }
 
     vector<C> cqrowvec = m_kernel->process(cv);
@@ -181,10 +245,10 @@ ConstantQ::processOctaveBlock(int octave)
     // Reform into a column matrix 
     vector<vector<double> > cqblock;
     for (int j = 0; j < m_p.atomsPerFrame; ++j) {
-	cqblock.push_back(vector<double>());
-	for (int i = 0; i < m_p.binsPerOctave; ++i) {
-	    cqblock[j].push_back(abs(cqrowvec[i * m_p.atomsPerFrame + j]));
-	}
+        cqblock.push_back(vector<double>());
+        for (int i = 0; i < m_p.binsPerOctave; ++i) {
+            cqblock[j].push_back(abs(cqrowvec[i * m_p.atomsPerFrame + j]));
+        }
     }
 
     return cqblock;
