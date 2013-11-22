@@ -6,16 +6,40 @@
 
 using std::vector;
 using std::cerr;
+using std::cout;
 using std::endl;
+
+#include <cstdio>
 
 int main(int argc, char **argv)
 {
-    ConstantQ k(48000, 50, 24000, 24);
+    vector<double> in;
 
-    vector<double> in(65536*4, 0.0);
+    for (int i = 0; i < 64; ++i) {
+	in.push_back(sin(i * M_PI / 2.0));
+    }
+
+    ConstantQ k(8, 1, 4, 4);
+
     vector<vector<double> > out = k.process(in);
+    vector<vector<double> > rest = k.getRemainingBlocks();
 
+    out.insert(out.end(), rest.begin(), rest.end());
 
-    cerr << "got " << out.size() << " back" << endl;
+    cerr << "got " << out.size() << " back (" << out[0].size() << " in each?)" << endl;
+
+    for (int b = 0; b < out.size() / 8; ++b) {
+	printf("\nColumns %d to %d:\n\n", b * 8, b * 8 + 7);
+	for (int j = int(out[0].size()) - 1; j >= 0; --j) {
+	    for (int i = 0; i < 8; ++i) {
+		if (i + b * 8 < out.size()) {
+		    double v = out[i + b * 8][j];
+		    if (v < 0.0001) printf("  0      ");
+		    else printf("  %.4f ", out[i + b * 8][j]);
+		}
+	    }
+	    printf("\n");
+	}
+    }
 }
 

@@ -174,7 +174,22 @@ ConstantQ::process(const vector<double> &td)
 
     //!!!! need some mechanism for handling remaining samples at the end
 
-    while ((int)m_buffers[0].size() >= m_bigBlockSize) {
+    while (true) {
+
+	// We could have quite different remaining sample counts in
+	// different octaves, because (apart from the predictable
+	// added counts for decimator output on each block) we also
+	// have variable additional latency per octave
+	bool enough = true;
+	for (int i = 0; i < m_octaves; ++i) {
+	    int required = m_p.fftSize * pow(2, m_octaves - i - 1);
+	    cerr << "for octave " << i << ", buf len =  "<< m_buffers[i].size() << " (need " << required << ")" << endl;
+
+	    if ((int)m_buffers[i].size() < required) {
+		enough = false;
+	    }
+	}
+	if (!enough) break;
 
         int base = out.size();
         int totalColumns = pow(2, m_octaves - 1) * m_p.atomsPerFrame;
@@ -216,9 +231,29 @@ ConstantQ::process(const vector<double> &td)
 vector<vector<double> >
 ConstantQ::getRemainingBlocks()
 {
-    int n = m_bigBlockSize + m_bigBlockSize - m_buffers[0].size();
-    vector<double> pad(n, 0.0);
-    return process(pad);
+/*    int n = 0;
+    for (int i = 0; i < m_octaves; ++i) {
+	int latency = 0;
+	if (i > 0) latency = m_decimators[i]->getLatency() * pow(2, i);
+	if (latency > n) n = latency;
+    }
+*/
+    int n = ceil(double(m_totalLatency) / m_bigBlockSize) * m_bigBlockSize;
+/*
+	int blockSize = m_p.fftSize * pow(2, m_octaves - i - 1);
+	int neededHere = blockSize + blockSize - (int)m_buffers[i].size();
+	cerr << "getRemainingBlocks: neededHere = " << neededHere << endl;	
+	if (neededHere > n) n = neededHere;
+    }
+*/
+    cerr << "getRemainingBlocks: n = " << n << endl;	
+
+    if (n > 0) {
+	vector<double> pad(n, 0.0);
+	return process(pad);
+    } else {
+	return vector<vector<double> > ();
+    }
 }
 
 vector<vector<double> >
