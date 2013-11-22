@@ -111,9 +111,16 @@ ConstantQ::initialise()
         m_decimators.push_back(r);
     }
 
-    //!!! should be multiple of the kernel fft size?
+    m_bigBlockSize = m_p.fftSize * pow(2, m_octaves) / 2;
+    cerr << "m_bigBlockSize = " << m_bigBlockSize << endl;
+
     int maxLatency = *std::max_element(latencies.begin(), latencies.end());
-    m_totalLatency = MathUtilities::nextPowerOfTwo(maxLatency);
+
+    cerr << "max actual latency = " << maxLatency << endl;
+    
+    m_totalLatency = ceil(double(maxLatency) / m_bigBlockSize) * m_bigBlockSize;
+
+//    m_totalLatency = MathUtilities::nextPowerOfTwo(maxLatency);
     cerr << "total latency = " << m_totalLatency << endl;
         //!!! should also round up so that total latency is a multiple of the big block size
 
@@ -155,7 +162,6 @@ ConstantQ::initialise()
     }
 
     m_fft = new FFTReal(m_p.fftSize);
-    m_bigBlockSize = m_p.fftSize * pow(2, m_octaves) / 2;
 
     cerr << "m_bigBlockSize = " << m_bigBlockSize << " for " << m_octaves << " octaves" << endl;
 }
@@ -248,12 +254,15 @@ ConstantQ::getRemainingBlocks()
 */
     cerr << "getRemainingBlocks: n = " << n << endl;	
 
-    if (n > 0) {
-	vector<double> pad(n, 0.0);
-	return process(pad);
-    } else {
-	return vector<vector<double> > ();
-    }
+    int pad = m_p.fftSize * pow(2, m_octaves-1); // same as padding
+						 // added at start
+
+    pad += n;
+
+    cerr << "pad = " << pad << endl;
+
+    vector<double> zeros(pad, 0.0);
+    return process(zeros);
 }
 
 vector<vector<double> >
