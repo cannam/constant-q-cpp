@@ -91,9 +91,9 @@ eprintln "padding = \(padding)";
     maxDrop = emptyHops * (pow 2 (octaves-1)) - emptyHops;
     eprintln "maxDrop = \(maxDrop)";
 
-    cqblocks = map do octlist:
-        concat
-           (map do rv:
+    cqblocks =
+        map do octlist:
+            concatMap do rv:
                 cm.asColumns
                    (cm.generate do row col:
                         cm.at rv ((row * kdata.atomsPerFrame) + col) 0
@@ -101,8 +101,8 @@ eprintln "padding = \(padding)";
                         rows = kdata.binsPerOctave,
                         columns = kdata.atomsPerFrame
                     })
-            done octlist)
-    done cqblocks;
+            done octlist
+        done cqblocks;
 
     cqblocks = array (map2 do octlist octave:
         d = emptyHops * (pow 2 (octaves-octave)) - emptyHops;
@@ -185,12 +185,12 @@ eprintln "octaveLists keys are: \(keys octaveLists)";
 
     {
         kernel = kdata with {
-            binFrequencies = array (concat
-               (map do octave:
+            binFrequencies = array
+               (concatMap do octave:
                     map do freq:
                         freq / (pow 2 octave);
                     done (reverse (list kdata.binFrequencies))
-                done [0..octaves-1]))
+                done [0..octaves-1])
         },
         output = processOctaveLists octaveLists
     }
