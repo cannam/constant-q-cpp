@@ -134,10 +134,20 @@ ConstantQ::initialise()
 //	drops.push_back(0);
     }
 
+    int maxLatPlusDrop = 0;
+    for (int i = 0; i < m_octaves; ++i) {
+	int latPlusDrop = latencies[i] + drops[i];
+	if (latPlusDrop > maxLatPlusDrop) maxLatPlusDrop = latPlusDrop;
+    }
+
+    cerr << "maxLatPlusDrop = " << maxLatPlusDrop << endl;
+
     int maxDrop = *std::max_element(drops.begin(), drops.end());
     cerr << "maxDrop " << maxDrop << endl;
     
-    m_totalLatency = ceil(double(maxLatency + maxDrop) / m_bigBlockSize) * m_bigBlockSize;
+//    m_totalLatency = ceil(double(maxLatPlusDrop) / m_bigBlockSize) * m_bigBlockSize;
+    int bigHop = m_p.fftHop * pow(2, m_octaves) / 2;
+    m_totalLatency = ceil(double(maxLatPlusDrop) / bigHop) * bigHop;
 
 //    m_totalLatency = MathUtilities::nextPowerOfTwo(maxLatency);
     cerr << "total latency = " << m_totalLatency << endl;
@@ -157,20 +167,14 @@ ConstantQ::initialise()
 
         int pad = m_p.fftSize * pow(2, m_octaves-i-1);
 
-//!!! This appears to be about right, by visual inspection. But why?
-	int pad2 = 0;
-	for (int j = 0; j < i; ++j) {
-	    pad2 += 9;
-	}
-
 
         int drop = emptyHops * pow(2, m_octaves-i-1) - emptyHops;
 
 
 
-	cerr << "for octave " << i << ", latency for decimator = " << extraLatency << ", fixed padding = " << pad << ", visual inspection pad = " << pad2 << ", hops to drop would be " << drop << " from emptyHops = " << emptyHops << ", 2^i = " << pow(2, i) << ", 2^o-i = " << pow(2,m_octaves-i-1) << endl;
+	cerr << "for octave " << i << ", latency for decimator = " << extraLatency << ", fixed padding = " << pad << ", hops to drop would be " << drop << " from emptyHops = " << emptyHops << ", 2^i = " << pow(2, i) << ", 2^o-i = " << pow(2,m_octaves-i-1) << endl;
 
-	extraLatency += pad ;//+ pad2;
+	extraLatency += pad;
 
 	cerr << "then extraLatency -> " << extraLatency << endl;
 
