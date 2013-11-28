@@ -3,8 +3,8 @@ DEFINES := -DUSE_PTHREADS
 
 CFLAGS := -I../.. $(CFLAGS) $(DEFINES)
 
-CXXFLAGS := -I../.. -fPIC -Wall -g $(CXXFLAGS) $(DEFINES)
-#CXXFLAGS := -I../.. -fPIC -Wall -O3 -ffast-math -ftree-vectorize $(CXXFLAGS) $(DEFINES)
+#CXXFLAGS := -I../.. -fPIC -Wall -g $(CXXFLAGS) $(DEFINES)
+CXXFLAGS := -I../.. -fPIC -Wall -O3 -ffast-math -ftree-vectorize $(CXXFLAGS) $(DEFINES)
 
 LDFLAGS := $(LDFLAGS)
 

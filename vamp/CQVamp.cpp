@@ -4,6 +4,8 @@
 
 #include "../cpp-qm-dsp/ConstantQ.h"
 
+#include "qm-dsp/base/Pitch.h"
+
 using std::string;
 using std::vector;
 using std::cerr;
@@ -11,10 +13,13 @@ using std::endl;
 
 CQVamp::CQVamp(float inputSampleRate) :
     Vamp::Plugin(inputSampleRate),
+    m_minMIDIPitch(36),
+    m_maxMIDIPitch(84),
+    m_tuningFrequency(440),
+    m_bpo(24),
     m_cq(0),
     m_maxFrequency(inputSampleRate/2),
     m_minFrequency(46),
-    m_bpo(24),
     m_haveStartTime(false),
     m_columnCount(0)
 {
@@ -65,7 +70,7 @@ CQVamp::ParameterList
 CQVamp::getParameterDescriptors() const
 {
     ParameterList list;
-
+/*
     ParameterDescriptor desc;
     desc.identifier = "minfreq";
     desc.name = "Minimum Frequency";
@@ -86,6 +91,39 @@ CQVamp::getParameterDescriptors() const
     desc.defaultValue = m_inputSampleRate/2;
     desc.isQuantized = false;
     list.push_back(desc);
+ */
+    ParameterDescriptor desc;
+    desc.identifier = "minpitch";
+    desc.name = "Minimum Pitch";
+    desc.unit = "MIDI units";
+    desc.description = "MIDI pitch corresponding to the lowest frequency to be included in the constant-Q transform";
+    desc.minValue = 0;
+    desc.maxValue = 127;
+    desc.defaultValue = 36;
+    desc.isQuantized = true;
+    desc.quantizeStep = 1;
+    list.push_back(desc);
+
+    desc.identifier = "maxpitch";
+    desc.name = "Maximum Pitch";
+    desc.unit = "MIDI units";
+    desc.description = "MIDI pitch corresponding to the highest frequency to be included in the constant-Q transform";
+    desc.minValue = 0;
+    desc.maxValue = 127;
+    desc.defaultValue = 84;
+    desc.isQuantized = true;
+    desc.quantizeStep = 1;
+    list.push_back(desc);
+
+    desc.identifier = "tuning";
+    desc.name = "Tuning Frequency";
+    desc.unit = "Hz";
+    desc.description = "Frequency of concert A";
+    desc.minValue = 360;
+    desc.maxValue = 500;
+    desc.defaultValue = 440;
+    desc.isQuantized = false;
+    list.push_back(desc);
     
     desc.identifier = "bpo";
     desc.name = "Bins per Octave";
@@ -104,12 +142,23 @@ CQVamp::getParameterDescriptors() const
 float
 CQVamp::getParameter(std::string param) const
 {
+    if (param == "minpitch") {
+        return m_minMIDIPitch;
+    }
+    if (param == "maxpitch") {
+        return m_maxMIDIPitch;
+    }
+    if (param == "tuning") {
+        return m_tuningFrequency;
+    }
+/*
     if (param == "minfreq") {
         return m_minFrequency;
     }
     if (param == "maxfreq") {
         return m_maxFrequency;
     }
+*/
     if (param == "bpo") {
         return m_bpo;
     }
@@ -121,11 +170,18 @@ CQVamp::getParameter(std::string param) const
 void
 CQVamp::setParameter(std::string param, float value)
 {
-    if (param == "minfreq") {
+    if (param == "minpitch") {
+        m_minMIDIPitch = lrintf(value);
+    } else if (param == "maxpitch") {
+        m_maxMIDIPitch = lrintf(value);
+    } else if (param == "tuning") {
+        m_tuningFrequency = value;
+/*    if (param == "minfreq") {
         m_minFrequency = value;
     } else if (param == "maxfreq") {
         m_maxFrequency = value;
-    } else if (param == "bpo") {
+*/
+    } else  if (param == "bpo") {
         m_bpo = lrintf(value);
     } else {
         std::cerr << "WARNING: CQVamp::setParameter: unknown parameter \""
@@ -146,6 +202,11 @@ CQVamp::initialise(size_t channels, size_t stepSize, size_t blockSize)
 
     m_stepSize = stepSize;
     m_blockSize = blockSize;
+
+    m_minFrequency = Pitch::getFrequencyForPitch
+        (m_minMIDIPitch, 0, m_tuningFrequency);
+    m_maxFrequency = Pitch::getFrequencyForPitch
+        (m_maxMIDIPitch, 0, m_tuningFrequency);
 
     m_cq = new ConstantQ
 	(m_inputSampleRate, m_minFrequency, m_maxFrequency, m_bpo);
@@ -257,7 +318,7 @@ CQVamp::convertToFeatures(const vector<vector<double> > &cqout)
 	feature.values = column;
 	feature.label = "";
 
-        cerr << "timestamp = " << feature.timestamp << " (latency = " << m_cq->getLatency() << ", sample rate " << m_inputSampleRate << ")" << endl;
+//        cerr << "timestamp = " << feature.timestamp << " (latency = " << m_cq->getLatency() << ", sample rate " << m_inputSampleRate << ")" << endl;
 
         if (feature.timestamp >= m_startTime) {
             returnFeatures[0].push_back(feature);

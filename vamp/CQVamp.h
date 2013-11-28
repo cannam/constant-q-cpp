@@ -40,10 +40,14 @@ public:
     FeatureSet getRemainingFeatures();
 
 protected:
+    int m_minMIDIPitch;
+    int m_maxMIDIPitch;
+    float m_tuningFrequency;
+    int m_bpo;
+
     ConstantQ *m_cq;
     float m_maxFrequency;
     float m_minFrequency;
-    int m_bpo;
     int m_stepSize;
     int m_blockSize;
 

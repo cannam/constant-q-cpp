@@ -30,11 +30,11 @@ int main(int argc, char **argv)
 
     cerr << "got " << out.size() << " back (" << out[0].size() << " in each?)" << endl;
 
-    for (int b = 0; b < out.size() / 8; ++b) {
+    for (int b = 0; b < (int)out.size() / 8; ++b) {
 	printf("\nColumns %d to %d:\n\n", b * 8, b * 8 + 7);
 	for (int j = int(out[0].size()) - 1; j >= 0; --j) {
 	    for (int i = 0; i < 8; ++i) {
-		if (i + b * 8 < out.size()) {
+		if (i + b * 8 < (int)out.size()) {
 		    double v = out[i + b * 8][j];
 		    if (v < 0.0001) printf("  0      ");
 		    else printf("  %.4f ", out[i + b * 8][j]);
