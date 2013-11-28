@@ -111,7 +111,7 @@ ConstantQ::initialise()
         m_decimators.push_back(r);
     }
 
-    m_bigBlockSize = m_p.fftSize * pow(2, m_octaves) / 2;
+    m_bigBlockSize = m_p.fftSize * pow(2, m_octaves - 1);
 
     // Now add in the extra padding and compensate for hops that must
     // be dropped in order to align the atom centres across
@@ -135,18 +135,23 @@ ConstantQ::initialise()
 	if (latPlusDrop > maxLatPlusDrop) maxLatPlusDrop = latPlusDrop;
     }
 
-    // we want to design m_totalLatency such that m_totalLatency -
+    // we want to design totalLatency such that totalLatency -
     // latencies[0] - drops[0] is a multiple of m_p.fftHop, so that we
     // can get identical results in octave 0 to our reference
     // implementation, making for easier testing (though other octaves
     // will differ because of different resampler implementations)
 
-    m_totalLatency = maxLatPlusDrop;
-    int lat0 = m_totalLatency - latencies[0] - drops[0];
-    m_totalLatency = ceil(double(lat0 / m_p.fftHop) * m_p.fftHop)
+    int totalLatency = maxLatPlusDrop;
+    int lat0 = totalLatency - latencies[0] - drops[0];
+    totalLatency = ceil(double(lat0 / m_p.fftHop) * m_p.fftHop)
 	+ latencies[0] + drops[0];
 
-    cerr << "total latency = " << m_totalLatency << endl;
+    cerr << "total latency = " << totalLatency << endl;
+
+    // Padding as in the reference (will be introduced with the
+    // latency compensation in the loop below)
+    m_outputLatency = totalLatency + m_bigBlockSize
+	- m_p.firstCentre * pow(2, m_octaves-1);
 
     for (int i = 0; i < m_octaves; ++i) {
 
@@ -160,7 +165,7 @@ ConstantQ::initialise()
 	// (as in the reference).
 
 	double octaveLatency =
-	    double(m_totalLatency - latencies[i] - drops[i]
+	    double(totalLatency - latencies[i] - drops[i]
 		   + m_bigBlockSize) / factor;
 
         m_buffers.push_back
@@ -239,15 +244,8 @@ ConstantQ::process(const vector<double> &td)
 vector<vector<double> >
 ConstantQ::getRemainingBlocks()
 {
-    int n = ceil(double(m_totalLatency) / m_bigBlockSize) * m_bigBlockSize;
-
-    int pad = m_p.fftSize * pow(2, m_octaves-1); // same as padding
-						 // added at start
-
-    pad += n;
-
-    cerr << "pad = " << pad << endl;
-
+    // Same as padding added at start, though rounded up
+    int pad = ceil(double(m_outputLatency) / m_bigBlockSize) * m_bigBlockSize;
     vector<double> zeros(pad, 0.0);
     return process(zeros);
 }

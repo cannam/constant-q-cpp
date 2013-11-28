@@ -60,9 +60,9 @@ CQKernel::generateKernel()
 
     cerr << "atomsPerFrame = " << m_p.atomsPerFrame << " (atomHopFactor = " << atomHopFactor << ")" << endl;
 
-    int lastCentre = m_p.firstCentre + (m_p.atomsPerFrame - 1) * m_p.atomSpacing;
+    m_p.lastCentre = m_p.firstCentre + (m_p.atomsPerFrame - 1) * m_p.atomSpacing;
 
-    m_p.fftHop = (lastCentre + m_p.atomSpacing) - m_p.firstCentre;
+    m_p.fftHop = (m_p.lastCentre + m_p.atomSpacing) - m_p.firstCentre;
 
     cerr << "fftHop = " << m_p.fftHop << endl;
 

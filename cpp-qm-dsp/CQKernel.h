@@ -24,6 +24,7 @@ public:
         int atomsPerFrame;
         int atomSpacing;
         int firstCentre;
+        int lastCentre;
         double Q;
     };
 
