@@ -142,12 +142,21 @@ ConstantQ::initialise()
 
     cerr << "maxLatPlusDrop = " << maxLatPlusDrop << endl;
 
-    int maxDrop = *std::max_element(drops.begin(), drops.end());
-    cerr << "maxDrop " << maxDrop << endl;
+///    int maxDrop = *std::max_element(drops.begin(), drops.end());
+//    cerr << "maxDrop " << maxDrop << endl;
     
 //    m_totalLatency = ceil(double(maxLatPlusDrop) / m_bigBlockSize) * m_bigBlockSize;
     int bigHop = m_p.fftHop * pow(2, m_octaves) / 2;
-    m_totalLatency = ceil(double(maxLatPlusDrop) / bigHop) * bigHop;
+
+    // we want to design m_totalLatency such that m_totalLatency -
+    // latencies[0] - drops[0] is a multiple of m_p.fftHop, so that we
+    // can get identical results in octave 0 to our reference
+    // implementation, making for easier testing (though other octaves
+    // will differ because of different resampler implementations)
+
+    m_totalLatency = maxLatPlusDrop;
+    int lat0 = m_totalLatency - latencies[0] - drops[0];
+    m_totalLatency = ceil(double(lat0 / m_p.fftHop) * m_p.fftHop) + latencies[0] + drops[0];
 
 //    m_totalLatency = MathUtilities::nextPowerOfTwo(maxLatency);
     cerr << "total latency = " << m_totalLatency << endl;
