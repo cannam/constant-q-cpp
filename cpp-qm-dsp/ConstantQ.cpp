@@ -292,13 +292,6 @@ ConstantQ::processOctaveBlock(int octave)
     vector<double> ro(m_p.fftSize, 0.0);
     vector<double> io(m_p.fftSize, 0.0);
 
-    cerr << "octave " << octave << " time-domain data, first hop's worth:" << endl;
-    for (int i = 0; i < m_p.fftHop; ++i) {
-	cerr << m_buffers[octave][i] << " ";
-	if (fabs(m_buffers[octave][i]) > 0.01) cerr << "** ";
-    }
-    cerr << endl;
-
     m_fft->forward(m_buffers[octave].data(), ro.data(), io.data());
 
     vector<double> shifted;
