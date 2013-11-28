@@ -112,26 +112,18 @@ ConstantQ::initialise()
     }
 
     m_bigBlockSize = m_p.fftSize * pow(2, m_octaves) / 2;
-    cerr << "m_bigBlockSize = " << m_bigBlockSize << endl;
 
-    int maxLatency = *std::max_element(latencies.begin(), latencies.end());
-
-    cerr << "max actual latency = " << maxLatency << endl;
-    
     // Now add in the extra padding and compensate for hops that must
     // be dropped in order to align the atom centres across octaves
 
-    int emptyHops = m_p.firstCentre / m_p.atomSpacing; //!!! round?
+    int emptyHops = m_p.firstCentre / m_p.atomSpacing;
 
     vector<int> drops;
     for (int i = 0; i < m_octaves; ++i) {
-	//!!! simplify
 	int factor = pow(2, i);
 	int dropHops = emptyHops * pow(2, m_octaves - i - 1) - emptyHops;
 	int drop = ((dropHops * m_p.fftHop) * factor) / m_p.atomsPerFrame;
-	cerr << "octave " << i << " dropHops = " << dropHops << " drop = " << drop << endl;
 	drops.push_back(drop);
-//	drops.push_back(0);
     }
 
     int maxLatPlusDrop = 0;
@@ -139,14 +131,6 @@ ConstantQ::initialise()
 	int latPlusDrop = latencies[i] + drops[i];
 	if (latPlusDrop > maxLatPlusDrop) maxLatPlusDrop = latPlusDrop;
     }
-
-    cerr << "maxLatPlusDrop = " << maxLatPlusDrop << endl;
-
-///    int maxDrop = *std::max_element(drops.begin(), drops.end());
-//    cerr << "maxDrop " << maxDrop << endl;
-    
-//    m_totalLatency = ceil(double(maxLatPlusDrop) / m_bigBlockSize) * m_bigBlockSize;
-    int bigHop = m_p.fftHop * pow(2, m_octaves) / 2;
 
     // we want to design m_totalLatency such that m_totalLatency -
     // latencies[0] - drops[0] is a multiple of m_p.fftHop, so that we
@@ -156,39 +140,28 @@ ConstantQ::initialise()
 
     m_totalLatency = maxLatPlusDrop;
     int lat0 = m_totalLatency - latencies[0] - drops[0];
-    m_totalLatency = ceil(double(lat0 / m_p.fftHop) * m_p.fftHop) + latencies[0] + drops[0];
+    m_totalLatency = ceil(double(lat0 / m_p.fftHop) * m_p.fftHop)
+	+ latencies[0] + drops[0];
 
-//    m_totalLatency = MathUtilities::nextPowerOfTwo(maxLatency);
     cerr << "total latency = " << m_totalLatency << endl;
-        //!!! should also round up so that total latency is a multiple of the big block size
 
     for (int i = 0; i < m_octaves; ++i) {
 
 	double factor = pow(2, i);
 
-	// And here (see comment above) we calculate the difference
-	// between the total latency applied across all octaves, and
-	// the existing latency due to the decimator for this octave,
-	// and then convert it back into the sample rate appropriate
-	// for the output latency of this decimator.
+	// Calculate the difference between the total latency applied
+	// across all octaves, and the existing latency due to the
+	// decimator for this octave, and then convert it back into
+	// the sample rate appropriate for the output latency of this
+	// decimator -- including one additional big block of padding
+	// (as in the reference).
 
-	double extraLatency = double(m_totalLatency - latencies[i] - drops[i]) / factor;
-
-        int pad = m_p.fftSize * pow(2, m_octaves-i-1);
-
-
-        int drop = emptyHops * pow(2, m_octaves-i-1) - emptyHops;
-
-
-
-	cerr << "for octave " << i << ", latency for decimator = " << extraLatency << ", fixed padding = " << pad << ", hops to drop would be " << drop << " from emptyHops = " << emptyHops << ", 2^i = " << pow(2, i) << ", 2^o-i = " << pow(2,m_octaves-i-1) << endl;
-
-	extraLatency += pad;
-
-	cerr << "then extraLatency -> " << extraLatency << endl;
+	double octaveLatency =
+	    double(m_totalLatency - latencies[i] - drops[i]
+		   + m_bigBlockSize) / factor;
 
         m_buffers.push_back
-            (vector<double>(int(round(extraLatency)), 0.0));
+            (vector<double>(int(round(octaveLatency)), 0.0));
     }
 
     m_fft = new FFTReal(m_p.fftSize);
@@ -208,8 +181,6 @@ ConstantQ::process(const vector<double> &td)
 
     vector<vector<double> > out;
 
-    //!!!! need some mechanism for handling remaining samples at the end
-
     while (true) {
 
 	// We could have quite different remaining sample counts in
@@ -219,7 +190,7 @@ ConstantQ::process(const vector<double> &td)
 	bool enough = true;
 	for (int i = 0; i < m_octaves; ++i) {
 	    int required = m_p.fftSize * pow(2, m_octaves - i - 1);
-	    cerr << "for octave " << i << ", buf len =  "<< m_buffers[i].size() << " (need " << required << ")" << endl;
+//	    cerr << "for octave " << i << ", buf len =  "<< m_buffers[i].size() << " (need " << required << ")" << endl;
 
 	    if ((int)m_buffers[i].size() < required) {
 		enough = false;
@@ -229,7 +200,6 @@ ConstantQ::process(const vector<double> &td)
 
         int base = out.size();
         int totalColumns = pow(2, m_octaves - 1) * m_p.atomsPerFrame;
-        cerr << "totalColumns = " << totalColumns << endl;
         for (int i = 0; i < totalColumns; ++i) {
             out.push_back(vector<double>(m_p.binsPerOctave * m_octaves, 0.0));
         }
@@ -237,7 +207,6 @@ ConstantQ::process(const vector<double> &td)
         for (int octave = 0; octave < m_octaves; ++octave) {
 
             int blocksThisOctave = pow(2, (m_octaves - octave - 1));
-//          cerr << "octave " << octave+1 << " of " << m_octaves << ", n = " << blocksThisOctave << endl;
 
             for (int b = 0; b < blocksThisOctave; ++b) {
                 vector<vector<double> > block = processOctaveBlock(octave);
@@ -267,22 +236,7 @@ ConstantQ::process(const vector<double> &td)
 vector<vector<double> >
 ConstantQ::getRemainingBlocks()
 {
-/*    int n = 0;
-    for (int i = 0; i < m_octaves; ++i) {
-	int latency = 0;
-	if (i > 0) latency = m_decimators[i]->getLatency() * pow(2, i);
-	if (latency > n) n = latency;
-    }
-*/
     int n = ceil(double(m_totalLatency) / m_bigBlockSize) * m_bigBlockSize;
-/*
-	int blockSize = m_p.fftSize * pow(2, m_octaves - i - 1);
-	int neededHere = blockSize + blockSize - (int)m_buffers[i].size();
-	cerr << "getRemainingBlocks: neededHere = " << neededHere << endl;	
-	if (neededHere > n) n = neededHere;
-    }
-*/
-    cerr << "getRemainingBlocks: n = " << n << endl;	
 
     int pad = m_p.fftSize * pow(2, m_octaves-1); // same as padding
 						 // added at start
