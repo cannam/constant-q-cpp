@@ -118,13 +118,30 @@ ConstantQ::initialise()
 
     cerr << "max actual latency = " << maxLatency << endl;
     
-    m_totalLatency = ceil(double(maxLatency) / m_bigBlockSize) * m_bigBlockSize;
+    // Now add in the extra padding and compensate for hops that must
+    // be dropped in order to align the atom centres across octaves
+
+    int emptyHops = m_p.firstCentre / m_p.atomSpacing; //!!! round?
+
+    vector<int> drops;
+    for (int i = 0; i < m_octaves; ++i) {
+	//!!! simplify
+	int factor = pow(2, i);
+	int dropHops = emptyHops * pow(2, m_octaves - i - 1) - emptyHops;
+	int drop = ((dropHops * m_p.fftHop) * factor) / m_p.atomsPerFrame;
+	cerr << "octave " << i << " dropHops = " << dropHops << " drop = " << drop << endl;
+	drops.push_back(drop);
+//	drops.push_back(0);
+    }
+
+    int maxDrop = *std::max_element(drops.begin(), drops.end());
+    cerr << "maxDrop " << maxDrop << endl;
+    
+    m_totalLatency = ceil(double(maxLatency + maxDrop) / m_bigBlockSize) * m_bigBlockSize;
 
 //    m_totalLatency = MathUtilities::nextPowerOfTwo(maxLatency);
     cerr << "total latency = " << m_totalLatency << endl;
         //!!! should also round up so that total latency is a multiple of the big block size
-
-    int emptyHops = m_p.firstCentre / m_p.atomSpacing; //!!! round?
 
     for (int i = 0; i < m_octaves; ++i) {
 
@@ -136,7 +153,7 @@ ConstantQ::initialise()
 	// and then convert it back into the sample rate appropriate
 	// for the output latency of this decimator.
 
-	double extraLatency = double(m_totalLatency - latencies[i]) / factor;
+	double extraLatency = double(m_totalLatency - latencies[i] - drops[i]) / factor;
 
         int pad = m_p.fftSize * pow(2, m_octaves-i-1);
 
@@ -151,9 +168,9 @@ ConstantQ::initialise()
 
 
 
-	cerr << "for octave " << i << ", latency for decimator = " << extraLatency << ", fixed padding = " << pad << ", visual inspection pad = " << pad2 << ", hops to drop would be " << drop << ", 2^i = " << pow(2, i) << ", 2^o-i = " << pow(2,m_octaves-i-1) << endl;
+	cerr << "for octave " << i << ", latency for decimator = " << extraLatency << ", fixed padding = " << pad << ", visual inspection pad = " << pad2 << ", hops to drop would be " << drop << " from emptyHops = " << emptyHops << ", 2^i = " << pow(2, i) << ", 2^o-i = " << pow(2,m_octaves-i-1) << endl;
 
-	extraLatency += pad + pad2;
+	extraLatency += pad ;//+ pad2;
 
 	cerr << "then extraLatency -> " << extraLatency << endl;
 
@@ -270,6 +287,13 @@ ConstantQ::processOctaveBlock(int octave)
 {
     vector<double> ro(m_p.fftSize, 0.0);
     vector<double> io(m_p.fftSize, 0.0);
+
+    cerr << "octave " << octave << " time-domain data, first hop's worth:" << endl;
+    for (int i = 0; i < m_p.fftHop; ++i) {
+	cerr << m_buffers[octave][i] << " ";
+	if (fabs(m_buffers[octave][i]) > 0.01) cerr << "** ";
+    }
+    cerr << endl;
 
     m_fft->forward(m_buffers[octave].data(), ro.data(), io.data());
 

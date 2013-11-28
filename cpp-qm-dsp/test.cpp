@@ -16,6 +16,8 @@ int main(int argc, char **argv)
     vector<double> in;
 
     for (int i = 0; i < 64; ++i) {
+//	if (i == 0) in.push_back(1);
+//	else in.push_back(0);
 	in.push_back(sin(i * M_PI / 2.0));
     }
 
