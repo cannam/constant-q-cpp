@@ -14,7 +14,9 @@ CQVamp::CQVamp(float inputSampleRate) :
     m_cq(0),
     m_maxFrequency(inputSampleRate/2),
     m_minFrequency(46),
-    m_bpo(24)
+    m_bpo(24),
+    m_haveStartTime(false),
+    m_columnCount(0)
 {
 }
 
@@ -160,6 +162,8 @@ CQVamp::reset()
 	    (m_inputSampleRate, m_minFrequency, m_maxFrequency, m_bpo);
     }
     m_prevFeature.clear();
+    m_haveStartTime = false;
+    m_columnCount = 0;
 }
 
 size_t
@@ -197,13 +201,18 @@ CQVamp::getOutputDescriptors() const
 
 CQVamp::FeatureSet
 CQVamp::process(const float *const *inputBuffers,
-		Vamp::RealTime /* timestamp */)
+		Vamp::RealTime timestamp)
 {
     if (!m_cq) {
 	cerr << "ERROR: CQVamp::process: "
 	     << "Plugin has not been initialised"
 	     << endl;
 	return FeatureSet();
+    }
+
+    if (!m_haveStartTime) {
+        m_startTime = timestamp;
+        m_haveStartTime = true;
     }
 
     vector<double> data;
@@ -223,7 +232,6 @@ CQVamp::getRemainingFeatures()
 CQVamp::FeatureSet
 CQVamp::convertToFeatures(const vector<vector<double> > &cqout)
 {
-    
     FeatureSet returnFeatures;
 
     for (int i = 0; i < (int)cqout.size(); ++i) {
@@ -242,10 +250,20 @@ CQVamp::convertToFeatures(const vector<vector<double> > &cqout)
 	m_prevFeature = column;
 
 	Feature feature;
-	feature.hasTimestamp = false;
+	feature.hasTimestamp = true;
+        feature.timestamp = m_startTime + Vamp::RealTime::frame2RealTime
+            (m_columnCount * m_cq->getColumnHop() - m_cq->getLatency(),
+             m_inputSampleRate);
 	feature.values = column;
 	feature.label = "";
-	returnFeatures[0].push_back(feature);
+
+        cerr << "timestamp = " << feature.timestamp << " (latency = " << m_cq->getLatency() << ", sample rate " << m_inputSampleRate << ")" << endl;
+
+        if (feature.timestamp >= m_startTime) {
+            returnFeatures[0].push_back(feature);
+        }
+
+        ++m_columnCount;
     }
 
     return returnFeatures;

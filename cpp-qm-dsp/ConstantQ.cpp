@@ -114,7 +114,10 @@ ConstantQ::initialise()
     m_bigBlockSize = m_p.fftSize * pow(2, m_octaves) / 2;
 
     // Now add in the extra padding and compensate for hops that must
-    // be dropped in order to align the atom centres across octaves
+    // be dropped in order to align the atom centres across
+    // octaves. Again this is a bit trickier because we are doing it
+    // at input rather than output and so must work in per-octave
+    // sample rates rather than output blocks
 
     int emptyHops = m_p.firstCentre / m_p.atomSpacing;
 

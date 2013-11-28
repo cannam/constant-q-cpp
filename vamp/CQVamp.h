@@ -47,6 +47,10 @@ protected:
     int m_stepSize;
     int m_blockSize;
 
+    Vamp::RealTime m_startTime;
+    bool m_haveStartTime;
+    int m_columnCount;
+
     std::vector<float> m_prevFeature;
     FeatureSet convertToFeatures(const std::vector<std::vector<double> > &);
 };

@@ -25,6 +25,7 @@ public:
     int getOctaves() const { return m_octaves; }
     int getTotalBins() const { return m_octaves * m_binsPerOctave; }
     int getColumnHop() const { return m_p.fftHop / m_p.atomsPerFrame; }
+    int getLatency() const { return m_totalLatency; } // a multiple of column hop
 
     std::vector<std::vector<double> > process(const std::vector<double> &);
     std::vector<std::vector<double> > getRemainingBlocks();
