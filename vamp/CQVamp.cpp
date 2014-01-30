@@ -2,9 +2,9 @@
 
 #include "CQVamp.h"
 
-#include "../cpp-qm-dsp/ConstantQ.h"
+#include "cpp-qm-dsp/ConstantQ.h"
 
-#include "qm-dsp/base/Pitch.h"
+#include "base/Pitch.h"
 
 using std::string;
 using std::vector;
@@ -318,7 +318,7 @@ CQVamp::convertToFeatures(const vector<vector<double> > &cqout)
 	feature.values = column;
 	feature.label = "";
 
-//        cerr << "timestamp = " << feature.timestamp << " (latency = " << m_cq->getLatency() << ", sample rate " << m_inputSampleRate << ")" << endl;
+//        cerr << "timestamp = " << feature.timestamp << " (start time = " << m_startTime << ", column count = " << m_columnCount << ", latency = " << m_cq->getLatency() << ", sample rate " << m_inputSampleRate << ")" << endl;
 
         if (feature.timestamp >= m_startTime) {
             returnFeatures[0].push_back(feature);

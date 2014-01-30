@@ -3,9 +3,9 @@
 
 #include "CQKernel.h"
 
-#include "qm-dsp/dsp/rateconversion/Resampler.h"
-#include "qm-dsp/maths/MathUtilities.h"
-#include "qm-dsp/dsp/transforms/FFT.h"
+#include "dsp/rateconversion/Resampler.h"
+#include "maths/MathUtilities.h"
+#include "dsp/transforms/FFT.h"
 
 #include <algorithm>
 #include <complex>
@@ -52,7 +52,7 @@ ConstantQ::initialise()
     double actualMinFreq =
         (m_maxFrequency / pow(2.0, m_octaves)) * pow(2.0, 1.0/m_binsPerOctave);
 
-    cerr << "actual min freq = " << actualMinFreq << endl;
+//    cerr << "actual min freq = " << actualMinFreq << endl;
 
     m_kernel = new CQKernel(m_sampleRate, m_maxFrequency, m_binsPerOctave);
     m_p = m_kernel->getProperties();
@@ -146,12 +146,15 @@ ConstantQ::initialise()
     totalLatency = ceil(double(lat0 / m_p.fftHop) * m_p.fftHop)
 	+ latencies[0] + drops[0];
 
-    cerr << "total latency = " << totalLatency << endl;
+//    cerr << "total latency = " << totalLatency << endl;
 
     // Padding as in the reference (will be introduced with the
     // latency compensation in the loop below)
     m_outputLatency = totalLatency + m_bigBlockSize
 	- m_p.firstCentre * pow(2, m_octaves-1);
+
+//    cerr << "m_bigBlockSize = " << m_bigBlockSize << ", firstCentre = "
+//	 << m_p.firstCentre << ", m_octaves = " << m_octaves << ", so m_outputLatency = " << m_outputLatency << endl;
 
     for (int i = 0; i < m_octaves; ++i) {
 
@@ -173,8 +176,6 @@ ConstantQ::initialise()
     }
 
     m_fft = new FFTReal(m_p.fftSize);
-
-    cerr << "m_bigBlockSize = " << m_bigBlockSize << " for " << m_octaves << " octaves" << endl;
 }
 
 vector<vector<double> > 

@@ -2,9 +2,9 @@
 
 #include "CQKernel.h"
 
-#include "qm-dsp/maths/MathUtilities.h"
-#include "qm-dsp/dsp/transforms/FFT.h"
-#include "qm-dsp/base/Window.h"
+#include "maths/MathUtilities.h"
+#include "dsp/transforms/FFT.h"
+#include "base/Window.h"
 
 #include <cmath>
 #include <cassert>

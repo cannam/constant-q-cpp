@@ -1,0 +1,5 @@
+syntax: glob
+*~
+*.o
+*.so
+cpp-qm-dsp/test

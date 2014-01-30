@@ -19,7 +19,7 @@ testStream = af.open "sweep-48000.wav";
 // So the stream is [ 0, 1, 0, -1, 0, 1, 0, -1, ... ] :
 //testStream = manipulate.withDuration 64 (syn.sinusoid 8 2);
 
-//testStream = manipulate.withDuration 32 (syn.pulseTrain 8 0.001);
+testStream = manipulate.withDuration 32 (syn.pulseTrain 8 0.001);
 
 eprintln "have test stream";
 
@@ -41,7 +41,7 @@ eprintln "overall output size = \(mat.size bigM)";
 mat.print bigM;
 
 //\() (plot.plot [Contour bigM]);
-//\() (plot.plot [Grid bigM]);
+\() (plot.plot [Grid bigM]);
 
 ()
 
