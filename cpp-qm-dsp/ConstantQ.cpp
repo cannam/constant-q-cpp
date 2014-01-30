@@ -45,15 +45,22 @@ ConstantQ::~ConstantQ()
     delete m_kernel;
 }
 
+double
+ConstantQ::getMinFrequency() const
+{
+    return m_p.minFrequency / pow(2.0, m_octaves - 1);
+}
+
+double
+ConstantQ::getBinFrequency(int bin) const
+{
+    return getMinFrequency() * pow(2, (double(bin) / getBinsPerOctave()));
+}
+
 void
 ConstantQ::initialise()
 {
     m_octaves = int(ceil(log2(m_maxFrequency / m_minFrequency)));
-    double actualMinFreq =
-        (m_maxFrequency / pow(2.0, m_octaves)) * pow(2.0, 1.0/m_binsPerOctave);
-
-//    cerr << "actual min freq = " << actualMinFreq << endl;
-
     m_kernel = new CQKernel(m_sampleRate, m_maxFrequency, m_binsPerOctave);
     m_p = m_kernel->getProperties();
     
@@ -238,7 +245,7 @@ ConstantQ::process(const vector<double> &td)
             }
         }
     }
-    
+
     return out;
 }
 
@@ -272,7 +279,7 @@ ConstantQ::processOctaveBlock(int octave)
 
     vector<C> cqrowvec = m_kernel->process(cv);
 
-    // Reform into a column matrix 
+    // Reform into a column matrix
     vector<vector<double> > cqblock;
     for (int j = 0; j < m_p.atomsPerFrame; ++j) {
         cqblock.push_back(vector<double>());

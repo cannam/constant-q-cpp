@@ -19,13 +19,14 @@ public:
     ~ConstantQ();
 
     double getSampleRate() const { return m_sampleRate; }
-    double getMaxFrequency() const { return m_p.maxFrequency; }
-    double getMinFrequency() const { return m_p.minFrequency; } // actual min, not that provided to ctor
     int getBinsPerOctave() const { return m_binsPerOctave; }
     int getOctaves() const { return m_octaves; }
     int getTotalBins() const { return m_octaves * m_binsPerOctave; }
     int getColumnHop() const { return m_p.fftHop / m_p.atomsPerFrame; }
     int getLatency() const { return m_outputLatency; } 
+    double getMaxFrequency() const { return m_p.maxFrequency; }
+    double getMinFrequency() const; // actual min, not that passed to ctor
+    double getBinFrequency(int bin) const;
 
     std::vector<std::vector<double> > process(const std::vector<double> &);
     std::vector<std::vector<double> > getRemainingBlocks();
