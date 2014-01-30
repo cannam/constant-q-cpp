@@ -52,3 +52,10 @@ distclean:	clean
 depend:
 	makedepend -Y -fMakefile.inc $(SOURCES) $(HEADERS)
 
+# DO NOT DELETE
+
+cpp-qm-dsp/CQKernel.o: cpp-qm-dsp/CQKernel.h
+cpp-qm-dsp/ConstantQ.o: cpp-qm-dsp/ConstantQ.h cpp-qm-dsp/CQKernel.h
+vamp/CQVamp.o: vamp/CQVamp.h cpp-qm-dsp/ConstantQ.h cpp-qm-dsp/CQKernel.h
+vamp/libmain.o: vamp/CQVamp.h
+cpp-qm-dsp/ConstantQ.o: cpp-qm-dsp/CQKernel.h

@@ -6,6 +6,9 @@
 
 #include "base/Pitch.h"
 
+#include <algorithm>
+#include <cstdio>
+
 using std::string;
 using std::vector;
 using std::cerr;
@@ -70,28 +73,7 @@ CQVamp::ParameterList
 CQVamp::getParameterDescriptors() const
 {
     ParameterList list;
-/*
-    ParameterDescriptor desc;
-    desc.identifier = "minfreq";
-    desc.name = "Minimum Frequency";
-    desc.unit = "Hz";
-    desc.description = "Hint for the lowest frequency to be included in the constant-Q transform. The actual frequency range will be an integral number of octaves ending at the highest frequency specified";
-    desc.minValue = 10;
-    desc.maxValue = m_inputSampleRate/2;
-    desc.defaultValue = 46;
-    desc.isQuantized = false;
-    list.push_back(desc);
 
-    desc.identifier = "maxfreq";
-    desc.name = "Maximum Frequency";
-    desc.unit = "Hz";
-    desc.description = "Highest frequency to be included in the constant-Q transform";
-    desc.minValue = 10;
-    desc.maxValue = m_inputSampleRate/2;
-    desc.defaultValue = m_inputSampleRate/2;
-    desc.isQuantized = false;
-    list.push_back(desc);
- */
     ParameterDescriptor desc;
     desc.identifier = "minpitch";
     desc.name = "Minimum Pitch";
@@ -151,14 +133,6 @@ CQVamp::getParameter(std::string param) const
     if (param == "tuning") {
         return m_tuningFrequency;
     }
-/*
-    if (param == "minfreq") {
-        return m_minFrequency;
-    }
-    if (param == "maxfreq") {
-        return m_maxFrequency;
-    }
-*/
     if (param == "bpo") {
         return m_bpo;
     }
@@ -176,11 +150,6 @@ CQVamp::setParameter(std::string param, float value)
         m_maxMIDIPitch = lrintf(value);
     } else if (param == "tuning") {
         m_tuningFrequency = value;
-/*    if (param == "minfreq") {
-        m_minFrequency = value;
-    } else if (param == "maxfreq") {
-        m_maxFrequency = value;
-*/
     } else  if (param == "bpo") {
         m_bpo = lrintf(value);
     } else {
@@ -251,6 +220,16 @@ CQVamp::getOutputDescriptors() const
     d.description = "Output of constant-Q transform, as a single vector per process block";
     d.hasFixedBinCount = true;
     d.binCount = (m_cq ? m_cq->getTotalBins() : (9 * 24));
+
+    if (m_cq) {
+        char name[20];
+        for (int i = 0; i < d.binCount; ++i) {
+            float freq = m_cq->getBinFrequency(i);
+            sprintf(name, "%.1f Hz", freq);
+            d.binNames.push_back(name);
+        }
+    }
+
     d.hasKnownExtents = false;
     d.isQuantized = false;
     d.sampleType = OutputDescriptor::FixedSampleRate;
@@ -307,6 +286,9 @@ CQVamp::convertToFeatures(const vector<vector<double> > &cqout)
 		column[j] = m_prevFeature[j];
 	    }
 	}
+
+        // put low frequencies at the start
+        std::reverse(column.begin(), column.end());
 
 	m_prevFeature = column;
 
