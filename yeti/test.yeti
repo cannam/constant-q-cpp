@@ -6,11 +6,69 @@ plot = load may.plot;
 cm = load may.matrix.complex;
 mat = load may.matrix;
 vec = load may.vector;
+win = load may.signal.window;
+mm = load may.mathmisc;
 manipulate = load may.stream.manipulate;
 syn = load may.stream.syntheticstream;
 
 { cqt } = load cqt;
 
+// Test with a single windowed sinusoid, repeating at various frequencies
+
+sinTestStream sampleRate duration signalFreq = // duration is in samples
+   (sin = syn.sinusoid sampleRate signalFreq;
+    chunk = mat.getRow 0 (sin.read duration);
+    syn.precalculatedMono sampleRate (win.windowed win.hann chunk));
+
+// We want to make a CQ transform spanning more than one octave, but
+// not going all the way to fs/2 so we can test it also with
+// frequencies above and below its extents
+
+sampleRate = 100;
+
+// fs/2 = 50 so 10->40 gives us 2 octaves
+cqmin = 10;
+cqmax = 40;
+bpo = 4; // fairly arbitrary
+
+testFreqs = map (* 5) [ 0..10 ];
+duration = sampleRate * 2;
+
+streamBuilder = sinTestStream sampleRate duration;
+
+binForFreq f =
+    mm.round (bpo * mm.log2 (f / cqmin)) - 1;
+
+for testFreqs do f:
+    str = streamBuilder f;
+    cq = cqt { maxFreq = cqmax, minFreq = cqmin, binsPerOctave = bpo } str;
+    m = mat.concatHorizontal (map cm.magnitudes cq.output);
+    println "binFrequencies = \(cq.kernel.binFrequencies)";
+    println "binForFreq \(f) = \(binForFreq f)";
+    success = all id
+       (map do c:
+            // passes test if the correct max bin, or the expected max
+            // is out of range, or if all bins are below a threshold
+            expected = binForFreq f;
+            good =
+               (expected < 0 or expected >= vec.length c) or
+               (vec.max c < 0.001) or
+               (vec.maxindex c == binForFreq f);
+            if (not good) then
+                println " * bad! maxindex \(vec.maxindex c) != expected \(binForFreq f) for freq \(f) in column: \(vec.list c)";
+//                println "matrix is:";
+//                mat.print m;
+            else 
+                print "✓"; 
+            fi;
+            good;
+            done (mat.asColumns m));
+    println " success = \(success) for freq \(f)";
+done;
+
+
+
+/*
 //testStream = manipulate.withDuration 96000 (syn.sinusoid 48000 500);
 //testStream = manipulate.withDuration 96000 (syn.pulseTrain 48000 4);
 testStream = af.open "sweep-48000.wav";
@@ -27,13 +85,6 @@ cq = cqt { maxFreq = testStream.sampleRate/2, minFreq = 50, binsPerOctave = 24 }
 
 eprintln "bin frequencies: \(cq.kernel.binFrequencies)";
 
-/*
-for cq.output do c:
-    mm = cm.magnitudes c;
-    for (mat.asColumns mm) (println . strJoin "," . vec.list);
-done;
-*/
-
 bigM = mat.concatHorizontal (map cm.magnitudes cq.output);
 
 eprintln "overall output size = \(mat.size bigM)";
@@ -42,6 +93,6 @@ mat.print bigM;
 
 //\() (plot.plot [Contour bigM]);
 \() (plot.plot [Grid bigM]);
-
+*/
 ()
 

@@ -114,8 +114,8 @@ eprintln "padding = \(padding)";
     done cqblocks [1..octaves]);
 
     assembleBlock bits =
-       (eprintln "assembleBlock: structure of bits is:";
-        eprintln (map length bits);
+       (//eprintln "assembleBlock: structure of bits is:";
+        //eprintln (map length bits);
 
         rows = octaves * kdata.binsPerOctave;
         columns = (pow 2 (octaves - 1)) * kdata.atomsPerFrame;
