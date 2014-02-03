@@ -7,12 +7,11 @@ cm = load may.matrix.complex;
 mat = load may.matrix;
 vec = load may.vector;
 win = load may.signal.window;
-test = load may.test.test;
 mm = load may.mathmisc;
 manipulate = load may.stream.manipulate;
 syn = load may.stream.syntheticstream;
 
-{ cqtkernel } = load cqtkernel;
+{ makeKernel } = load cqtkernel;
 { cqt } = load cqt;
 
 // We want to test:
@@ -31,8 +30,6 @@ syn = load may.stream.syntheticstream;
 // Signal-noise ratio
 //
 // Specimen output for simple test case
-
-/*
 
 // Test with a single windowed sinusoid, repeating at various frequencies
 
