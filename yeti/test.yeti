@@ -7,11 +7,32 @@ cm = load may.matrix.complex;
 mat = load may.matrix;
 vec = load may.vector;
 win = load may.signal.window;
+test = load may.test.test;
 mm = load may.mathmisc;
 manipulate = load may.stream.manipulate;
 syn = load may.stream.syntheticstream;
 
+{ cqtkernel } = load cqtkernel;
 { cqt } = load cqt;
+
+// We want to test:
+// 
+// Kernel design -- check size (number of bins, number of atoms);
+// check an example kernel against known data
+//
+// Time alignment -- feed a dirac train, check that peaks in all bins
+// align
+//
+// Frequency discrimination -- feed a sinusoid, check peaks
+//
+// Latency compensation -- for dirac at 0, check peak can be found at
+// 0 plus the declared latency
+//
+// Signal-noise ratio
+//
+// Specimen output for simple test case
+
+/*
 
 // Test with a single windowed sinusoid, repeating at various frequencies
 
