@@ -10,6 +10,7 @@ win = load may.signal.window;
 mm = load may.mathmisc;
 manipulate = load may.stream.manipulate;
 syn = load may.stream.syntheticstream;
+test = load may.test;
 
 { makeKernel } = load cqtkernel;
 { cqt } = load cqt;
