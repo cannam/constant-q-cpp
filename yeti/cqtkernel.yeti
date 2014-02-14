@@ -26,8 +26,8 @@ makeKernel { sampleRate, maxFreq, binsPerOctave } =
     
     fftSize = nextPowerOfTwo (firstCentre + ceil (maxNK/2));
     
-    eprintln "sampleRate = \(sampleRate), maxFreq = \(maxFreq), binsPerOctave = \(binsPerOctave), q = \(q), atomHopFactor = \(atomHopFactor), thresh = \(thresh)";
-    eprintln "minFreq = \(minFreq), bigQ = \(bigQ), maxNK = \(maxNK), minNK = \(minNK), atomHop = \(atomHop), firstCentre = \(firstCentre), fftSize = \(fftSize)";
+//    eprintln "sampleRate = \(sampleRate), maxFreq = \(maxFreq), binsPerOctave = \(binsPerOctave), q = \(q), atomHopFactor = \(atomHopFactor), thresh = \(thresh)";
+//    eprintln "minFreq = \(minFreq), bigQ = \(bigQ), maxNK = \(maxNK), minNK = \(minNK), atomHop = \(atomHop), firstCentre = \(firstCentre), fftSize = \(fftSize)";
     
     winNr = floor((fftSize - ceil(maxNK/2) - firstCentre) / atomHop) + 1;
     
@@ -35,7 +35,7 @@ makeKernel { sampleRate, maxFreq, binsPerOctave } =
     
     fftHop = (lastCentre + atomHop) - firstCentre;
     
-    eprintln "winNr = \(winNr), lastCentre = \(lastCentre), fftHop = \(fftHop)";
+//    eprintln "winNr = \(winNr), lastCentre = \(lastCentre), fftHop = \(fftHop)";
     
     fftFunc = fft.forward fftSize;
     
@@ -88,7 +88,7 @@ makeKernel { sampleRate, maxFreq, binsPerOctave } =
     
     kmat = cm.toSparse (cm.scaled (1/fftSize) (cm.fromRows (concat kernels)));
     
-    eprintln "density = \(cm.density kmat) (\(cm.nonZeroValues kmat) of \(cm.width kmat * cm.height kmat))";
+//    eprintln "density = \(cm.density kmat) (\(cm.nonZeroValues kmat) of \(cm.width kmat * cm.height kmat))";
     
     // Normalisation
     
@@ -104,7 +104,7 @@ makeKernel { sampleRate, maxFreq, binsPerOctave } =
     weight = (fftHop / fftSize) / (vec.mean (vec.abs wK));
     weight = sqrt(weight);
 
-    eprintln "weight = \(weight)";
+//    eprintln "weight = \(weight)";
     
     {
         kernel = cm.scaled weight kmat,
