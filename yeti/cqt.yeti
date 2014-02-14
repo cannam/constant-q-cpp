@@ -20,13 +20,13 @@ cqt { maxFreq, minFreq, binsPerOctave } str =
 
     kdata = cqtkernel.makeKernel { sampleRate, maxFreq, binsPerOctave };
 
-    eprintln "sampleRate = \(sampleRate), maxFreq = \(maxFreq), minFreq = \(minFreq), actualMinFreq = \(actualMinFreq), octaves = \(octaves), binsPerOctave = \(binsPerOctave), fftSize = \(kdata.fftSize), hop = \(kdata.fftHop)";
+//    eprintln "sampleRate = \(sampleRate), maxFreq = \(maxFreq), minFreq = \(minFreq), actualMinFreq = \(actualMinFreq), octaves = \(octaves), binsPerOctave = \(binsPerOctave), fftSize = \(kdata.fftSize), hop = \(kdata.fftHop)";
 
-    eprintln "atomsPerFrame = \(kdata.atomsPerFrame)";
+//    eprintln "atomsPerFrame = \(kdata.atomsPerFrame)";
 
     padding = (kdata.fftSize * (pow 2 (octaves-1)));
 
-eprintln "padding = \(padding)";
+//    eprintln "padding = \(padding)";
 
     str = manipulate.paddedBy padding str;
 
@@ -35,7 +35,7 @@ eprintln "padding = \(padding)";
     //!!! can't be right!
     kernel = cm.transposed (cm.conjugateTransposed kdata.kernel);
 
-    eprintln "have kernel";
+//    eprintln "have kernel";
 
     fftFunc = fft.forward kdata.fftSize;
 
@@ -89,7 +89,7 @@ eprintln "padding = \(padding)";
 
     emptyHops = kdata.firstCentre / kdata.atomSpacing; //!!! int? round?
     maxDrop = emptyHops * (pow 2 (octaves-1)) - emptyHops;
-    eprintln "maxDrop = \(maxDrop)";
+//    eprintln "maxDrop = \(maxDrop)";
 
     cqblocks =
         map do octlist:
@@ -109,7 +109,7 @@ eprintln "padding = \(padding)";
 
 //        d = 0; //!!!
 
-        eprintln "dropping \(d)";
+//        eprintln "dropping \(d)";
         drop d octlist;
     done cqblocks [1..octaves]);
 
@@ -167,7 +167,7 @@ eprintln "padding = \(padding)";
          _: []
         esac;
 
-eprintln "cqblocks has \(length cqblocks) entries";
+//eprintln "cqblocks has \(length cqblocks) entries";
 
     octaveLists = [:];
 
@@ -181,7 +181,7 @@ println "oct \(octaves) - \(octave) = \(octaves - octave)";
              octaveLists[octaves - octave] := octlist 
          done cqblocks [1..octaves]);
 */
-eprintln "octaveLists keys are: \(keys octaveLists)";
+//eprintln "octaveLists keys are: \(keys octaveLists)";
 
     {
         kernel = kdata with {
