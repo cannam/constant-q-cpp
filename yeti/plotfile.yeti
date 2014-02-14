@@ -1,0 +1,33 @@
+
+program plotfile;
+
+af = load may.stream.audiofile;
+plot = load may.plot;
+cm = load may.matrix.complex;
+mat = load may.matrix;
+
+{ cqt } = load cqt;
+
+plotfile f =
+   (testStream = af.open f;
+    eprintln "Opened file stream...";
+    cq = cqt {
+        maxFreq = testStream.sampleRate/2, 
+        minFreq = 50, 
+        binsPerOctave = 24
+        } testStream;
+    eprintln "Generated kernel and primed transform, now calculating...";
+    bigM = mat.concatHorizontal (map cm.magnitudes cq.output);
+    eprintln "Plotting...";
+    \() (plot.plot [Contour bigM]));
+
+usage () =
+   (eprintln "\nUsage: plotfile file.wav";
+    eprintln "\n   Loads audio from file.wav and plots a 24bpo Constant-Q spectrogram";
+    eprintln "   from 50Hz up to half the file samplerate");
+
+case (list _argv) of
+file::[]: plotfile file;
+_: usage ();
+esac;
+

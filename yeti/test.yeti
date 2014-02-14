@@ -1,21 +1,7 @@
 
 program test;
-/*
-af = load may.stream.audiofile;
-plot = load may.plot;
-cm = load may.matrix.complex;
-mat = load may.matrix;
-vec = load may.vector;
-win = load may.signal.window;
-mm = load may.mathmisc;
-manipulate = load may.stream.manipulate;
-syn = load may.stream.syntheticstream;
-*/
 
 { runTests } = load may.test;
-
-//{ makeKernel } = load cqtkernel;
-//{ cqt } = load cqt;
 
 // We want to test:
 // 
