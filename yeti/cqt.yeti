@@ -16,7 +16,7 @@ ch = load may.stream.channels;
 cqt { maxFreq, minFreq, binsPerOctave } str =
    (sampleRate = str.sampleRate;
     octaves = ceil (log2 (maxFreq / minFreq));
-    actualMinFreq = (maxFreq / (pow 2 octaves)) * (pow 2 (1/binsPerOctave));
+//    actualMinFreq = (maxFreq / (pow 2 octaves)) * (pow 2 (1/binsPerOctave));
 
     kdata = cqtkernel.makeKernel { sampleRate, maxFreq, binsPerOctave };
 
@@ -88,7 +88,7 @@ cqt { maxFreq, minFreq, binsPerOctave } str =
     // and split into single-atom columns
 
     emptyHops = kdata.firstCentre / kdata.atomSpacing; //!!! int? round?
-    maxDrop = emptyHops * (pow 2 (octaves-1)) - emptyHops;
+//    maxDrop = emptyHops * (pow 2 (octaves-1)) - emptyHops;
 //    eprintln "maxDrop = \(maxDrop)";
 
     cqblocks =

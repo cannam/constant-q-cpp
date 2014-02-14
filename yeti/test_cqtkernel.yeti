@@ -1,0 +1,18 @@
+
+module test_cqtkernel;
+
+cm = load may.matrix.complex;
+
+{ makeKernel } = load cqtkernel;
+
+[
+
+"minimal": \(
+    k = makeKernel { sampleRate = 16, maxFreq = 8, binsPerOctave = 4 };
+print k;
+cm.print k.kernel;
+true;
+),
+
+] is hash<string, () -> boolean>
+
