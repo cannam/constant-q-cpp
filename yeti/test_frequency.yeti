@@ -7,6 +7,7 @@ win = load may.signal.window;
 mm = load may.mathmisc;
 cm = load may.matrix.complex;
 syn = load may.stream.syntheticstream;
+plot = load may.plot;
 
 { cqt } = load cqt;
 
@@ -31,6 +32,8 @@ bpo = 4; // fairly arbitrary
 testFreqs = map (* 5) [ 0..10 ];
 duration = sampleRate * 2;
 
+threshold = 0.05;
+
 streamBuilder = sinTestStream sampleRate duration;
 
 binForFreq f =
@@ -44,6 +47,7 @@ tests = mapIntoHash
         m = mat.concatHorizontal (map cm.magnitudes cq.output);
 //    println "binFrequencies = \(cq.kernel.binFrequencies)";
 //    println "binForFreq \(f) = \(binForFreq f)";
+        var colno = 0;
         success = all id
            (map do c:
                 // passes test if the correct max bin, or the expected max
@@ -51,15 +55,19 @@ tests = mapIntoHash
                 expected = binForFreq f;
                 good =
                    (expected < 0 or expected >= vec.length c) or
-                   (vec.max c < 0.001) or
+                   (vec.max c < threshold) or
                    (vec.maxindex c == binForFreq f);
                 if (not good) then
-                    println " * bad! maxindex \(vec.maxindex c) != expected \(binForFreq f) for freq \(f) in column: \(vec.list c)";
+                    println " * bad! maxindex \(vec.maxindex c) != expected \(binForFreq f) for freq \(f) in column \(colno) of \(mat.width m): column is \(vec.list c)";
                 println "matrix is:";
                 mat.print m;
+                chart = plot.plot [Grid m];
+                sleep 100;
+                chart#dispose();
                 else 
                     print "✓"; 
                 fi;
+                colno := colno + 1;
                 good;
             done (mat.asColumns m));
         success;
