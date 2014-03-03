@@ -32,12 +32,20 @@ bpo = 4; // fairly arbitrary
 testFreqs = map (* 5) [ 0..10 ];
 duration = sampleRate * 2;
 
-threshold = 0.05;
+threshold = 0.08;
 
 streamBuilder = sinTestStream sampleRate duration;
 
 binForFreq f =
     mm.round (bpo * mm.log2 (f / cqmin)) - 1;
+
+report message matrix =
+   (eprintln message;
+    eprintln "matrix is:";
+    mat.eprint matrix;
+    chart = plot.plot [Grid matrix];
+    sleep 100;
+    chart#dispose());
 
 tests = mapIntoHash
     do f: "freq_\(f)" done
@@ -50,22 +58,30 @@ tests = mapIntoHash
         var colno = 0;
         success = all id
            (map do c:
-                // passes test if the correct max bin, or the expected max
-                // is out of range, or if all bins are below a threshold
+                // The test passes for this column if:
+                //
+                //  * the max bin is the expected one, or
+                //
+                //  * the expected max is out of range entirely (but
+                //  we need to test _something_ in this case --
+                //  what?), or
+                //
+                //  * all bins are below a threshold, or
+                //
+                //  * this is an odd column and the expected max is in
+                //  the lower octave
+                //
+                // We should also check that all values in the lower
+                // octave are zero for odd columns.
+                //
                 expected = binForFreq f;
                 good =
                    (expected < 0 or expected >= vec.length c) or
+                   ((colno % 2 == 1) and expected < (vec.length c / 2)) or
                    (vec.max c < threshold) or
                    (vec.maxindex c == binForFreq f);
                 if (not good) then
-                    println " * bad! maxindex \(vec.maxindex c) != expected \(binForFreq f) for freq \(f) in column \(colno) of \(mat.width m): column is \(vec.list c)";
-                println "matrix is:";
-                mat.print m;
-                chart = plot.plot [Grid m];
-                sleep 100;
-                chart#dispose();
-                else 
-                    print "✓"; 
+                    report " * bad! maxindex \(vec.maxindex c) != expected \(binForFreq f) for freq \(f) in column \(colno) of \(mat.width m): column is \(vec.list c)" m;
                 fi;
                 colno := colno + 1;
                 good;

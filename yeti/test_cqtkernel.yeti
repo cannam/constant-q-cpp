@@ -11,7 +11,7 @@ cm = load may.matrix.complex;
     k = makeKernel { sampleRate = 16, maxFreq = 8, binsPerOctave = 4 };
 print k;
 cm.print k.kernel;
-true;
+false;
 ),
 
 ] is hash<string, () -> boolean>
