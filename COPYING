@@ -1,4 +1,11 @@
-/*
+
+The code in this library is provided under an MIT-style licence as
+follows. However, note that other code which it depends on may be
+licensed differently (for example, qm-dsp is under the GPL). This
+licence applies only to the source files actually contained in this
+repository, and not to any of its subrepositories. See individual
+files for more details.
+
     Constant-Q library
     Copyright (c) 2013-2014 Queen Mary, University of London
 
@@ -26,22 +33,5 @@
     shall not be used in advertising or otherwise to promote the sale,
     use or other dealings in this Software without prior written
     authorization.
-*/
 
-module test_cqtkernel;
-
-cm = load may.matrix.complex;
-
-{ makeKernel } = load cqtkernel;
-
-[
-
-"minimal": \(
-    k = makeKernel { sampleRate = 16, maxFreq = 8, binsPerOctave = 4 };
-print k;
-cm.print k.kernel;
-false;
-),
-
-] is hash<string, () -> boolean>
 
