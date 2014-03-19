@@ -1,0 +1,91 @@
+@prefix rdfs:     <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:      <http://www.w3.org/2001/XMLSchema#> .
+@prefix vamp:     <http://purl.org/ontology/vamp/> .
+@prefix plugbase: <http://vamp-plugins.org/rdf/plugins/cqvamp#> .
+@prefix owl:      <http://www.w3.org/2002/07/owl#> .
+@prefix dc:       <http://purl.org/dc/elements/1.1/> .
+@prefix af:       <http://purl.org/ontology/af/> .
+@prefix foaf:     <http://xmlns.com/foaf/0.1/> .
+@prefix cc:       <http://web.resource.org/cc/> .
+@prefix :         <#> .
+
+<>  a   vamp:PluginDescription ;
+    foaf:maker          <http://www.vamp-plugins.org/doap.rdf#template-generator> ;
+    foaf:primaryTopic   <http://vamp-plugins.org/rdf/plugins/cqvamp> .
+
+:cqvamp a  vamp:PluginLibrary ;
+    vamp:identifier "cqvamp"  ; 
+    vamp:available_plugin plugbase:cqvamp ; 
+#   foaf:page <Place more-information HTML page URL here and uncomment> ;
+    .
+
+plugbase:cqvamp a   vamp:Plugin ;
+    dc:title              "Constant-Q Spectrogram" ;
+    vamp:name             "Constant-Q Spectrogram" ;
+    dc:description        """Extract a spectrogram with constant ratio of centre frequency to resolution from the input audio""" ;
+    foaf:maker            [ foaf:name "Queen Mary, University of London" ] ; # FIXME could give plugin author's URI here
+    dc:rights             """Plugin by Chris Cannam. Method by Christian Schörkhuber and Anssi Klapuri. Copyright (c) 2013 QMUL""" ;
+#   cc:license            <Place plugin license URI here and uncomment> ; 
+    vamp:identifier       "cqvamp" ;
+    vamp:vamp_API_version vamp:api_version_2 ;
+    owl:versionInfo       "1" ;
+    vamp:input_domain     vamp:TimeDomain ;
+
+    vamp:parameter   plugbase:cqvamp_param_minpitch ;
+    vamp:parameter   plugbase:cqvamp_param_maxpitch ;
+    vamp:parameter   plugbase:cqvamp_param_tuning ;
+    vamp:parameter   plugbase:cqvamp_param_bpo ;
+
+    vamp:output      plugbase:cqvamp_output_constantq ;
+    .
+plugbase:cqvamp_param_minpitch a  vamp:QuantizedParameter ;
+    vamp:identifier     "minpitch" ;
+    dc:title            "Minimum Pitch" ;
+    dc:format           "MIDI units" ;
+    vamp:min_value       0 ;
+    vamp:max_value       127 ;
+    vamp:unit           "MIDI units" ;
+    vamp:quantize_step   1  ;
+    vamp:default_value   36 ;
+    vamp:value_names     ();
+    .
+plugbase:cqvamp_param_maxpitch a  vamp:QuantizedParameter ;
+    vamp:identifier     "maxpitch" ;
+    dc:title            "Maximum Pitch" ;
+    dc:format           "MIDI units" ;
+    vamp:min_value       0 ;
+    vamp:max_value       127 ;
+    vamp:unit           "MIDI units" ;
+    vamp:quantize_step   1  ;
+    vamp:default_value   84 ;
+    vamp:value_names     ();
+    .
+plugbase:cqvamp_param_tuning a  vamp:Parameter ;
+    vamp:identifier     "tuning" ;
+    dc:title            "Tuning Frequency" ;
+    dc:format           "Hz" ;
+    vamp:min_value       360 ;
+    vamp:max_value       500 ;
+    vamp:unit           "Hz"  ;
+    vamp:default_value   440 ;
+    vamp:value_names     ();
+    .
+plugbase:cqvamp_param_bpo a  vamp:QuantizedParameter ;
+    vamp:identifier     "bpo" ;
+    dc:title            "Bins per Octave" ;
+    dc:format           "bins" ;
+    vamp:min_value       2 ;
+    vamp:max_value       480 ;
+    vamp:unit           "bins" ;
+    vamp:quantize_step   1  ;
+    vamp:default_value   24 ;
+    vamp:value_names     ();
+    .
+plugbase:cqvamp_output_constantq a  vamp:DenseOutput ;
+    vamp:identifier       "constantq" ;
+    dc:title              "Constant-Q Spectrogram" ;
+    dc:description        """Output of constant-Q transform, as a single vector per process block"""  ;
+    vamp:unit             "" ;
+    vamp:computes_signal_type  af:Spectrogram ;
+    .
+
