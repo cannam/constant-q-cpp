@@ -135,9 +135,6 @@ cqt { maxFreq, minFreq, binsPerOctave } str =
 
     cqblocks = array (map2 do octlist octave:
         d = emptyHops * (pow 2 (octaves-octave)) - emptyHops;
-
-//        d = 0; //!!!
-
 //        eprintln "dropping \(d)";
         drop d octlist;
     done cqblocks [1..octaves]);
