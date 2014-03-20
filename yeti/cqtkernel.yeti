@@ -124,7 +124,7 @@ makeKernel { sampleRate, maxFreq, binsPerOctave } =
     wx1 = vec.maxindex (complex.magnitudes (cm.getRow 0 kmat));
     wx2 = vec.maxindex (complex.magnitudes (cm.getRow (cm.height kmat - 1) kmat));
 
-    subset = cm.columnSlice kmat wx1 (wx2+1);
+    subset = cm.flipped (cm.columnSlice kmat wx1 (wx2+1));
     square = cm.product (cm.conjugateTransposed subset) subset;
 
     diag = complex.magnitudes (cm.getDiagonal 0 square);

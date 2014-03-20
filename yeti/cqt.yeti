@@ -33,6 +33,7 @@ module cqt;
 cqtkernel = load cqtkernel;
 resample = load may.stream.resample;
 manipulate = load may.stream.manipulate;
+mat = load may.matrix;
 cm = load may.matrix.complex;
 framer = load may.stream.framer;
 cplx = load may.complex;
@@ -175,7 +176,36 @@ cqt { maxFreq, minFreq, binsPerOctave } str =
         done { rows, columns };
         );
 
-    processOctaveLists octs =
+    assembleBlockSpectrogram bits =
+       (// As assembleBlock, but producing a dense magnitude
+        // spectrogram (rather than a complex output with zeros
+        // between the cell values in lower octaves). (todo: smoothing)
+
+        //eprintln "assembleBlockSpectrogram: structure of bits is:";
+        //eprintln (map length bits);
+
+        rows = octaves * kdata.binsPerOctave;
+        columns = (pow 2 (octaves - 1)) * kdata.atomsPerFrame;
+
+        mat.generate do row col:
+
+            oct = int (row / binsPerOctave);
+            binNo = row % kdata.binsPerOctave;
+
+            chunks = pow 2 oct;
+            colsPerAtom = int (columns / (chunks * kdata.atomsPerFrame));
+            atomNo = int (col / colsPerAtom);
+
+            if atomNo < length bits[oct] then
+                cplx.magnitude bits[oct][atomNo][binNo];
+            else 
+                0
+            fi;
+
+        done { rows, columns };
+        );
+
+    processOctaveLists assembler octs =
         case octs[0] of
         block::rest:
            (toAssemble = array 
@@ -189,7 +219,7 @@ cqt { maxFreq, minFreq, binsPerOctave } str =
                         array []
                     fi
                 done (keys octs));
-            assembleBlock toAssemble :. \(processOctaveLists octs));
+            assembler toAssemble :. \(processOctaveLists assembler octs));
          _: []
         esac;
 
@@ -218,7 +248,14 @@ println "oct \(octaves) - \(octave) = \(octaves - octave)";
                     done (reverse (list kdata.binFrequencies))
                 done [0..octaves-1])
         },
-        output = processOctaveLists octaveLists
+        octaves,
+        output type =
+            case type of
+            ComplexCQ ():
+                Complex (processOctaveLists assembleBlock octaveLists);
+            Spectrogram ():
+                Real (processOctaveLists assembleBlockSpectrogram octaveLists);
+            esac
     }
     );
 

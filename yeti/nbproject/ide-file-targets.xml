@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project basedir=".." name="cqt-IDE">
+    <!-- TODO: edit the following target according to your needs -->
+    <!-- (more info: http://www.netbeans.org/kb/articles/freeform-config.html#debugj2se) -->
+    <property name="maydir" value="${basedir}/../../may"/>
+    <property name="yetidir" value="${basedir}/../../yeti"/>
+    <property name="jardir" value="${maydir}/ext/jar"/>
+        <path id="cp">
+            <fileset dir="${basedir}">
+                <include name="cqt.jar"/>
+            </fileset>
+            <fileset dir="${jardir}">
+                <include name="*.jar"/>
+            </fileset>
+            <fileset dir="${yetidir}">
+                <include name="yeti.jar"/>
+            </fileset>
+            <fileset dir="${maydir}">
+                <include name="may.jar"/>
+            </fileset>
+        </path>
+    <target name="debug-nb">
+        <nbjpdastart addressproperty="jpda.address" name="cqt" transport="dt_socket">
+            <classpath refid="cp"/>
+        </nbjpdastart>
+        <!-- TODO configure the main class for your project here: -->
+        <java classname="plotfile" fork="true">
+            <classpath refid="cp"/>
+            <jvmarg value="-Xdebug"/>
+            <jvmarg value="-Xrunjdwp:transport=dt_socket,address=${jpda.address}"/>
+            <arg value="${basedir}/test.wav"/>
+        </java>
+    </target>
+    <target name="-profile-check">
+        <startprofiler freeform="true"/>
+    </target>
+    <!-- TODO: edit the following target according to your needs -->
+    <!-- (more info: http://netbeans.org/kb/articles/freeform-config.html#profilej2se) -->
+    <target depends="-profile-check" if="profiler.configured" name="profile-nb">
+        <!-- TODO configure the main class for your project here: -->
+        <java classname="plotfile" fork="true">
+            <classpath refid="cp"/>
+            <jvmarg line="${agent.jvmargs}"/>
+            <arg value="${basedir}/test.wav"/>
+        </java>
+    </target>
+</project>

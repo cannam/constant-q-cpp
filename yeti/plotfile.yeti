@@ -8,23 +8,34 @@ mat = load may.matrix;
 
 { cqt } = load cqt;
 
+minFreq = 27.5;
+maxRateDivisor = 3;
+binsPerOctave = 60;
+
 plotfile f =
    (testStream = af.open f;
     eprintln "Opened file stream...";
+    start = System#currentTimeMillis();
     cq = cqt {
-        maxFreq = testStream.sampleRate/2, 
-        minFreq = 50, 
-        binsPerOctave = 24
+        maxFreq = testStream.sampleRate/maxRateDivisor, 
+        minFreq, 
+        binsPerOctave
         } testStream;
-    eprintln "Generated kernel and primed transform, now calculating...";
-    bigM = mat.concatHorizontal (map cm.magnitudes cq.output);
+    middle = System#currentTimeMillis();
+    eprintln "Generated kernel \(cm.size cq.kernel.kernel) and primed transform (\(cq.octaves) octaves), took \(middle-start)ms, now calculating...";
+    bigM = case (cq.output (Spectrogram ())) of
+        Real s: mat.concatHorizontal s;
+        _: failWith "Real expected";
+    esac;
+    finish = System#currentTimeMillis();
+    eprintln "Done, that part took \(finish-middle)ms, all CQ stuff took \(finish-start)ms";
     eprintln "Plotting...";
     \() (plot.plot [Contour bigM]));
 
 usage () =
    (eprintln "\nUsage: plotfile file.wav";
-    eprintln "\n   Loads audio from file.wav and plots a 24bpo Constant-Q spectrogram";
-    eprintln "   from 50Hz up to half the file samplerate");
+    eprintln "\n   Loads audio from file.wav and plots a \(binsPerOctave)bpo Constant-Q spectrogram";
+    eprintln "   from \(minFreq)Hz up to 1/\(maxRateDivisor) of the file samplerate");
 
 case (list _argv) of
 file::[]: plotfile file;
