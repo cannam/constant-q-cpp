@@ -309,7 +309,7 @@ ConstantQ::processOctaveBlock(int octave)
 
     vector<C> cqrowvec = m_kernel->process(cv);
 
-    // Reform into a column matrix
+    // Reform into a column matrix and use only the magnitude
     vector<vector<double> > cqblock;
     for (int j = 0; j < m_p.atomsPerFrame; ++j) {
         cqblock.push_back(vector<double>());

@@ -1,0 +1,59 @@
+<project name="cqt" default="jar" basedir=".">
+
+  <property name="maydir" value="${basedir}/../../may"/>
+  <property name="yetidir" value="${basedir}/../../yeti"/>
+
+  <property name="jardir" value="${maydir}/ext/jar"/>
+
+  <property name="extjars" value="${jardir}/jvamp.jar:${jardir}/yertle.jar:${jardir}/jtransforms-2.4.jar:${jardir}/jzy3d-swt-0.9.1.jar:${jardir}/jzy3d-api-0.9.1.jar:${jardir}/jogl-all.jar:${jardir}/gluegen.jar:${jardir}/gluegen-rt.jar:${jardir}/opencsv-2.1.jar:${jardir}/org.convexhull.jar"/>
+
+  <condition property="archtag" value="linux32">
+    <os family="unix" arch="i386"/>
+  </condition>
+  <condition property="archtag" value="linux64">
+    <os family="unix" arch="amd64"/>
+  </condition>
+  <condition property="archtag" value="win32">
+    <os family="windows" arch="x86"/>
+  </condition>
+  <condition property="archtag" value="win64">
+    <os family="windows" arch="amd64"/>
+  </condition>
+  <condition property="archtag" value="osx">
+    <os family="mac"/>
+  </condition>
+
+  <target name="taskdef">
+    <taskdef name="yetic" classname="yeti.lang.compiler.YetiTask"
+	     classpath="${yetidir}/yeti.jar:${maydir}/may.jar:${extjars}" />
+  </target>
+
+  <target name="prepare">
+    <mkdir dir="${basedir}/classes"/>
+  </target>
+
+  <target name="yeticlasses" depends="taskdef">
+    <yetic srcdir="${basedir}" 
+	   destdir="${basedir}/classes"
+	   includes="**/*.yeti"
+	   preload="yeti/lang/std:yeti/lang/io"/>
+  </target>
+
+  <target name="classes" depends="prepare,yeticlasses"/>
+
+  <target name="jar" depends="classes,taskdef">
+    <jar jarfile="${basedir}/cqt.jar">
+      <fileset dir="${basedir}/classes" 
+	       includes="**/*.class" 
+	       excludes="**/test/*.class"/>
+    </jar>
+  </target>
+
+  <target name="clean">
+    <delete dir="${basedir}/classes"/>
+  </target>
+
+  <target name="rebuild" depends="clean,jar"/>
+
+</project>
+
