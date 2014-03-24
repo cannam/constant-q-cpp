@@ -89,9 +89,10 @@ makeKernel { sampleRate, maxFreq, binsPerOctave } =
 
         push binFrequencies fk;
 
-        genKernel f = vec.multiply win
-           (vec.fromList
-               (map do i: f (2 * pi * fk * i / sampleRate) done [0..nk-1]));
+        genKernel f = vec.multiply
+           [win,
+            vec.fromList
+               (map do i: f (2 * pi * fk * i / sampleRate) done [0..nk-1])];
     
         reals = genKernel cos;
         imags = genKernel sin;
