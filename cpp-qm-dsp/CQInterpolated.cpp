@@ -32,6 +32,7 @@
 #include "CQInterpolated.h"
 
 #include <iostream>
+#include <stdexcept>
 
 using std::vector;
 
@@ -64,7 +65,7 @@ CQInterpolated::getRemainingBlocks()
 }
 
 vector<vector<double> >
-CQInterpolated::postProcess(vector<vector<double> > cq, bool insist)
+CQInterpolated::postProcess(const vector<vector<double> > &cq, bool insist)
 {
     if (m_interpolation == None) {
 	return cq;
@@ -184,31 +185,62 @@ CQInterpolated::fetchLinear(bool insist)
 	}
     } else {
 	// firstFullHeight == 0 and secondFullHeight also valid. Can interpolate
-
-	out.push_back(m_buffer[0]);
-
-	for (int i = 1; i < secondFullHeight; ++i) {
-
-	    vector<double> col = m_buffer[i];
-	    int thisHeight = col.size();
-
-	    double proportion = double(i) / double(secondFullHeight);
-
-	    cerr << "secondFullHeight = " << secondFullHeight << " proportion = " << proportion << " ";
-
-	    for (int j = thisHeight; j < height; ++j) {
-		col.push_back((1.0 - proportion) * m_buffer[0][j]
-			      + proportion * m_buffer[secondFullHeight][j]);
-	    }
-
-	    out.push_back(col);
-	}
-
+	out = linearInterpolated(m_buffer, 0, secondFullHeight);
 	m_buffer = Grid(m_buffer.begin() + secondFullHeight, m_buffer.end());
 	Grid more = fetchLinear(insist);
 	out.insert(out.end(), more.begin(), more.end());
 	return out;
     }
+}
+
+vector<vector<double> >
+CQInterpolated::linearInterpolated(const Grid &g, int x0, int x1)
+{
+    // g must be a grid with full-height columns at x0 and x1
+
+    if (x0 >= x1) {
+	throw std::logic_error("x0 >= x1");
+    }
+    if (x1 >= g.size()) {
+	throw std::logic_error("x1 >= g.size()");
+    }
+    if (g[x0].size() != g[x1].size()) {
+	throw std::logic_error("x0 and x1 are not the same height");
+    }
+
+    int height = g[x0].size();
+    int width = x1 - x0;
+
+    Grid out(g.begin() + x0, g.begin() + x1);
+
+    for (int y = 0; y < height; ++y) {
+
+	int spacing = width;
+	for (int i = 1; i < width; ++i) {
+	    int thisHeight = g[x0 + i].size();
+	    if (thisHeight > height) {
+		throw std::logic_error("First column not full-height");
+	    }
+	    if (thisHeight > y) {
+		spacing = i;
+		break;
+	    }
+	}
+
+	if (spacing < 2) continue;
+
+	for (int i = 0; i + spacing <= width; i += spacing) {
+	    for (int j = 1; j < spacing; ++j) {
+		double proportion = double(j)/double(spacing);
+		double interpolated = 
+		    g[x0 + i][y] * (1.0 - proportion) +
+		    g[x0 + i + spacing][y] * proportion;
+		out[i + j].push_back(interpolated);
+	    }
+	}
+    }
+
+    return out;
 }
 
 

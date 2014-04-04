@@ -69,9 +69,10 @@ private:
 
     typedef std::vector<std::vector<double> > Grid;
     Grid m_buffer;
-    Grid postProcess(Grid, bool insist);
+    Grid postProcess(const Grid &, bool insist);
     Grid fetchHold(bool insist);
     Grid fetchLinear(bool insist);
+    Grid linearInterpolated(const Grid &, int, int);
     std::vector<double> m_prevColumn;
 };
 
