@@ -148,7 +148,7 @@ CQInterpolated::fetchLinear(bool insist)
     int secondFullHeight = -1;
 
     for (int i = 0; i < width; ++i) {
-	if (m_buffer[i].size() == height) {
+	if ((int)m_buffer[i].size() == height) {
 	    if (firstFullHeight == -1) {
 		firstFullHeight = i;
 	    } else if (secondFullHeight == -1) {
@@ -201,7 +201,7 @@ CQInterpolated::linearInterpolated(const Grid &g, int x0, int x1)
     if (x0 >= x1) {
 	throw std::logic_error("x0 >= x1");
     }
-    if (x1 >= g.size()) {
+    if (x1 >= (int)g.size()) {
 	throw std::logic_error("x1 >= g.size()");
     }
     if (g[x0].size() != g[x1].size()) {
