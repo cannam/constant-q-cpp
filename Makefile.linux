@@ -1,6 +1,6 @@
 
-CFLAGS := -Wall -O3 -fPIC -I../vamp-plugin-sdk/
-#CFLAGS := -g -fPIC -I../vamp-plugin-sdk
+#CFLAGS := -Wall -O3 -fPIC -I../vamp-plugin-sdk/
+CFLAGS := -g -fPIC -I../vamp-plugin-sdk
 
 CXXFLAGS := $(CFLAGS)
 

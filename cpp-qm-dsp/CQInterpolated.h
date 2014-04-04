@@ -29,67 +29,50 @@
     authorization.
 */
 
-#ifndef CQVAMP_H
-#define CQVAMP_H
+#ifndef CQ_INTERPOLATED_H
+#define CQ_INTERPOLATED_H
 
-#include <vamp-sdk/Plugin.h>
+#include <vector>
+#include "ConstantQ.h"
 
-#include "cpp-qm-dsp/CQInterpolated.h"
-
-class ConstantQ;
-
-class CQVamp : public Vamp::Plugin
+class CQInterpolated
 {
 public:
-    CQVamp(float inputSampleRate);
-    virtual ~CQVamp();
+    enum Interpolation {
+	None, // leave empty cells empty
+	Hold, // repeat prior cell
+	Linear, // linear interpolation between consecutive time cells
+    };
 
-    bool initialise(size_t channels, size_t stepSize, size_t blockSize);
-    void reset();
+    CQInterpolated(double sampleRate,
+		   double minFreq, double maxFreq,
+		   int binsPerOctave,
+		   Interpolation interpolation);
+    ~CQInterpolated();
 
-    InputDomain getInputDomain() const { return TimeDomain; }
+    double getSampleRate() const { return m_cq.getSampleRate(); }
+    int getBinsPerOctave() const { return m_cq.getBinsPerOctave(); }
+    int getOctaves() const { return m_cq.getOctaves(); }
+    int getTotalBins() const { return m_cq.getTotalBins(); }
+    int getColumnHop() const { return m_cq.getColumnHop(); }
+    int getLatency() const { return m_cq.getLatency(); } 
+    double getMaxFrequency() const { return m_cq.getMaxFrequency(); }
+    double getMinFrequency() const { return m_cq.getMinFrequency(); }
+    double getBinFrequency(int bin) const { return m_cq.getBinFrequency(bin); }
 
-    std::string getIdentifier() const;
-    std::string getName() const;
-    std::string getDescription() const;
-    std::string getMaker() const;
-    int getPluginVersion() const;
-    std::string getCopyright() const;
+    std::vector<std::vector<double> > process(const std::vector<double> &);
+    std::vector<std::vector<double> > getRemainingBlocks();
 
-    ParameterList getParameterDescriptors() const;
-    float getParameter(std::string) const;
-    void setParameter(std::string, float);
+private:
+    ConstantQ m_cq;
+    Interpolation m_interpolation;
 
-    size_t getPreferredStepSize() const;
-    size_t getPreferredBlockSize() const;
-
-    OutputList getOutputDescriptors() const;
-
-    FeatureSet process(const float *const *inputBuffers,
-                       Vamp::RealTime timestamp);
-
-    FeatureSet getRemainingFeatures();
-
-protected:
-    int m_minMIDIPitch;
-    int m_maxMIDIPitch;
-    float m_tuningFrequency;
-    int m_bpo;
-    CQInterpolated::Interpolation m_interpolation;
-
-    CQInterpolated *m_cq;
-    float m_maxFrequency;
-    float m_minFrequency;
-    int m_stepSize;
-    int m_blockSize;
-
-    Vamp::RealTime m_startTime;
-    bool m_haveStartTime;
-    int m_columnCount;
-
-    std::vector<float> m_prevFeature;
-    FeatureSet convertToFeatures(const std::vector<std::vector<double> > &);
+    typedef std::vector<std::vector<double> > Grid;
+    Grid m_buffer;
+    Grid postProcess(Grid, bool insist);
+    Grid fetchHold(bool insist);
+    Grid fetchLinear(bool insist);
+    std::vector<double> m_prevColumn;
 };
-
 
 #endif

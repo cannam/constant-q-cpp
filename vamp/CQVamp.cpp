@@ -31,8 +31,6 @@
 
 #include "CQVamp.h"
 
-#include "cpp-qm-dsp/ConstantQ.h"
-
 #include "base/Pitch.h"
 
 #include <algorithm>
@@ -49,6 +47,7 @@ CQVamp::CQVamp(float inputSampleRate) :
     m_maxMIDIPitch(84),
     m_tuningFrequency(440),
     m_bpo(24),
+    m_interpolation(CQInterpolated::Linear),
     m_cq(0),
     m_maxFrequency(inputSampleRate/2),
     m_minFrequency(46),
@@ -147,6 +146,20 @@ CQVamp::getParameterDescriptors() const
     desc.quantizeStep = 1;
     list.push_back(desc);
 
+    desc.identifier = "interpolation";
+    desc.name = "Interpolation";
+    desc.unit = "";
+    desc.description = "Interpolation method used to fill empty cells in lower octaves";
+    desc.minValue = 0;
+    desc.maxValue = 2;
+    desc.defaultValue = 2;
+    desc.isQuantized = true;
+    desc.quantizeStep = 1;
+    desc.valueNames.push_back("None, leave empty");
+    desc.valueNames.push_back("None, repeat prior value");
+    desc.valueNames.push_back("Linear interpolation");
+    list.push_back(desc);
+
     return list;
 }
 
@@ -165,6 +178,9 @@ CQVamp::getParameter(std::string param) const
     if (param == "bpo") {
         return m_bpo;
     }
+    if (param == "interpolation") {
+        return (float)m_interpolation;
+    }
     std::cerr << "WARNING: CQVamp::getParameter: unknown parameter \""
               << param << "\"" << std::endl;
     return 0.0;
@@ -179,8 +195,10 @@ CQVamp::setParameter(std::string param, float value)
         m_maxMIDIPitch = lrintf(value);
     } else if (param == "tuning") {
         m_tuningFrequency = value;
-    } else  if (param == "bpo") {
+    } else if (param == "bpo") {
         m_bpo = lrintf(value);
+    } else if (param == "interpolation") {
+        m_interpolation = (CQInterpolated::Interpolation)lrintf(value);
     } else {
         std::cerr << "WARNING: CQVamp::setParameter: unknown parameter \""
                   << param << "\"" << std::endl;
@@ -192,7 +210,7 @@ CQVamp::initialise(size_t channels, size_t stepSize, size_t blockSize)
 {
     if (m_cq) {
 	delete m_cq;
-	m_cq = 0;
+        m_cq = 0;
     }
 
     if (channels < getMinChannelCount() ||
@@ -206,8 +224,9 @@ CQVamp::initialise(size_t channels, size_t stepSize, size_t blockSize)
     m_maxFrequency = Pitch::getFrequencyForPitch
         (m_maxMIDIPitch, 0, m_tuningFrequency);
 
-    m_cq = new ConstantQ
-	(m_inputSampleRate, m_minFrequency, m_maxFrequency, m_bpo);
+    m_cq = new CQInterpolated
+	(m_inputSampleRate, m_minFrequency, m_maxFrequency, m_bpo,
+         m_interpolation);
 
     return true;
 }
@@ -217,8 +236,9 @@ CQVamp::reset()
 {
     if (m_cq) {
 	delete m_cq;
-	m_cq = new ConstantQ
-	    (m_inputSampleRate, m_minFrequency, m_maxFrequency, m_bpo);
+	m_cq = new CQInterpolated
+	    (m_inputSampleRate, m_minFrequency, m_maxFrequency, m_bpo,
+             m_interpolation);
     }
     m_prevFeature.clear();
     m_haveStartTime = false;
@@ -303,17 +323,15 @@ CQVamp::convertToFeatures(const vector<vector<double> > &cqout)
 {
     FeatureSet returnFeatures;
 
-    for (int i = 0; i < (int)cqout.size(); ++i) {
+    int width = cqout.size();
+    int height = m_cq->getTotalBins();
 
-	vector<float> column(m_cq->getTotalBins(), 0.f);
+    for (int i = 0; i < width; ++i) {
 
-	for (int j = 0; j < (int)cqout[i].size(); ++j) {
+	vector<float> column(height, 0.f);
+        int thisHeight = cqout[i].size();
+	for (int j = 0; j < thisHeight; ++j) {
 	    column[j] = cqout[i][j];
-	}
-	for (int j = cqout[i].size(); j < m_cq->getTotalBins(); ++j) {
-	    if (j < (int)m_prevFeature.size()) {
-		column[j] = m_prevFeature[j];
-	    }
 	}
 
         // put low frequencies at the start

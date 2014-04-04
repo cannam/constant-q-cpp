@@ -247,7 +247,7 @@ ConstantQ::process(const vector<double> &td)
         int base = out.size();
         int totalColumns = pow(2, m_octaves - 1) * m_p.atomsPerFrame;
         for (int i = 0; i < totalColumns; ++i) {
-            out.push_back(vector<double>(m_p.binsPerOctave * m_octaves, 0.0));
+            out.push_back(vector<double>());
         }
 
         for (int octave = 0; octave < m_octaves; ++octave) {
@@ -259,18 +259,20 @@ ConstantQ::process(const vector<double> &td)
                 
                 for (int j = 0; j < m_p.atomsPerFrame; ++j) {
 
-		    for (int k = 0; k < pow(2, octave); ++k) {
-
-			int target = base + k +
+                    int target = base +
 			    (b * (totalColumns / blocksThisOctave) + 
 			     (j * ((totalColumns / blocksThisOctave) /
 				   m_p.atomsPerFrame)));
 
-			for (int i = 0; i < m_p.binsPerOctave; ++i) {
-			    out[target][m_p.binsPerOctave * octave + i] = 
-				block[j][m_p.binsPerOctave - i - 1];
-			}
-		    }
+                    while (out[target].size() < 
+                           m_p.binsPerOctave * (octave + 1)) {
+                        out[target].push_back(0.0);
+                    }
+                    
+                    for (int i = 0; i < m_p.binsPerOctave; ++i) {
+                        out[target][m_p.binsPerOctave * octave + i] = 
+                            block[j][m_p.binsPerOctave - i - 1];
+                    }
                 }
             }
         }
