@@ -111,10 +111,8 @@ ConstantQ::initialise()
 
         int factor = pow(2, i);
 
-        // Each octave uses an identical fs/2 resampler fed with the
-        // output from that of the octave above
         Resampler *r = new Resampler
-            (sourceRate, sourceRate / 2, 60, 0.02);
+            (sourceRate, sourceRate / factor, 60, 0.02);
 
         // We need to adapt the latencies so as to get the first input
         // sample to be aligned, in time, at the decimator output
@@ -146,7 +144,7 @@ ConstantQ::initialise()
 	// use that to compensate in a moment, when we've discovered
 	// what the longest latency across all octaves is.
 
-        latencies.push_back(r->getLatency() + latencies[i-1]);
+        latencies.push_back(r->getLatency() * factor);
         m_decimators.push_back(r);
     }
 
@@ -222,10 +220,8 @@ ConstantQ::process(const vector<double> &td)
 {
     m_buffers[0].insert(m_buffers[0].end(), td.begin(), td.end());
 
-    vector<double> dec(td);
-
     for (int i = 1; i < m_octaves; ++i) {
-        dec = m_decimators[i]->process(dec.data(), dec.size());
+        vector<double> dec = m_decimators[i]->process(td.data(), td.size());
         m_buffers[i].insert(m_buffers[i].end(), dec.begin(), dec.end());
     }
 
