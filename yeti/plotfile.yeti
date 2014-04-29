@@ -23,10 +23,7 @@ plotfile f =
         } testStream;
     middle = System#currentTimeMillis();
     eprintln "Generated kernel \(cm.size cq.kernel.kernel) and primed transform (\(cq.octaves) octaves), took \(middle-start)ms, now calculating...";
-    bigM = case (cq.output (Spectrogram ())) of
-        Real s: mat.concatHorizontal s;
-        _: failWith "Real expected";
-    esac;
+    bigM = mat.concatHorizontal cq.cqSpectrogram;
     finish = System#currentTimeMillis();
     eprintln "Done, that part took \(finish-middle)ms, all CQ stuff took \(finish-start)ms";
     eprintln "Plotting...";

@@ -178,8 +178,8 @@ cqt { maxFreq, minFreq, binsPerOctave } str =
 
     assembleBlockSpectrogram bits =
        (// As assembleBlock, but producing a dense magnitude
-        // spectrogram (rather than a complex output with zeros
-        // between the cell values in lower octaves). (todo: smoothing)
+        // spectrogram (rather than a complex output). (todo:
+        // interpolation, smoothing)
 
         //eprintln "assembleBlockSpectrogram: structure of bits is:";
         //eprintln (map length bits);
@@ -248,14 +248,10 @@ println "oct \(octaves) - \(octave) = \(octaves - octave)";
                     done (reverse (list kdata.binFrequencies))
                 done [0..octaves-1])
         },
+        sampleRate,
         octaves,
-        output type = //!!! this api is not good
-            case type of
-            ComplexCQ ():
-                Complex (processOctaveLists assembleBlock octaveLists);
-            Spectrogram ():
-                Real (processOctaveLists assembleBlockSpectrogram octaveLists);
-            esac
+        get cqComplex () = processOctaveLists assembleBlock octaveLists,
+        get cqSpectrogram () = processOctaveLists assembleBlockSpectrogram octaveLists,
     }
     );
 

@@ -134,10 +134,12 @@ makeKernel { sampleRate, maxFreq, binsPerOctave } =
     weight = (fftHop / fftSize) / (vec.mean (vec.abs wK));
     weight = sqrt(weight);
 
+    kernel = cm.scaled weight kmat;
+
 //    eprintln "weight = \(weight)";
     
     {
-        kernel = cm.scaled weight kmat,
+        kernel,
         fftSize,
         fftHop,
         binsPerOctave,

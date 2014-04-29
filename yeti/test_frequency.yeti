@@ -81,10 +81,7 @@ tests = mapIntoHash
     do f: \(
         str = streamBuilder f;
         cq = cqt { maxFreq = cqmax, minFreq = cqmin, binsPerOctave = bpo } str;
-        out = case cq.output (ComplexCQ ()) of
-            Complex c: c;
-            _: failWith "expected complex";
-        esac;
+        out = cq.cqComplex;
         m = mat.concatHorizontal (map cm.magnitudes out);
 //    println "binFrequencies = \(cq.kernel.binFrequencies)";
 //    println "binForFreq \(f) = \(binForFreq f)";
