@@ -62,7 +62,8 @@ cqt { maxFreq, minFreq, binsPerOctave } str =
 
     streams = manipulate.duplicated octaves str;
 
-    //!!! can't be right!
+    // forward transform uses the conjugate-transposed kernel, inverse
+    // uses the original
     kernel = cm.transposed (cm.conjugateTransposed kdata.kernel);
 
 //    eprintln "have kernel";

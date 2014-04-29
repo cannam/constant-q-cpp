@@ -105,6 +105,17 @@ icqt cq =
         map pile (list (flattenOctaves (map decomposeOctaves cq.cqComplex)));
 
     for octaveColumnLists do l: println "octave column list length: \(length l)" done;
+
+    kernel = cm.transposed kdata.kernel; // right way around for the multiply
+    
+    spectra = 
+        map do l:
+            map do col:
+                cm.product kernel (cm.newComplexColumnVector col);
+            done l;
+        done octaveColumnLists;
+
+    eprintln "calculated spectra, now to ifft, overlap-add..."
     
 );
 
