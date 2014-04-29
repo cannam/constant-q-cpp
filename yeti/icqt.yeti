@@ -33,6 +33,7 @@ module icqt;
 cqt = load cqt;
 cm = load may.matrix.complex;
 mm = load may.mathmisc;
+vec = load may.vector;
 
 icqt cq =
    (kdata = cq.kernel;
@@ -52,6 +53,7 @@ icqt cq =
     // and height kdata.binsPerOctave * cq.octaves.
 
     bpo = kdata.binsPerOctave;
+    atomsPerFrame = kdata.atomsPerFrame;
     octaves = cq.octaves;
 
     // transform a single block, all octaves tall, into an array
@@ -82,12 +84,25 @@ icqt cq =
                             acc[oct] ++ chunk[oct]
                             done [0..octaves-1]))
                     rest;
-            _: [];
+            _: acc;
             esac;
         flattenAux (array (map \[] [0..octaves-1])) decomposed);
 
-    octaveColumnLists = flattenOctaves (map decomposeOctaves cq.cqComplex);
+    // given a list of columns, pile up each sequence of atomsPerFrame
+    // columns into a single tall column and return the resulting list
+    // of tall columns
+    pile cols =
+       (pileAux acc cols =
+            if (length cols) >= atomsPerFrame then
+                atoms = take atomsPerFrame cols;
+                pileAux (acc ++ [concat atoms]) (drop atomsPerFrame cols);
+            else
+                acc
+            fi;
+        pileAux [] cols);
 
+    octaveColumnLists = 
+        map pile (list (flattenOctaves (map decomposeOctaves cq.cqComplex)));
 
     for octaveColumnLists do l: println "octave column list length: \(length l)" done;
     
