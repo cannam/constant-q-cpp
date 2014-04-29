@@ -31,13 +31,66 @@
 module icqt;
 
 cqt = load cqt;
+cm = load may.matrix.complex;
+mm = load may.mathmisc;
 
 icqt cq =
    (kdata = cq.kernel;
 
-    // kdata.kernel is the kernel matrix for a single octave, of width
-    // kdata.fftSize and height kdata.binsPerOctave.  !!! todo: unit
-    // tests for kernel size etc kdata.fftHop is the overlap between
-    // kernel matrices in a single octave.  cq.sampleRate is the
-    // output stream sample rate.
+    // kdata.kernel is the kernel matrix for a single octave. It has
+    // width kdata.fftSize and height kdata.binsPerOctave *
+    // kdata.atomsPerFrame.
+    //
+    // kdata.fftHop is the overlap between kernel matrices in a single
+    // octave.
+    // 
+    // cq.sampleRate is the output stream sample rate and cq.octaves
+    // the number of octaves.
+    //
+    // cq.cqComplex is the list of complex matrices containing the CQ
+    // output. Each has width kdata.atomsPerFrame * 2^(cq.octaves-1)
+    // and height kdata.binsPerOctave * cq.octaves.
 
+    bpo = kdata.binsPerOctave;
+    octaves = cq.octaves;
+
+    // transform a single block, all octaves tall, into an array
+    // (indexed by octave) of lists of individual columns (valid
+    // values for that octave only)
+    decomposeOctaves mat = array
+       (map do oct:
+            octMat = cm.rowSlice mat (bpo * oct) (bpo * (oct + 1));
+            gap = (mm.pow 2 oct) - 1;
+            pickFrom cols =
+                case cols of
+                c::cs: c::(pickFrom (drop gap cs));
+                _: [];
+                esac;
+            pickFrom (cm.asColumns octMat);
+        done [0..octaves-1]);
+
+    // transform a list of the arrays produced by decomposeOctaves
+    // into a single array (indexed by octave) of lists of the
+    // individual columns
+    flattenOctaves decomposed =
+       (flattenAux acc decomposed = 
+            case decomposed of
+            chunk::rest:
+                flattenAux 
+                   (array
+                       (map do oct:
+                            acc[oct] ++ chunk[oct]
+                            done [0..octaves-1]))
+                    rest;
+            _: [];
+            esac;
+        flattenAux (array (map \[] [0..octaves-1])) decomposed);
+
+    octaveColumnLists = flattenOctaves (map decomposeOctaves cq.cqComplex);
+
+
+    for octaveColumnLists do l: println "octave column list length: \(length l)" done;
+    
+);
+
+{icqt}

@@ -38,6 +38,8 @@ cm = load may.matrix.complex;
 syn = load may.stream.syntheticstream;
 plot = load may.plot;
 
+{ compare } = load may.test;
+
 { cqt } = load cqt;
 
 // Test with a single windowed sinusoid, repeating at various frequencies
@@ -71,23 +73,30 @@ binForFreq f =
 report message matrix =
    (eprintln message;
     eprintln "matrix is:";
-    mat.eprint matrix;
-    chart = plot.plot [Grid matrix];
-    sleep 100;
-    chart#dispose());
+    mat.eprint matrix);
+//    chart = plot.plot [Grid matrix];
+//    sleep 100;
+//    chart#dispose());
 
 tests = mapIntoHash
     do f: "freq_\(f)" done
     do f: \(
         str = streamBuilder f;
         cq = cqt { maxFreq = cqmax, minFreq = cqmin, binsPerOctave = bpo } str;
-        out = cq.cqComplex;
-        m = mat.concatHorizontal (map cm.magnitudes out);
+        spec = cq.cqSpectrogram;
+        rightSize = all id
+           (map do s:
+            compare (mat.size s) { 
+                rows = cq.kernel.binsPerOctave * cq.octaves,
+                columns = cq.kernel.atomsPerFrame * mm.pow 2 (cq.octaves - 1)
+            }
+            done spec);
+        m = mat.concatHorizontal spec;
 //    println "binFrequencies = \(cq.kernel.binFrequencies)";
 //    println "binForFreq \(f) = \(binForFreq f)";
         var colno = 0;
         success = all id
-           (map do c:
+           (rightSize :: map do c:
                 // The test passes for this column if:
                 //
                 //  * the max bin is the expected one, or

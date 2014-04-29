@@ -1,4 +1,4 @@
-<project name="cqt" default="jar" basedir=".">
+<project name="cqt" default="test" basedir=".">
 
   <property name="maydir" value="${basedir}/../../may"/>
   <property name="yetidir" value="${basedir}/../../yeti"/>
@@ -45,8 +45,23 @@
     <jar jarfile="${basedir}/cqt.jar">
       <fileset dir="${basedir}/classes" 
 	       includes="**/*.class" 
-	       excludes="**/test/*.class"/>
+	       excludes="**/test*.class"/>
     </jar>
+  </target>
+
+  <target name="testjar" depends="classes,taskdef">
+    <jar jarfile="${basedir}/test.jar">
+      <fileset dir="${basedir}/classes" 
+	       includes="**/test*.class"/>
+    </jar>
+  </target>
+
+  <target name="test" depends="jar,testjar,taskdef">
+    <java classpath="${basedir}/test.jar:${basedir}/cqt.jar:${maydir}/may.jar:${yetidir}/yeti.jar:${extjars}"
+	  classname="test"
+	  fork="true" failonerror="true">
+      <sysproperty key="java.library.path" path="${maydir}/ext/native/${archtag}"/>
+    </java>
   </target>
 
   <target name="clean">

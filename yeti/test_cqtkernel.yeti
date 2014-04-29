@@ -31,16 +31,32 @@
 module test_cqtkernel;
 
 cm = load may.matrix.complex;
+mm = load may.mathmisc;
+
+{ compare, compareUsing } = load may.test;
 
 { makeKernel } = load cqtkernel;
+
+eps = 1e-7;
+
+compareClose = compareUsing do a b: abs (a - b) < eps done;
 
 [
 
 "minimal": \(
     k = makeKernel { sampleRate = 16, maxFreq = 8, binsPerOctave = 4 };
-print k;
-cm.print k.kernel;
-false;
+    compare k.binsPerOctave 4 and
+        compare (cm.size k.kernel) {
+            rows = k.binsPerOctave * k.atomsPerFrame,
+            columns = k.fftSize
+        } and
+        compareClose k.maxFrequency 8 and
+        compareClose k.minFrequency (4 * (mm.pow 2 (1/4))) and
+        compare k.atomsPerFrame 5 and
+        compare k.fftSize 32 and
+        compare (length k.binFrequencies) k.binsPerOctave and
+        compareClose (head k.binFrequencies) k.minFrequency and
+        compareClose (head (reverse k.binFrequencies)) k.maxFrequency
 ),
 
 ] is hash<string, () -> boolean>
