@@ -32,8 +32,12 @@ module icqt;
 
 cqt = load cqt;
 cm = load may.matrix.complex;
+framer = load may.stream.framer;
+win = load may.signal.window;
 mm = load may.mathmisc;
 vec = load may.vector;
+resamp = load may.stream.resample;
+manip = load may.stream.manipulate;
 
 icqt cq =
    (kdata = cq.kernel;
@@ -111,12 +115,28 @@ icqt cq =
     spectra = 
         map do l:
             map do col:
-                cm.product kernel (cm.newComplexColumnVector col);
+                res = cm.transposed (cm.product kernel (cm.newComplexColumnVector col));
+                cm.columnSlice res 0 (kdata.fftSize / 2 + 1)
             done l;
         done octaveColumnLists;
 
-    eprintln "calculated spectra, now to ifft, overlap-add..."
+    eprintln "calculated spectra, now to ifft, overlap-add...";
+
+    rates = map do oct: cq.sampleRate / (mm.pow 2 oct) done [0..cq.octaves-1];
     
+    resynthesised =
+        map2 do frames rate:
+            framer.complexStreamed rate kdata.fftSize
+                [ FrequencyDomain true, Window win.boxcar, Hop kdata.fftHop ]
+                frames;
+        done spectra rates;
+
+   eprintln "have streams:";
+   for resynthesised eprintln;
+
+   resampled = map (resamp.resampledTo cq.sampleRate) resynthesised;
+
+   manip.sum resampled;
 );
 
 {icqt}

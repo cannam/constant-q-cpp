@@ -27,6 +27,11 @@ icq = icqt cq;
 
 eprintln "calculated icq...";
 
+outfile = "test-output.wav";
+written = af.write icq outfile;
+
+eprintln "wrote \(written) to \(outfile)";
+
 //for cq.cqSpectrogram do mm:
 //    for (mat.asColumns mm) (println . strJoin "," . vec.list);
 //done;
