@@ -38,6 +38,7 @@ mm = load may.mathmisc;
 vec = load may.vector;
 resamp = load may.stream.resample;
 manip = load may.stream.manipulate;
+mat = load may.matrix;
 
 icqt cq =
    (kdata = cq.kernel;
@@ -65,7 +66,8 @@ icqt cq =
     // values for that octave only)
     decomposeOctaves mat = array
        (map do oct:
-            octMat = cm.rowSlice mat (bpo * oct) (bpo * (oct + 1));
+            inverted = cm.fromRows (reverse (cm.asRows mat));
+            octMat = cm.rowSlice inverted (bpo * oct) (bpo * (oct + 1));
             gap = (mm.pow 2 oct) - 1;
             pickFrom cols =
                 case cols of
@@ -92,16 +94,17 @@ icqt cq =
             esac;
         flattenAux (array (map \[] [0..octaves-1])) decomposed);
 
-    // given a list of columns, pile up each sequence of atomsPerFrame
-    // columns into a single tall column and return the resulting list
-    // of tall columns
+    // given a list of columns, deinterleave and pile up each sequence
+    // of atomsPerFrame columns into a single tall column and return
+    // the resulting list of tall columns
     pile cols =
        (pileAux acc cols =
             if (length cols) >= atomsPerFrame then
                 atoms = take atomsPerFrame cols;
-                pileAux (acc ++ [concat atoms]) (drop atomsPerFrame cols);
+                juggled = concat (reverse (cm.asRows (cm.fromColumns atoms)));
+                pileAux (juggled :: acc) (drop atomsPerFrame cols);
             else
-                acc
+                reverse acc
             fi;
         pileAux [] cols);
 
