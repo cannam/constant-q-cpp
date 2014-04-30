@@ -1,0 +1,45 @@
+
+program experiment;
+
+af = load may.stream.audiofile;
+plot = load may.plot;
+cm = load may.matrix.complex;
+mat = load may.matrix;
+vec = load may.vector;
+manipulate = load may.stream.manipulate;
+syn = load may.stream.syntheticstream;
+
+{ cqt } = load cqt;
+{ icqt } = load icqt;
+
+//testStream = manipulate.withDuration 96000 (syn.sinusoid 48000 500);
+//testStream = manipulate.withDuration 96000 (syn.pulseTrain 48000 4);
+testStream = af.open "sweep-48000.wav";
+//testStream = af.open "sweep.wav";
+
+eprintln "have test stream";
+
+cq = cqt { maxFreq = testStream.sampleRate/2, minFreq = 50, binsPerOctave = 24 } testStream;
+
+eprintln "bin frequencies: \(cq.kernel.binFrequencies)";
+
+icq = icqt cq;
+
+eprintln "calculated icq...";
+
+//for cq.cqSpectrogram do mm:
+//    for (mat.asColumns mm) (println . strJoin "," . vec.list);
+//done;
+
+/*
+bigM = mat.concatHorizontal (map cm.magnitudes cq.output);
+
+eprintln "overall output size = \(mat.size bigM)";
+
+mat.print bigM;
+*/
+//\() (plot.plot [Contour bigM]);
+//\() (plot.plot [Grid bigM]);
+
+()
+
