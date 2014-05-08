@@ -264,7 +264,7 @@ ConstantQ::process(const vector<double> &td)
 			     (j * ((totalColumns / blocksThisOctave) /
 				   m_p.atomsPerFrame)));
 
-                    while (out[target].size() < 
+                    while (int(out[target].size()) < 
                            m_p.binsPerOctave * (octave + 1)) {
                         out[target].push_back(0.0);
                     }
