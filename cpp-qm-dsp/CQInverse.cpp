@@ -173,9 +173,9 @@ CQInverse::process(const ComplexBlock &block)
     // and stack these so as to achieve a list, for each octave, of
     // taller columns of height binsPerOctave * atomsPerFrame
     //
-    // 3. For each column, take the product with the inverse CQ kernel
-    // (which is the conjugate of the forward kernel) and perform an
-    // inverse FFT
+    // 3. For each taller column, take the product with the inverse CQ
+    // kernel (which is the conjugate of the forward kernel) and
+    // perform an inverse FFT
     //
     // 4. Overlap-add each octave's resynthesised blocks (unwindowed)
     //
@@ -225,19 +225,43 @@ CQInverse::processOctave(int octave, const ComplexBlock &columns)
             ("Columns in octave must be a multiple of atoms per frame");
     }
 
-    ComplexBlock reshaped;
     for (int i = 0; i < ncols; i += m_p.atomsPerFrame) {
+
         ComplexColumn tallcol;
         for (int b = 0; b < m_binsPerOctave; ++b) {
             for (int a = 0; a < m_p.atomsPerFrame; ++a) {
                 tallcol.push_back(columns[i + a][b]);
             }
         }
-        reshaped.push_back(tallcol);
+        
+        processOctaveColumn(octave, tallcol);
     }
-
-    
-
 }
 
+void
+CQInverse::processOctaveColumn(int octave, const ComplexColumn &column)
+{
+    // 3. For each taller column, take the product with the inverse CQ
+    // kernel (which is the conjugate of the forward kernel) and
+    // perform an inverse FFT
+
+    ComplexSequence transformed = m_kernel->processInverse(column);
+
+    int halfLen = m_p.fftSize/2 + 1;
+
+    RealSequence ri(halfLen, 0);
+    RealSequence ii(halfLen, 0);
+
+    for (int i = 0; i < halfLen; ++i) {
+        ri[i] = transformed[i].real();
+        ii[i] = transformed[i].imag();
+    }
+
+    RealSequence timeDomain(m_p.fftSize, 0);
+
+    m_fft->inverse(ri.data(), ii.data(), timeDomain.data());
+
+
+    //...
+}
 

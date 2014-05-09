@@ -241,9 +241,10 @@ CQKernel::finaliseKernel()
     
     cerr << "weight = " << weight << endl;
 
-    // apply normalisation weight, make sparse, and store conjugates
-    // (our multiplication order means we will effectively be using
-    // the adjoint or conjugate transpose of the kernel matrix)
+    // apply normalisation weight, make sparse, and store conjugate
+    // (we use the adjoint or conjugate transpose of the kernel matrix
+    // for the forward transform, the plain kernel for the inverse
+    // which we expect to be less common)
 
     KernelMatrix sk;
 
@@ -274,18 +275,42 @@ CQKernel::finaliseKernel()
 }
 
 vector<C>
-CQKernel::process(const vector<C> &cv)
+CQKernel::processForward(const vector<C> &cv)
 {
-    // matrix multiply m_kernel.data by in, converting in to complex
-    // as we go
+    // straightforward matrix multiply (taking into account m_kernel's
+    // slightly-sparse representation)
 
     int nrows = m_p.binsPerOctave * m_p.atomsPerFrame;
 
-    vector<C> rv(nrows, C(0, 0));
+    vector<C> rv(nrows, C());
 
     for (int i = 0; i < nrows; ++i) {
         for (int j = 0; j < (int)m_kernel.data[i].size(); ++j) {
             rv[i] += cv[j + m_kernel.origin[i]] * m_kernel.data[i][j];
+        }
+    }
+
+    return rv;
+}
+
+vector<C>
+CQKernel::processInverse(const vector<C> &cv)
+{
+    // matrix multiply by conjugate transpose of m_kernel. This is
+    // actually the original kernel as calculated, we just stored the
+    // conjugate-transpose of the kernel because we expect to be doing
+    // more forward transforms than inverse ones.
+
+    int ncols = m_p.binsPerOctave * m_p.atomsPerFrame;
+    int nrows = m_p.fftSize;
+
+    vector<C> rv(nrows, C());
+
+    for (int j = 0; j < ncols; ++j) {
+        int i0 = m_kernel.origin[j];
+        int i1 = i0 + m_kernel.data[j].size();
+        for (int i = i0; i < i1; ++i) {
+            rv[i] += cv[j] * conj(m_kernel.data[j][i - i0]);
         }
     }
 

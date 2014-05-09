@@ -83,6 +83,7 @@ private:
     
     void initialise();
     void processOctave(int octave, const ComplexBlock &block);
+    void processOctaveColumn(int octave, const ComplexColumn &column);
 };
 
 #endif

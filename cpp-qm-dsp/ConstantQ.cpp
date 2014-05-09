@@ -305,7 +305,7 @@ ConstantQ::processOctaveBlock(int octave)
         cv.push_back(Complex(ro[i], io[i]));
     }
 
-    ComplexSequence cqrowvec = m_kernel->process(cv);
+    ComplexSequence cqrowvec = m_kernel->processForward(cv);
 
     // Reform into a column matrix
     ComplexBlock cqblock;
