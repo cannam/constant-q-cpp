@@ -279,7 +279,7 @@ CQInverse::processOctave(int octave, const ComplexBlock &columns)
         ComplexColumn tallcol;
         for (int b = 0; b < m_binsPerOctave; ++b) {
             for (int a = 0; a < m_p.atomsPerFrame; ++a) {
-                tallcol.push_back(columns[i + a][b]);
+                tallcol.push_back(columns[i + a][m_binsPerOctave - b - 1]);
             }
         }
         
