@@ -272,7 +272,7 @@ CQVamp::getOutputDescriptors() const
 
     if (m_cq) {
         char name[20];
-        for (int i = 0; i < d.binCount; ++i) {
+        for (int i = 0; i < (int)d.binCount; ++i) {
             float freq = m_cq->getBinFrequency(i);
             sprintf(name, "%.1f Hz", freq);
             d.binNames.push_back(name);

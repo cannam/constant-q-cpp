@@ -47,7 +47,7 @@ public:
                   double minFreq, double maxFreq,
                   int binsPerOctave,
                   Interpolation interpolation);
-    ~CQSpectrogram();
+    virtual ~CQSpectrogram();
 
     virtual double getSampleRate() const { return m_cq.getSampleRate(); }
     virtual int getBinsPerOctave() const { return m_cq.getBinsPerOctave(); }

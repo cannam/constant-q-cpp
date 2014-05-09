@@ -50,7 +50,7 @@ int main(int argc, char **argv)
 	in.push_back(sin(i * M_PI / 2.0));
     }
 
-    CQSpectrogram k(8, 1, 4, 4, CQSpectrogram::None);
+    CQSpectrogram k(8, 1, 4, 4, CQSpectrogram::InterpolateZeros);
 
     vector<vector<double> > out = k.process(in);
     vector<vector<double> > rest = k.getRemainingOutput();

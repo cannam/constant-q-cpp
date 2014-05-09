@@ -44,7 +44,7 @@ public:
     CQInverse(double sampleRate,
 	      double minFreq, double maxFreq,
 	      int binsPerOctave);
-    ~CQInverse();
+    virtual ~CQInverse();
 
     virtual double getSampleRate() const { return m_sampleRate; }
     virtual int getBinsPerOctave() const { return m_binsPerOctave; }
@@ -76,6 +76,7 @@ private:
 
     std::vector<Resampler *> m_upsamplers;
     std::vector<RealSequence> m_buffers;
+    std::vector<RealSequence> m_olaBufs; // fixed-length, for overlap-add
     
     int m_outputLatency;
 
@@ -84,6 +85,8 @@ private:
     void initialise();
     void processOctave(int octave, const ComplexBlock &block);
     void processOctaveColumn(int octave, const ComplexColumn &column);
+    void overlapAddAndResample(int octave, const RealSequence &);
+    RealSequence drawFromBuffers();
 };
 
 #endif

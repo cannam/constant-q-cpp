@@ -127,13 +127,15 @@ CQInverse::initialise()
     m_outputLatency = maxLatency; //!!! for now
 
     for (int i = 0; i < m_octaves; ++i) {
-
 	// Calculate the difference between the total latency applied
 	// across all octaves, and the existing latency due to the
 	// upsampler for this octave
+        m_buffers.push_back(RealSequence(m_outputLatency - latencies[i], 0.0));
+    }
 
-        m_buffers.push_back
-            (vector<double>(m_outputLatency - latencies[i], 0.0));
+    for (int i = 0; i < m_octaves; ++i) {
+        // Fixed-size buffer for IFFT overlap-add
+        m_olaBufs.push_back(RealSequence(m_p.fftSize, 0.0));
     }
 
     m_fft = new FFTReal(m_p.fftSize);
@@ -148,9 +150,15 @@ CQInverse::process(const ComplexBlock &block)
     // be the case for data that came directly from our ConstantQ
     // implementation.
 
-    int blockWidth = m_p.atomsPerFrame * int(pow(2, m_octaves - 1));
-
     int widthProvided = block.size();
+
+    if (widthProvided == 0) {
+        return drawFromBuffers();
+    }
+
+    cerr << "process: given " << widthProvided << " cols" << endl;
+
+    int blockWidth = m_p.atomsPerFrame * int(pow(2, m_octaves - 1));
 
     if (widthProvided % blockWidth != 0) {
         cerr << "ERROR: CQInverse::process: Input block size ("
@@ -180,14 +188,14 @@ CQInverse::process(const ComplexBlock &block)
     // 4. Overlap-add each octave's resynthesised blocks (unwindowed)
     //
     // 5. Resample each octave's overlap-add stream to the original
-    // rate, and sum.
+    // rate
+    //
+    // 6. Sum the resampled streams and return
     
-    // We will, for now, do all but the last step in sequence, one
-    // octave at a time, and push the results to m_buffers for summing
-    // and return.
-
     for (int i = 0; i < m_octaves; ++i) {
         
+        // Step 1
+
         ComplexBlock oct;
 
         for (int j = 0; j < widthProvided; ++j) {
@@ -200,10 +208,51 @@ CQInverse::process(const ComplexBlock &block)
             oct.push_back(col);
         }
 
+        // Steps 2, 3, 4, 5
         processOctave(i, oct);
     }
-            
-#error need to return something
+    
+    // Step 6
+    return drawFromBuffers();
+}
+
+CQInverse::RealSequence
+CQInverse::drawFromBuffers()
+{
+    // 6. Sum the resampled streams and return
+
+    int available = 0;
+
+    for (int i = 0; i < m_octaves; ++i) {
+        if (i == 0 || int(m_buffers[i].size()) < available) {
+            available = m_buffers[i].size();
+        }
+    }
+
+    RealSequence result(available, 0);
+
+    if (available == 0) {
+        return result;
+    }
+
+    for (int i = 0; i < m_octaves; ++i) {
+        for (int j = 0; j < available; ++j) {
+            result[j] += m_buffers[i][j];
+        }
+        m_buffers[i] = RealSequence(m_buffers[i].begin() + available,
+                                    m_buffers[i].end());
+    }
+
+    cerr << "process: returning " << available << endl;
+
+    return result;
+}
+
+CQInverse::RealSequence
+CQInverse::getRemainingOutput()
+{
+    //!!! for now -- may have to prompt the resamplers?
+    return drawFromBuffers();
 }
 
 void
@@ -245,6 +294,16 @@ CQInverse::processOctaveColumn(int octave, const ComplexColumn &column)
     // kernel (which is the conjugate of the forward kernel) and
     // perform an inverse FFT
 
+    if ((int)column.size() != m_p.atomsPerFrame * m_binsPerOctave) {
+        cerr << "ERROR: CQInverse::processOctaveColumn: Height of column ("
+             << column.size() << ") in octave " << octave
+             << " must be atoms-per-frame * bins-per-octave ("
+             << m_p.atomsPerFrame << " * " << m_binsPerOctave << " = "
+             << m_p.atomsPerFrame * m_binsPerOctave << ")" << endl;
+        throw std::invalid_argument
+            ("Column height must match atoms-per-frame * bins-per-octave");
+    }
+
     ComplexSequence transformed = m_kernel->processInverse(column);
 
     int halfLen = m_p.fftSize/2 + 1;
@@ -261,7 +320,50 @@ CQInverse::processOctaveColumn(int octave, const ComplexColumn &column)
 
     m_fft->inverse(ri.data(), ii.data(), timeDomain.data());
 
+    overlapAddAndResample(octave, timeDomain);
+}
 
-    //...
+void
+CQInverse::overlapAddAndResample(int octave, const RealSequence &seq)
+{
+    // 4. Overlap-add each octave's resynthesised blocks (unwindowed)
+    //
+    // and
+    //
+    // 5. Resample each octave's overlap-add stream to the original
+    // rate
+
+    if (seq.size() != m_olaBufs[octave].size()) {
+        cerr << "ERROR: CQInverse::overlapAdd: input sequence length ("
+             << seq.size() << ") is expected to match OLA buffer size ("
+             << m_olaBufs[octave].size() << ")" << endl;
+        throw std::invalid_argument
+            ("Input sequence length should match OLA buffer size");
+    }
+
+    RealSequence toResample(m_olaBufs[octave].begin(),
+                            m_olaBufs[octave].begin() + m_p.fftHop);
+
+    RealSequence resampled = 
+        octave > 0 ?
+        m_upsamplers[octave]->process(toResample.data(), toResample.size()) :
+        toResample;
+
+    m_buffers[octave].insert(m_buffers[octave].end(),
+                             resampled.begin(),
+                             resampled.end());
+    
+    m_olaBufs[octave] = RealSequence(m_olaBufs[octave].begin() + m_p.fftHop,
+                                     m_olaBufs[octave].end());
+    
+    RealSequence pad(m_p.fftHop, 0);
+
+    m_olaBufs[octave].insert(m_olaBufs[octave].end(),
+                             pad.begin(),
+                             pad.end());
+
+    for (int i = 0; i < m_p.fftSize; ++i) {
+        m_olaBufs[octave][i] += seq[i];
+    }
 }
 
