@@ -29,51 +29,32 @@
     authorization.
 */
 
-#ifndef CQ_INTERPOLATED_H
-#define CQ_INTERPOLATED_H
+#ifndef CQBASE_H
+#define CQBASE_H
 
 #include <vector>
-#include "ConstantQ.h"
+#include <complex>
 
-class CQInterpolated
+class CQBase // interface class
 {
 public:
-    enum Interpolation {
-	None, // leave empty cells empty
-	Hold, // repeat prior cell
-	Linear, // linear interpolation between consecutive time cells
-    };
+    typedef std::complex<double> Complex;
+    typedef std::vector<double> RealSequence;
+    typedef std::vector<double> RealColumn;
+    typedef std::vector<Complex> ComplexSequence;
+    typedef std::vector<Complex> ComplexColumn;
+    typedef std::vector<RealColumn> RealBlock;
+    typedef std::vector<ComplexColumn> ComplexBlock;
 
-    CQInterpolated(double sampleRate,
-		   double minFreq, double maxFreq,
-		   int binsPerOctave,
-		   Interpolation interpolation);
-    ~CQInterpolated();
-
-    double getSampleRate() const { return m_cq.getSampleRate(); }
-    int getBinsPerOctave() const { return m_cq.getBinsPerOctave(); }
-    int getOctaves() const { return m_cq.getOctaves(); }
-    int getTotalBins() const { return m_cq.getTotalBins(); }
-    int getColumnHop() const { return m_cq.getColumnHop(); }
-    int getLatency() const { return m_cq.getLatency(); } 
-    double getMaxFrequency() const { return m_cq.getMaxFrequency(); }
-    double getMinFrequency() const { return m_cq.getMinFrequency(); }
-    double getBinFrequency(int bin) const { return m_cq.getBinFrequency(bin); }
-
-    std::vector<std::vector<double> > process(const std::vector<double> &);
-    std::vector<std::vector<double> > getRemainingBlocks();
-
-private:
-    ConstantQ m_cq;
-    Interpolation m_interpolation;
-
-    typedef std::vector<std::vector<double> > Grid;
-    Grid m_buffer;
-    Grid postProcess(const Grid &, bool insist);
-    Grid fetchHold(bool insist);
-    Grid fetchLinear(bool insist);
-    Grid linearInterpolated(const Grid &, int, int);
-    std::vector<double> m_prevColumn;
+    virtual double getSampleRate() const = 0;
+    virtual int getBinsPerOctave() const = 0;
+    virtual int getOctaves() const = 0; 
+    virtual int getTotalBins() const = 0;
+    virtual int getColumnHop() const = 0;
+    virtual int getLatency() const = 0;
+    virtual double getMaxFrequency() const = 0;
+    virtual double getMinFrequency() const = 0; // actual min, not that passed to ctor
+    virtual double getBinFrequency(int bin) const = 0;
 };
 
 #endif

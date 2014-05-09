@@ -32,30 +32,36 @@
 #ifndef CONSTANTQ_H
 #define CONSTANTQ_H
 
+#include "CQBase.h"
 #include "CQKernel.h"
-
-#include <vector>
 
 class Resampler;
 class FFTReal;
 
-class ConstantQ
+/**
+ * Calculate a complex sparse constant-Q representation from
+ * time-domain input.
+ *
+ * For a real (magnitude-only) or interpolated representation, see
+ * CQSpectrogram.
+ */
+class ConstantQ : public CQBase
 {
 public:
     ConstantQ(double sampleRate, 
 	      double minFreq, double maxFreq, 
 	      int binsPerOctave);
-    ~ConstantQ();
+    virtual ~ConstantQ();
 
-    double getSampleRate() const { return m_sampleRate; }
-    int getBinsPerOctave() const { return m_binsPerOctave; }
-    int getOctaves() const { return m_octaves; }
-    int getTotalBins() const { return m_octaves * m_binsPerOctave; }
-    int getColumnHop() const { return m_p.fftHop / m_p.atomsPerFrame; }
-    int getLatency() const { return m_outputLatency; } 
-    double getMaxFrequency() const { return m_p.maxFrequency; }
-    double getMinFrequency() const; // actual min, not that passed to ctor
-    double getBinFrequency(int bin) const;
+    virtual double getSampleRate() const { return m_sampleRate; }
+    virtual int getBinsPerOctave() const { return m_binsPerOctave; }
+    virtual int getOctaves() const { return m_octaves; }
+    virtual int getTotalBins() const { return m_octaves * m_binsPerOctave; }
+    virtual int getColumnHop() const { return m_p.fftHop / m_p.atomsPerFrame; }
+    virtual int getLatency() const { return m_outputLatency; } 
+    virtual double getMaxFrequency() const { return m_p.maxFrequency; }
+    virtual double getMinFrequency() const;
+    virtual double getBinFrequency(int bin) const;
 
     /**
      * Given a series of time-domain samples, return a series of
@@ -76,14 +82,14 @@ public:
      * and every bin contains a value, use CQInterpolated instead of
      * ConstantQ.
      */
-    std::vector<std::vector<double> > process(const std::vector<double> &);
+    ComplexBlock process(const RealSequence &);
 
     /**
      * Return the remaining constant-Q columns following the end of
      * processing. Any buffered input is padded so as to ensure that
      * all input provided to process() will have been returned.
      */
-    std::vector<std::vector<double> > getRemainingBlocks();
+    ComplexBlock getRemainingOutput();
 
 private:
     double m_sampleRate;
@@ -97,14 +103,14 @@ private:
     int m_bigBlockSize;
 
     std::vector<Resampler *> m_decimators;
-    std::vector<std::vector<double> > m_buffers;
+    RealBlock m_buffers;
 
     int m_outputLatency;
 
     FFTReal *m_fft;
 
     void initialise();
-    std::vector<std::vector<double> > processOctaveBlock(int octave);
+    ComplexBlock processOctaveBlock(int octave);
 };
 
 #endif

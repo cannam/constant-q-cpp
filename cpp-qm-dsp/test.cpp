@@ -28,7 +28,7 @@
     authorization.
 */
 
-#include "ConstantQ.h"
+#include "CQSpectrogram.h"
 
 #include <iostream>
 #include <vector>
@@ -50,10 +50,10 @@ int main(int argc, char **argv)
 	in.push_back(sin(i * M_PI / 2.0));
     }
 
-    ConstantQ k(8, 1, 4, 4);
+    CQSpectrogram k(8, 1, 4, 4, CQSpectrogram::None);
 
     vector<vector<double> > out = k.process(in);
-    vector<vector<double> > rest = k.getRemainingBlocks();
+    vector<vector<double> > rest = k.getRemainingOutput();
 
     out.insert(out.end(), rest.begin(), rest.end());
 
