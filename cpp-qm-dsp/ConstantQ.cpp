@@ -205,7 +205,7 @@ ConstantQ::initialise()
 		   + m_bigBlockSize) / factor;
 
         m_buffers.push_back
-            (vector<double>(int(round(octaveLatency)), 0.0));
+            (RealSequence(int(round(octaveLatency)), 0.0));
     }
 
     m_fft = new FFTReal(m_p.fftSize);
@@ -217,7 +217,7 @@ ConstantQ::process(const RealSequence &td)
     m_buffers[0].insert(m_buffers[0].end(), td.begin(), td.end());
 
     for (int i = 1; i < m_octaves; ++i) {
-        vector<double> dec = m_decimators[i]->process(td.data(), td.size());
+        RealSequence dec = m_decimators[i]->process(td.data(), td.size());
         m_buffers[i].insert(m_buffers[i].end(), dec.begin(), dec.end());
     }
 
@@ -282,19 +282,19 @@ ConstantQ::getRemainingOutput()
 {
     // Same as padding added at start, though rounded up
     int pad = ceil(double(m_outputLatency) / m_bigBlockSize) * m_bigBlockSize;
-    vector<double> zeros(pad, 0.0);
+    RealSequence zeros(pad, 0.0);
     return process(zeros);
 }
 
 ConstantQ::ComplexBlock
 ConstantQ::processOctaveBlock(int octave)
 {
-    vector<double> ro(m_p.fftSize, 0.0);
-    vector<double> io(m_p.fftSize, 0.0);
+    RealSequence ro(m_p.fftSize, 0.0);
+    RealSequence io(m_p.fftSize, 0.0);
 
     m_fft->forward(m_buffers[octave].data(), ro.data(), io.data());
 
-    vector<double> shifted;
+    RealSequence shifted;
     shifted.insert(shifted.end(), 
                    m_buffers[octave].begin() + m_p.fftHop,
                    m_buffers[octave].end());

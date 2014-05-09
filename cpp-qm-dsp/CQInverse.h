@@ -75,13 +75,14 @@ private:
     int m_bigBlockSize;
 
     std::vector<Resampler *> m_upsamplers;
-    std::vector<std::vector<double> > m_buffers;
+    std::vector<RealSequence> m_buffers;
     
     int m_outputLatency;
 
     FFTReal *m_fft;
     
     void initialise();
+    void processOctave(int octave, const ComplexBlock &block);
 };
 
 #endif

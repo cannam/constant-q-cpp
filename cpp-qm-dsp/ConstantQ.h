@@ -103,7 +103,7 @@ private:
     int m_bigBlockSize;
 
     std::vector<Resampler *> m_decimators;
-    RealBlock m_buffers;
+    std::vector<RealSequence> m_buffers;
 
     int m_outputLatency;
 

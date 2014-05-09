@@ -149,10 +149,18 @@ CQInverse::process(const ComplexBlock &block)
     // implementation.
 
     int blockWidth = m_p.atomsPerFrame * int(pow(2, m_octaves - 1));
-    if (block.size() % blockWidth != 0) {
+
+    int widthProvided = block.size();
+
+    if (widthProvided % blockWidth != 0) {
+        cerr << "ERROR: CQInverse::process: Input block size ("
+             << widthProvided
+             << ") must be a multiple of processing block width "
+             << "(atoms-per-frame * 2^(octaves-1) = "
+             << m_p.atomsPerFrame << " * 2^(" << m_octaves << "-1) = "
+             << blockWidth << ")" << endl;
         throw std::invalid_argument
-            ("Input block size must be a multiple of processing block width "
-             "(atoms-per-frame * 2^(octaves-1))");
+            ("Input block size must be a multiple of processing block width");
     }
 
     // Procedure:
@@ -174,6 +182,62 @@ CQInverse::process(const ComplexBlock &block)
     // 5. Resample each octave's overlap-add stream to the original
     // rate, and sum.
     
+    // We will, for now, do all but the last step in sequence, one
+    // octave at a time, and push the results to m_buffers for summing
+    // and return.
+
+    for (int i = 0; i < m_octaves; ++i) {
+        
+        ComplexBlock oct;
+
+        for (int j = 0; j < widthProvided; ++j) {
+            int h = block[j].size();
+            if (h < m_binsPerOctave * (i+1)) {
+                continue;
+            }
+            ComplexColumn col(block[j].begin() + m_binsPerOctave * i,
+                              block[j].begin() + m_binsPerOctave * (i+1));
+            oct.push_back(col);
+        }
+
+        processOctave(i, oct);
+    }
+            
+#error need to return something
+}
+
+void
+CQInverse::processOctave(int octave, const ComplexBlock &columns)
+{
+    // 2. Group each octave list by atomsPerFrame columns at a time,
+    // and stack these so as to achieve a list, for each octave, of
+    // taller columns of height binsPerOctave * atomsPerFrame
+
+    int ncols = columns.size();
+
+    if (ncols % m_p.atomsPerFrame != 0) {
+        cerr << "ERROR: CQInverse::process: Number of columns ("
+             << ncols
+             << ") in octave " << octave
+             << " must be a multiple of atoms-per-frame ("
+             << m_p.atomsPerFrame << ")" << endl;
+        throw std::invalid_argument
+            ("Columns in octave must be a multiple of atoms per frame");
+    }
+
+    ComplexBlock reshaped;
+    for (int i = 0; i < ncols; i += m_p.atomsPerFrame) {
+        ComplexColumn tallcol;
+        for (int b = 0; b < m_binsPerOctave; ++b) {
+            for (int a = 0; a < m_p.atomsPerFrame; ++a) {
+                tallcol.push_back(columns[i + a][b]);
+            }
+        }
+        reshaped.push_back(tallcol);
+    }
+
+    
+
 }
 
 
