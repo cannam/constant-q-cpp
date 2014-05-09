@@ -57,7 +57,32 @@ public:
     double getMinFrequency() const; // actual min, not that passed to ctor
     double getBinFrequency(int bin) const;
 
+    /**
+     * Given a series of time-domain samples, return a series of
+     * constant-Q columns. Any samples left over (that did not fit
+     * into a constant-Q processing block) are saved for the next call
+     * to process or getRemainingBlocks.
+     *
+     * Each column contains a series of constant-Q bin values ordered
+     * from highest to lowest frequency.
+     *
+     * Columns are of variable height: each will contain at least
+     * getBinsPerOctave() values, because the highest-frequency octave
+     * is always present, but a second octave (if requested) will
+     * appear only in alternate columns, a third octave only in every
+     * fourth column, and so on.
+     *
+     * If you need a format in which all columns are of equal height
+     * and every bin contains a value, use CQInterpolated instead of
+     * ConstantQ.
+     */
     std::vector<std::vector<double> > process(const std::vector<double> &);
+
+    /**
+     * Return the remaining constant-Q columns following the end of
+     * processing. Any buffered input is padded so as to ensure that
+     * all input provided to process() will have been returned.
+     */
     std::vector<std::vector<double> > getRemainingBlocks();
 
 private:

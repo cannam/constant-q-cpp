@@ -60,6 +60,9 @@ public:
     // Input is the format produced by ConstantQ class, not
     // CQInterpolated (or can we make this support either?)
 
+    //!!! no, we need complex not magnitudes! CQ should probably
+    //!!! produce totally raw output and something like CQInterpolated
+    //!!! do the magnitude stuff as well as interpolation
     std::vector<double> process(const std::vector<std::vector<double> > &);
     std::vector<double> getRemainingOutput();
 

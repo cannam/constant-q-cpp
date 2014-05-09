@@ -20,8 +20,8 @@ TEST_LDFLAGS := $(LDFLAGS) -lboost_unit_test_framework
 PLUGIN	:= cqvamp$(PLUGIN_EXT)
 TEST	:= $(LIB_DIR)/test
 
-LIB_HEADERS := $(LIB_DIR)/CQKernel.h $(LIB_DIR)/ConstantQ.h $(LIB_DIR)/CQInterpolated.h
-LIB_SOURCES := $(LIB_DIR)/CQKernel.cpp $(LIB_DIR)/ConstantQ.cpp $(LIB_DIR)/CQInterpolated.cpp
+LIB_HEADERS := $(LIB_DIR)/CQKernel.h $(LIB_DIR)/ConstantQ.h $(LIB_DIR)/CQInterpolated.h $(LIB_DIR)/CQInverse.h
+LIB_SOURCES := $(LIB_DIR)/CQKernel.cpp $(LIB_DIR)/ConstantQ.cpp $(LIB_DIR)/CQInterpolated.cpp $(LIB_DIR)/CQInverse.cpp
 
 VAMP_HEADERS := $(VAMP_DIR)/CQVamp.h
 VAMP_SOURCES := $(VAMP_DIR)/CQVamp.cpp $(VAMP_DIR)/libmain.cpp

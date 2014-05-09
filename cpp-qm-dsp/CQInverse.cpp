@@ -37,6 +37,11 @@
 #include "maths/MathUtilities.h"
 #include "dsp/transforms/FFT.h"
 
+#include <algorithm>
+#include <complex>
+#include <iostream>
+#include <stdexcept>
+
 using std::vector;
 using std::complex;
 using std::cerr;
@@ -119,71 +124,52 @@ CQInverse::initialise()
 
     m_bigBlockSize = m_p.fftSize * pow(2, m_octaves - 1);
 
-
-//!!! GOT HERE!
-#error continue from here please!
-/*
-    // Now add in the extra padding and compensate for hops that must
-    // be dropped in order to align the atom centres across
-    // octaves. Again this is a bit trickier because we are doing it
-    // at input rather than output and so must work in per-octave
-    // sample rates rather than output blocks
-
-    int emptyHops = m_p.firstCentre / m_p.atomSpacing;
-
-    vector<int> drops;
+    //!!! review this later for the hops-dropped stuff
+    int maxLatency = 0;
     for (int i = 0; i < m_octaves; ++i) {
-	int factor = pow(2, i);
-	int dropHops = emptyHops * pow(2, m_octaves - i - 1) - emptyHops;
-	int drop = ((dropHops * m_p.fftHop) * factor) / m_p.atomsPerFrame;
-	drops.push_back(drop);
+	if (latencies[i] > maxLatency) maxLatency = latencies[i];
     }
 
-    int maxLatPlusDrop = 0;
-    for (int i = 0; i < m_octaves; ++i) {
-	int latPlusDrop = latencies[i] + drops[i];
-	if (latPlusDrop > maxLatPlusDrop) maxLatPlusDrop = latPlusDrop;
-    }
-
-    // we want to design totalLatency such that totalLatency -
-    // latencies[0] - drops[0] is a multiple of m_p.fftHop, so that we
-    // can get identical results in octave 0 to our reference
-    // implementation, making for easier testing (though other octaves
-    // will differ because of different resampler implementations)
-
-    int totalLatency = maxLatPlusDrop;
-    int lat0 = totalLatency - latencies[0] - drops[0];
-    totalLatency = ceil(double(lat0 / m_p.fftHop) * m_p.fftHop)
-	+ latencies[0] + drops[0];
-
-//    cerr << "total latency = " << totalLatency << endl;
-
-    // Padding as in the reference (will be introduced with the
-    // latency compensation in the loop below)
-    m_outputLatency = totalLatency + m_bigBlockSize
-	- m_p.firstCentre * pow(2, m_octaves-1);
-
-//    cerr << "m_bigBlockSize = " << m_bigBlockSize << ", firstCentre = "
-//	 << m_p.firstCentre << ", m_octaves = " << m_octaves << ", so m_outputLatency = " << m_outputLatency << endl;
+    m_outputLatency = maxLatency; //!!! for now
 
     for (int i = 0; i < m_octaves; ++i) {
-
-	double factor = pow(2, i);
 
 	// Calculate the difference between the total latency applied
 	// across all octaves, and the existing latency due to the
-	// decimator for this octave, and then convert it back into
-	// the sample rate appropriate for the output latency of this
-	// decimator -- including one additional big block of padding
-	// (as in the reference).
-
-	double octaveLatency =
-	    double(totalLatency - latencies[i] - drops[i]
-		   + m_bigBlockSize) / factor;
+	// upsampler for this octave
 
         m_buffers.push_back
-            (vector<double>(int(round(octaveLatency)), 0.0));
+            (vector<double>(m_outputLatency - latencies[i], 0.0));
     }
-*/
+
     m_fft = new FFTReal(m_p.fftSize);
 }
+
+std::vector<double> process(const std::vector<std::vector<double> > &blocks)
+{
+    // The input data is of the form produced by ConstantQ::process --
+    // an unknown number N of columns of varying height. We assert
+    // that N is a multiple of atomsPerFrame * 2^(octaves-1).
+    //
+    // Our procedure:
+    // 
+    // 1. Slice the list of columns into a set of lists of columns,
+    // one per octave, each of width N / (2^octave-1) and height
+    // binsPerOctave, containing the values present in that octave
+    //
+    // 2. Group each octave list by atomsPerFrame columns at a time,
+    // and stack these so as to achieve a list, for each octave, of
+    // taller columns of height binsPerOctave * atomsPerFrame
+    //
+    // 3. For each column, take the product with the inverse CQ kernel
+    // (which is the conjugate of the forward kernel) and perform an
+    // inverse FFT
+    //
+    // 4. Overlap-add each octave's resynthesised blocks (unwindowed)
+    //
+    // 5. Resample each octave's overlap-add stream to the original
+    // rate, and sum
+    
+}
+
+
