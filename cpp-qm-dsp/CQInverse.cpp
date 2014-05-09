@@ -31,23 +31,17 @@
 
 #include "CQInverse.h"
 
-#include "CQKernel.h"
-
 #include "dsp/rateconversion/Resampler.h"
 #include "maths/MathUtilities.h"
 #include "dsp/transforms/FFT.h"
 
 #include <algorithm>
-#include <complex>
 #include <iostream>
 #include <stdexcept>
 
 using std::vector;
-using std::complex;
 using std::cerr;
 using std::endl;
-
-typedef std::complex<double> C;
 
 CQInverse::CQInverse(double sampleRate,
                      double minFreq,
@@ -145,13 +139,23 @@ CQInverse::initialise()
     m_fft = new FFTReal(m_p.fftSize);
 }
 
-std::vector<double> process(const std::vector<std::vector<double> > &blocks)
+CQInverse::RealSequence
+CQInverse::process(const ComplexBlock &block)
 {
     // The input data is of the form produced by ConstantQ::process --
     // an unknown number N of columns of varying height. We assert
-    // that N is a multiple of atomsPerFrame * 2^(octaves-1).
-    //
-    // Our procedure:
+    // that N is a multiple of atomsPerFrame * 2^(octaves-1), as must
+    // be the case for data that came directly from our ConstantQ
+    // implementation.
+
+    int blockWidth = m_p.atomsPerFrame * int(pow(2, m_octaves - 1));
+    if (block.size() % blockWidth != 0) {
+        throw std::invalid_argument
+            ("Input block size must be a multiple of processing block width "
+             "(atoms-per-frame * 2^(octaves-1))");
+    }
+
+    // Procedure:
     // 
     // 1. Slice the list of columns into a set of lists of columns,
     // one per octave, each of width N / (2^octave-1) and height
@@ -168,7 +172,7 @@ std::vector<double> process(const std::vector<std::vector<double> > &blocks)
     // 4. Overlap-add each octave's resynthesised blocks (unwindowed)
     //
     // 5. Resample each octave's overlap-add stream to the original
-    // rate, and sum
+    // rate, and sum.
     
 }
 

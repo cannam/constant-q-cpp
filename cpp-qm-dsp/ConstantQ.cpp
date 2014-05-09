@@ -38,12 +38,10 @@
 #include "dsp/transforms/FFT.h"
 
 #include <algorithm>
-#include <complex>
 #include <iostream>
 #include <stdexcept>
 
 using std::vector;
-using std::complex;
 using std::cerr;
 using std::endl;
 

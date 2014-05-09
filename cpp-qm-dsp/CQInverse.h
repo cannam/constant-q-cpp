@@ -29,17 +29,16 @@
     authorization.
 */
 
-#ifndef CQ_INVERSE_H
-#define CQ_INVERSE_H
+#ifndef CQINVERSE_H
+#define CQINVERSE_H
 
+#include "CQBase.h"
 #include "CQKernel.h"
-
-#include <vector>
 
 class Resampler;
 class FFTReal;
 
-class CQInverse
+class CQInverse : public CQBase
 {
 public:
     CQInverse(double sampleRate,
@@ -47,24 +46,22 @@ public:
 	      int binsPerOctave);
     ~CQInverse();
 
-    double getSampleRate() const { return m_sampleRate; }
-    int getBinsPerOctave() const { return m_binsPerOctave; }
-    int getOctaves() const { return m_octaves; }
-    int getTotalBins() const { return m_octaves * m_binsPerOctave; }
-    int getColumnHop() const { return m_p.fftHop / m_p.atomsPerFrame; }
-    int getLatency() const { return m_outputLatency; } 
-    double getMaxFrequency() const { return m_p.maxFrequency; }
-    double getMinFrequency() const; // actual min, not that passed to ctor
-    double getBinFrequency(int bin) const;
+    virtual double getSampleRate() const { return m_sampleRate; }
+    virtual int getBinsPerOctave() const { return m_binsPerOctave; }
+    virtual int getOctaves() const { return m_octaves; }
+    virtual int getTotalBins() const { return m_octaves * m_binsPerOctave; }
+    virtual int getColumnHop() const { return m_p.fftHop / m_p.atomsPerFrame; }
+    virtual int getLatency() const { return m_outputLatency; } 
+    virtual double getMaxFrequency() const { return m_p.maxFrequency; }
+    virtual double getMinFrequency() const; // actual min, not that passed to ctor
+    virtual double getBinFrequency(int bin) const;
 
-    // Input is the format produced by ConstantQ class, not
-    // CQInterpolated (or can we make this support either?)
+    // Input is the format produced by ConstantQ class,
+    // i.e. uninterpolated complex, not the real-valued stuff produced
+    // by CQSpectrogram
 
-    //!!! no, we need complex not magnitudes! CQ should probably
-    //!!! produce totally raw output and something like CQInterpolated
-    //!!! do the magnitude stuff as well as interpolation
-    std::vector<double> process(const std::vector<std::vector<double> > &);
-    std::vector<double> getRemainingOutput();
+    RealSequence process(const ComplexBlock &);
+    RealSequence getRemainingOutput();
 
 private:
     double m_sampleRate;
