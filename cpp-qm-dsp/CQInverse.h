@@ -72,7 +72,6 @@ private:
 
     CQKernel *m_kernel;
     CQKernel::Properties m_p;
-    int m_bigBlockSize;
 
     std::vector<Resampler *> m_upsamplers;
     std::vector<RealSequence> m_buffers;

@@ -12,6 +12,9 @@ using std::endl;
 
 #include <cstring>
 
+#include <unistd.h>
+#include <sys/time.h>
+
 int main(int argc, char **argv)
 {
     if (argc != 3) {
@@ -48,7 +51,7 @@ int main(int argc, char **argv)
 	     << sf_strerror(sndfileOut) << endl;
 	return 1;
     }
-    
+
     int ibs = 1024;
     int channels = sfinfo.channels;
     float *fbuf = new float[channels * ibs];
@@ -64,6 +67,12 @@ int main(int argc, char **argv)
     int inframe = 0;
     int outframe = 0;
     int latency = cq.getLatency() + cqi.getLatency();
+
+    cerr << "forward latency = " << cq.getLatency() << ", inverse latency = " 
+	 << cqi.getLatency() << ", total = " << latency << endl;
+
+    timeval tv;
+    (void)gettimeofday(&tv, 0);
 
     while (inframe < sfinfo.frames) {
 
@@ -111,8 +120,26 @@ int main(int argc, char **argv)
     sf_writef_double(sndfileOut, r1.data(), r1.size());
     sf_writef_double(sndfileOut, r2.data(), r2.size());
 
+    outframe += r1.size();
+    outframe += r2.size();
+
     sf_close(sndfile);
     sf_close(sndfileOut);
+
+    cerr << "in: " << inframe << ", out: " << outframe - latency << endl;
+
+    timeval etv;
+    (void)gettimeofday(&etv, 0);
+        
+    etv.tv_sec -= tv.tv_sec;
+    if (etv.tv_usec < tv.tv_usec) {
+	etv.tv_usec += 1000000;
+	etv.tv_sec -= 1;
+    }
+    etv.tv_usec -= tv.tv_usec;
+        
+    double sec = double(etv.tv_sec) + (double(etv.tv_usec) / 1000000.0);
+    cerr << "elapsed time (not counting init): " << sec << " sec, frames/sec at input: " << inframe/sec << endl;
 
     return 0;
 }

@@ -116,21 +116,46 @@ CQInverse::initialise()
         m_upsamplers.push_back(r);
     }
 
-    m_bigBlockSize = m_p.fftSize * pow(2, m_octaves - 1);
-
-    //!!! review this later for the hops-dropped stuff
-    int maxLatency = 0;
+    // additionally we will have fftHop latency at individual octave
+    // rate (before upsampling) for the overlap-add in each octave
     for (int i = 0; i < m_octaves; ++i) {
-	if (latencies[i] > maxLatency) maxLatency = latencies[i];
+        latencies[i] += m_p.fftHop * pow(2, i);
     }
 
-    m_outputLatency = maxLatency; //!!! for now
+    // Now reverse the drop adjustment made in ConstantQ to align the
+    // atom centres across different octaves (but this time at output
+    // sample rate)
+
+    int emptyHops = m_p.firstCentre / m_p.atomSpacing;
+
+    vector<int> pushes;
+    for (int i = 0; i < m_octaves; ++i) {
+	int factor = pow(2, i);
+	int pushHops = emptyHops * pow(2, m_octaves - i - 1) - emptyHops;
+	int push = ((pushHops * m_p.fftHop) * factor) / m_p.atomsPerFrame;
+	pushes.push_back(push);
+    }
+
+    int bigBlockSize = m_p.fftSize * pow(2, m_octaves - 1);
+    int maxLatLessPush = 0;
+    for (int i = 0; i < m_octaves; ++i) {
+	int latLessPush = bigBlockSize + latencies[i] - pushes[i];
+	if (latLessPush > maxLatLessPush) maxLatLessPush = latLessPush;
+    }
+
+    int totalLatency = maxLatLessPush;
+
+    m_outputLatency = totalLatency + m_p.firstCentre * pow(2, m_octaves-1);
 
     for (int i = 0; i < m_octaves; ++i) {
+
 	// Calculate the difference between the total latency applied
 	// across all octaves, and the existing latency due to the
-	// upsampler for this octave
-        m_buffers.push_back(RealSequence(m_outputLatency - latencies[i], 0.0));
+	// upsampler for this octave.
+
+        int latencyPadding = totalLatency - latencies[i] + pushes[i];
+
+        m_buffers.push_back(RealSequence(latencyPadding, 0.0));
     }
 
     for (int i = 0; i < m_octaves; ++i) {
@@ -155,8 +180,6 @@ CQInverse::process(const ComplexBlock &block)
     if (widthProvided == 0) {
         return drawFromBuffers();
     }
-
-    cerr << "process: given " << widthProvided << " cols" << endl;
 
     int blockWidth = m_p.atomsPerFrame * int(pow(2, m_octaves - 1));
 
@@ -243,15 +266,18 @@ CQInverse::drawFromBuffers()
                                     m_buffers[i].end());
     }
 
-    cerr << "process: returning " << available << endl;
-
     return result;
 }
 
 CQInverse::RealSequence
 CQInverse::getRemainingOutput()
 {
-    //!!! for now -- may have to prompt the resamplers?
+    for (int i = 0; i < (m_p.fftSize - m_p.fftHop) / m_p.fftHop; ++i) {
+        for (int j = 0; j < m_octaves; ++j) {
+            overlapAddAndResample(j, RealSequence(m_olaBufs[j].size(), 0));
+        }
+    }
+
     return drawFromBuffers();
 }
 
