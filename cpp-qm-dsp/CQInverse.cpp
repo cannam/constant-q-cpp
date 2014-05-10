@@ -108,6 +108,8 @@ CQInverse::initialise()
         Resampler *r = new Resampler
             (sourceRate / factor, sourceRate, 60, 0.02);
 
+        cerr << "inverse: octave " << i << ": resample from " << sourceRate/factor << " to " << sourceRate << endl;
+
 	// See ConstantQ.cpp for discussion on latency -- output
 	// latency here is at target rate which, this way around, is
 	// what we want

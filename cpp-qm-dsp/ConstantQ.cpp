@@ -110,6 +110,8 @@ ConstantQ::initialise()
         Resampler *r = new Resampler
             (sourceRate, sourceRate / factor, 60, 0.02);
 
+        cerr << "forward: octave " << i << ": resample from " << sourceRate << " to " << sourceRate / factor << endl;
+
         // We need to adapt the latencies so as to get the first input
         // sample to be aligned, in time, at the decimator output
         // across all octaves.

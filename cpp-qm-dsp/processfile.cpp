@@ -78,6 +78,15 @@ int main(int argc, char **argv)
 		 100, sfinfo.samplerate / 3,
 		 60);
 
+    cerr << "max freq = " << cq.getMaxFrequency() << ", min freq = "
+	 << cq.getMinFrequency() << ", octaves = " << cq.getOctaves() << endl;
+
+    cerr << "octave boundaries: ";
+    for (int i = 0; i < cq.getOctaves(); ++i) {
+	cerr << cq.getMaxFrequency() / pow(2, i) << " ";
+    }
+    cerr << endl;
+
     int inframe = 0;
     int outframe = 0;
     int latency = cq.getLatency() + cqi.getLatency();
@@ -115,6 +124,11 @@ int main(int argc, char **argv)
 	}
 	
 	vector<double> cqout = cqi.process(cq.process(cqin));
+
+	for (int i = 0; i < int(cqout.size()); ++i) {
+	    if (cqout[i] > 1.0) cqout[i] = 1.0;
+	    if (cqout[i] < -1.0) cqout[i] = -1.0;
+	}
 
 	if (outframe >= latency) {
 
@@ -154,26 +168,24 @@ int main(int argc, char **argv)
 	outframe += cqout.size();
     }
 
-    vector<double> r1 = cqi.process(cq.getRemainingOutput());
+    vector<double> r = cqi.process(cq.getRemainingOutput());
     vector<double> r2 = cqi.getRemainingOutput();
 
-    sf_writef_double(sndfileOut, r1.data(), r1.size());
-    if (doDiff) {
-	for (int i = 0; i < (int)r1.size(); ++i) {
-	    r1[i] -= buffer[outframe + i - latency];
-	}
-	sf_writef_double(sndDiffFile, r1.data(), r1.size());
-    }
-    outframe += r1.size();
+    r.insert(r.end(), r2.begin(), r2.end());
 
-    sf_writef_double(sndfileOut, r2.data(), r2.size());
-    if (doDiff) {
-	for (int i = 0; i < (int)r2.size(); ++i) {
-	    r2[i] -= buffer[outframe + i - latency];
-	}
-	sf_writef_double(sndDiffFile, r2.data(), r2.size());
+    for (int i = 0; i < int(r.size()); ++i) {
+	if (r[i] > 1.0) r[i] = 1.0;
+	if (r[i] < -1.0) r[i] = -1.0;
     }
-    outframe += r2.size();
+
+    sf_writef_double(sndfileOut, r.data(), r.size());
+    if (doDiff) {
+	for (int i = 0; i < (int)r.size(); ++i) {
+	    r[i] -= buffer[outframe + i - latency];
+	}
+	sf_writef_double(sndDiffFile, r.data(), r.size());
+    }
+    outframe += r.size();
 
     sf_close(sndfile);
     sf_close(sndfileOut);
