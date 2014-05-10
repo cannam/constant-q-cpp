@@ -158,13 +158,26 @@ int main(int argc, char **argv)
     vector<double> r2 = cqi.getRemainingOutput();
 
     sf_writef_double(sndfileOut, r1.data(), r1.size());
-    sf_writef_double(sndfileOut, r2.data(), r2.size());
-
+    if (doDiff) {
+	for (int i = 0; i < (int)r1.size(); ++i) {
+	    r1[i] -= buffer[outframe + i - latency];
+	}
+	sf_writef_double(sndDiffFile, r1.data(), r1.size());
+    }
     outframe += r1.size();
+
+    sf_writef_double(sndfileOut, r2.data(), r2.size());
+    if (doDiff) {
+	for (int i = 0; i < (int)r2.size(); ++i) {
+	    r2[i] -= buffer[outframe + i - latency];
+	}
+	sf_writef_double(sndDiffFile, r2.data(), r2.size());
+    }
     outframe += r2.size();
 
     sf_close(sndfile);
     sf_close(sndfileOut);
+
     if (doDiff) {
 	sf_close(sndDiffFile);
     }
