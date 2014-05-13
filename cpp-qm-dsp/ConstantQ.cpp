@@ -45,6 +45,8 @@ using std::vector;
 using std::cerr;
 using std::endl;
 
+//#define DEBUG_CQ 1
+
 ConstantQ::ConstantQ(double sampleRate,
                      double minFreq,
                      double maxFreq,
@@ -110,7 +112,9 @@ ConstantQ::initialise()
         Resampler *r = new Resampler
             (sourceRate, sourceRate / factor, 60, 0.02);
 
+#ifdef DEBUG_CQ
         cerr << "forward: octave " << i << ": resample from " << sourceRate << " to " << sourceRate / factor << endl;
+#endif
 
         // We need to adapt the latencies so as to get the first input
         // sample to be aligned, in time, at the decimator output
@@ -170,26 +174,37 @@ ConstantQ::initialise()
 	if (latPlusDrop > maxLatPlusDrop) maxLatPlusDrop = latPlusDrop;
     }
 
-    // we want to design totalLatency such that totalLatency -
-    // latencies[0] - drops[0] is a multiple of m_p.fftHop, so that we
-    // can get identical results in octave 0 to our reference
-    // implementation, making for easier testing (though other octaves
-    // will differ because of different resampler implementations)
-
     int totalLatency = maxLatPlusDrop;
+
     int lat0 = totalLatency - latencies[0] - drops[0];
     totalLatency = ceil(double(lat0 / m_p.fftHop) * m_p.fftHop)
 	+ latencies[0] + drops[0];
 
-//    cerr << "total latency = " << totalLatency << endl;
+    // We want (totalLatency - latencies[i]) to be a multiple of 2^i
+    // for each octave i, so that we do not end up with fractional
+    // octave latencies below. In theory this is hard, in practice if
+    // we ensure it for the last octave we should be OK.
+    double finalOctLat = latencies[m_octaves-1];
+    double finalOctFact = pow(2, m_octaves-1);
+    totalLatency =
+        int(round(finalOctLat +
+                  finalOctFact *
+                  ceil((totalLatency - finalOctLat) / finalOctFact)));
+
+#ifdef DEBUG_CQ
+    cerr << "total latency = " << totalLatency << endl;
+#endif
 
     // Padding as in the reference (will be introduced with the
     // latency compensation in the loop below)
     m_outputLatency = totalLatency + m_bigBlockSize
 	- m_p.firstCentre * pow(2, m_octaves-1);
 
-//    cerr << "m_bigBlockSize = " << m_bigBlockSize << ", firstCentre = "
-//	 << m_p.firstCentre << ", m_octaves = " << m_octaves << ", so m_outputLatency = " << m_outputLatency << endl;
+#ifdef DEBUG_CQ
+    cerr << "m_bigBlockSize = " << m_bigBlockSize << ", firstCentre = "
+	 << m_p.firstCentre << ", m_octaves = " << m_octaves
+         << ", so m_outputLatency = " << m_outputLatency << endl;
+#endif
 
     for (int i = 0; i < m_octaves; ++i) {
 
@@ -205,6 +220,21 @@ ConstantQ::initialise()
 	double octaveLatency =
 	    double(totalLatency - latencies[i] - drops[i]
 		   + m_bigBlockSize) / factor;
+
+#ifdef DEBUG_CQ
+        cerr << "octave " << i << ": resampler latency = " << latencies[i]
+             << ", drop " << drops[i] << " (/factor = " << drops[i]/factor
+             << "), octaveLatency = " << octaveLatency << " -> "
+             << int(round(octaveLatency)) << " (diff * factor = "
+             << (octaveLatency - round(octaveLatency)) << " * "
+             << factor << " = "
+             << (octaveLatency - round(octaveLatency)) * factor << ")" << endl;
+
+        cerr << "double(" << totalLatency << " - " 
+             << latencies[i] << " - " << drops[i] << " + " 
+             << m_bigBlockSize << ") / " << factor << " = " 
+             << octaveLatency << endl;
+#endif
 
         m_buffers.push_back
             (RealSequence(int(round(octaveLatency)), 0.0));
@@ -234,8 +264,6 @@ ConstantQ::process(const RealSequence &td)
 	bool enough = true;
 	for (int i = 0; i < m_octaves; ++i) {
 	    int required = m_p.fftSize * pow(2, m_octaves - i - 1);
-//	    cerr << "for octave " << i << ", buf len =  "<< m_buffers[i].size() << " (need " << required << ")" << endl;
-
 	    if ((int)m_buffers[i].size() < required) {
 		enough = false;
 	    }

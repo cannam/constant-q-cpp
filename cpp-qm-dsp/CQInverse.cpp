@@ -43,6 +43,8 @@ using std::vector;
 using std::cerr;
 using std::endl;
 
+//#define DEBUG_CQ 1
+
 CQInverse::CQInverse(double sampleRate,
                      double minFreq,
                      double maxFreq,
@@ -108,7 +110,9 @@ CQInverse::initialise()
         Resampler *r = new Resampler
             (sourceRate / factor, sourceRate, 60, 0.02);
 
+#ifdef DEBUG_CQ
         cerr << "inverse: octave " << i << ": resample from " << sourceRate/factor << " to " << sourceRate << endl;
+#endif
 
 	// See ConstantQ.cpp for discussion on latency -- output
 	// latency here is at target rate which, this way around, is
@@ -138,16 +142,20 @@ CQInverse::initialise()
 	pushes.push_back(push);
     }
 
-    int bigBlockSize = m_p.fftSize * pow(2, m_octaves - 1);
     int maxLatLessPush = 0;
     for (int i = 0; i < m_octaves; ++i) {
-	int latLessPush = bigBlockSize + latencies[i] - pushes[i];
+	int latLessPush = latencies[i] - pushes[i];
 	if (latLessPush > maxLatLessPush) maxLatLessPush = latLessPush;
     }
 
-    int totalLatency = maxLatLessPush;
+    int totalLatency = maxLatLessPush + 10;
+    if (totalLatency < 0) totalLatency = 0;
 
     m_outputLatency = totalLatency + m_p.firstCentre * pow(2, m_octaves-1);
+
+#ifdef DEBUG_CQ
+    cerr << "totalLatency = " << totalLatency << ", m_outputLatency = " << m_outputLatency << endl;
+#endif
 
     for (int i = 0; i < m_octaves; ++i) {
 
@@ -156,6 +164,10 @@ CQInverse::initialise()
 	// upsampler for this octave.
 
         int latencyPadding = totalLatency - latencies[i] + pushes[i];
+
+#ifdef DEBUG_CQ
+        cerr << "octave " << i << ": push " << pushes[i] << ", resampler latency inc overlap space " << latencies[i] << ", latencyPadding = " << latencyPadding << " (/factor = " << latencyPadding / pow(2, i) << ")" << endl;
+#endif
 
         m_buffers.push_back(RealSequence(latencyPadding, 0.0));
     }
