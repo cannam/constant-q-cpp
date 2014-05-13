@@ -29,8 +29,8 @@
     authorization.
 */
 
-#ifndef CONSTANTQ_H
-#define CONSTANTQ_H
+#ifndef CQINVERSE_H
+#define CQINVERSE_H
 
 #include "CQBase.h"
 #include "CQKernel.h"
@@ -38,20 +38,13 @@
 class Resampler;
 class FFTReal;
 
-/**
- * Calculate a complex sparse constant-Q representation from
- * time-domain input.
- *
- * For a real (magnitude-only) or interpolated representation, see
- * CQSpectrogram.
- */
-class ConstantQ : public CQBase
+class CQInverse : public CQBase
 {
 public:
-    ConstantQ(double sampleRate, 
-	      double minFreq, double maxFreq, 
+    CQInverse(double sampleRate,
+	      double minFreq, double maxFreq,
 	      int binsPerOctave);
-    virtual ~ConstantQ();
+    virtual ~CQInverse();
 
     virtual double getSampleRate() const { return m_sampleRate; }
     virtual int getBinsPerOctave() const { return m_binsPerOctave; }
@@ -60,36 +53,15 @@ public:
     virtual int getColumnHop() const { return m_p.fftHop / m_p.atomsPerFrame; }
     virtual int getLatency() const { return m_outputLatency; } 
     virtual double getMaxFrequency() const { return m_p.maxFrequency; }
-    virtual double getMinFrequency() const;
+    virtual double getMinFrequency() const; // actual min, not that passed to ctor
     virtual double getBinFrequency(int bin) const;
 
-    /**
-     * Given a series of time-domain samples, return a series of
-     * constant-Q columns. Any samples left over (that did not fit
-     * into a constant-Q processing block) are saved for the next call
-     * to process or getRemainingBlocks.
-     *
-     * Each column contains a series of constant-Q bin values ordered
-     * from highest to lowest frequency.
-     *
-     * Columns are of variable height: each will contain at least
-     * getBinsPerOctave() values, because the highest-frequency octave
-     * is always present, but a second octave (if requested) will
-     * appear only in alternate columns, a third octave only in every
-     * fourth column, and so on.
-     *
-     * If you need a format in which all columns are of equal height
-     * and every bin contains a value, use CQInterpolated instead of
-     * ConstantQ.
-     */
-    ComplexBlock process(const RealSequence &);
+    // Input is the format produced by ConstantQ class,
+    // i.e. uninterpolated complex, not the real-valued stuff produced
+    // by CQSpectrogram
 
-    /**
-     * Return the remaining constant-Q columns following the end of
-     * processing. Any buffered input is padded so as to ensure that
-     * all input provided to process() will have been returned.
-     */
-    ComplexBlock getRemainingOutput();
+    RealSequence process(const ComplexBlock &);
+    RealSequence getRemainingOutput();
 
 private:
     double m_sampleRate;
@@ -100,18 +72,20 @@ private:
 
     CQKernel *m_kernel;
     CQKernel::Properties m_p;
-    int m_bigBlockSize;
 
-    std::vector<Resampler *> m_decimators;
+    std::vector<Resampler *> m_upsamplers;
     std::vector<RealSequence> m_buffers;
-
+    std::vector<RealSequence> m_olaBufs; // fixed-length, for overlap-add
+    
     int m_outputLatency;
 
     FFTReal *m_fft;
-
+    
     void initialise();
-    ComplexBlock processOctaveBlock(int octave);
+    void processOctave(int octave, const ComplexBlock &block);
+    void processOctaveColumn(int octave, const ComplexColumn &column);
+    void overlapAddAndResample(int octave, const RealSequence &);
+    RealSequence drawFromBuffers();
 };
 
 #endif
-

@@ -47,7 +47,7 @@ CQVamp::CQVamp(float inputSampleRate) :
     m_maxMIDIPitch(84),
     m_tuningFrequency(440),
     m_bpo(24),
-    m_interpolation(CQInterpolated::Linear),
+    m_interpolation(CQSpectrogram::InterpolateLinear),
     m_cq(0),
     m_maxFrequency(inputSampleRate/2),
     m_minFrequency(46),
@@ -155,7 +155,7 @@ CQVamp::getParameterDescriptors() const
     desc.defaultValue = 2;
     desc.isQuantized = true;
     desc.quantizeStep = 1;
-    desc.valueNames.push_back("None, leave empty");
+    desc.valueNames.push_back("None, leave as zero");
     desc.valueNames.push_back("None, repeat prior value");
     desc.valueNames.push_back("Linear interpolation");
     list.push_back(desc);
@@ -198,7 +198,7 @@ CQVamp::setParameter(std::string param, float value)
     } else if (param == "bpo") {
         m_bpo = lrintf(value);
     } else if (param == "interpolation") {
-        m_interpolation = (CQInterpolated::Interpolation)lrintf(value);
+        m_interpolation = (CQSpectrogram::Interpolation)lrintf(value);
     } else {
         std::cerr << "WARNING: CQVamp::setParameter: unknown parameter \""
                   << param << "\"" << std::endl;
@@ -224,7 +224,7 @@ CQVamp::initialise(size_t channels, size_t stepSize, size_t blockSize)
     m_maxFrequency = Pitch::getFrequencyForPitch
         (m_maxMIDIPitch, 0, m_tuningFrequency);
 
-    m_cq = new CQInterpolated
+    m_cq = new CQSpectrogram
 	(m_inputSampleRate, m_minFrequency, m_maxFrequency, m_bpo,
          m_interpolation);
 
@@ -236,7 +236,7 @@ CQVamp::reset()
 {
     if (m_cq) {
 	delete m_cq;
-	m_cq = new CQInterpolated
+	m_cq = new CQSpectrogram
 	    (m_inputSampleRate, m_minFrequency, m_maxFrequency, m_bpo,
              m_interpolation);
     }
@@ -272,7 +272,7 @@ CQVamp::getOutputDescriptors() const
 
     if (m_cq) {
         char name[20];
-        for (int i = 0; i < d.binCount; ++i) {
+        for (int i = 0; i < (int)d.binCount; ++i) {
             float freq = m_cq->getBinFrequency(i);
             sprintf(name, "%.1f Hz", freq);
             d.binNames.push_back(name);
@@ -314,7 +314,7 @@ CQVamp::process(const float *const *inputBuffers,
 CQVamp::FeatureSet
 CQVamp::getRemainingFeatures()
 {
-    vector<vector<double> > cqout = m_cq->getRemainingBlocks();
+    vector<vector<double> > cqout = m_cq->getRemainingOutput();
     return convertToFeatures(cqout);
 }
 

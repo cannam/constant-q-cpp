@@ -38,16 +38,14 @@
 #include "dsp/transforms/FFT.h"
 
 #include <algorithm>
-#include <complex>
 #include <iostream>
 #include <stdexcept>
 
 using std::vector;
-using std::complex;
 using std::cerr;
 using std::endl;
 
-typedef std::complex<double> C;
+//#define DEBUG_CQ 1
 
 ConstantQ::ConstantQ(double sampleRate,
                      double minFreq,
@@ -114,6 +112,10 @@ ConstantQ::initialise()
         Resampler *r = new Resampler
             (sourceRate, sourceRate / factor, 60, 0.02);
 
+#ifdef DEBUG_CQ
+        cerr << "forward: octave " << i << ": resample from " << sourceRate << " to " << sourceRate / factor << endl;
+#endif
+
         // We need to adapt the latencies so as to get the first input
         // sample to be aligned, in time, at the decimator output
         // across all octaves.
@@ -172,26 +174,37 @@ ConstantQ::initialise()
 	if (latPlusDrop > maxLatPlusDrop) maxLatPlusDrop = latPlusDrop;
     }
 
-    // we want to design totalLatency such that totalLatency -
-    // latencies[0] - drops[0] is a multiple of m_p.fftHop, so that we
-    // can get identical results in octave 0 to our reference
-    // implementation, making for easier testing (though other octaves
-    // will differ because of different resampler implementations)
-
     int totalLatency = maxLatPlusDrop;
+
     int lat0 = totalLatency - latencies[0] - drops[0];
     totalLatency = ceil(double(lat0 / m_p.fftHop) * m_p.fftHop)
 	+ latencies[0] + drops[0];
 
-//    cerr << "total latency = " << totalLatency << endl;
+    // We want (totalLatency - latencies[i]) to be a multiple of 2^i
+    // for each octave i, so that we do not end up with fractional
+    // octave latencies below. In theory this is hard, in practice if
+    // we ensure it for the last octave we should be OK.
+    double finalOctLat = latencies[m_octaves-1];
+    double finalOctFact = pow(2, m_octaves-1);
+    totalLatency =
+        int(round(finalOctLat +
+                  finalOctFact *
+                  ceil((totalLatency - finalOctLat) / finalOctFact)));
+
+#ifdef DEBUG_CQ
+    cerr << "total latency = " << totalLatency << endl;
+#endif
 
     // Padding as in the reference (will be introduced with the
     // latency compensation in the loop below)
     m_outputLatency = totalLatency + m_bigBlockSize
 	- m_p.firstCentre * pow(2, m_octaves-1);
 
-//    cerr << "m_bigBlockSize = " << m_bigBlockSize << ", firstCentre = "
-//	 << m_p.firstCentre << ", m_octaves = " << m_octaves << ", so m_outputLatency = " << m_outputLatency << endl;
+#ifdef DEBUG_CQ
+    cerr << "m_bigBlockSize = " << m_bigBlockSize << ", firstCentre = "
+	 << m_p.firstCentre << ", m_octaves = " << m_octaves
+         << ", so m_outputLatency = " << m_outputLatency << endl;
+#endif
 
     for (int i = 0; i < m_octaves; ++i) {
 
@@ -208,24 +221,39 @@ ConstantQ::initialise()
 	    double(totalLatency - latencies[i] - drops[i]
 		   + m_bigBlockSize) / factor;
 
+#ifdef DEBUG_CQ
+        cerr << "octave " << i << ": resampler latency = " << latencies[i]
+             << ", drop " << drops[i] << " (/factor = " << drops[i]/factor
+             << "), octaveLatency = " << octaveLatency << " -> "
+             << int(round(octaveLatency)) << " (diff * factor = "
+             << (octaveLatency - round(octaveLatency)) << " * "
+             << factor << " = "
+             << (octaveLatency - round(octaveLatency)) * factor << ")" << endl;
+
+        cerr << "double(" << totalLatency << " - " 
+             << latencies[i] << " - " << drops[i] << " + " 
+             << m_bigBlockSize << ") / " << factor << " = " 
+             << octaveLatency << endl;
+#endif
+
         m_buffers.push_back
-            (vector<double>(int(round(octaveLatency)), 0.0));
+            (RealSequence(int(round(octaveLatency)), 0.0));
     }
 
     m_fft = new FFTReal(m_p.fftSize);
 }
 
-vector<vector<double> > 
-ConstantQ::process(const vector<double> &td)
+ConstantQ::ComplexBlock
+ConstantQ::process(const RealSequence &td)
 {
     m_buffers[0].insert(m_buffers[0].end(), td.begin(), td.end());
 
     for (int i = 1; i < m_octaves; ++i) {
-        vector<double> dec = m_decimators[i]->process(td.data(), td.size());
+        RealSequence dec = m_decimators[i]->process(td.data(), td.size());
         m_buffers[i].insert(m_buffers[i].end(), dec.begin(), dec.end());
     }
 
-    vector<vector<double> > out;
+    ComplexBlock out;
 
     while (true) {
 
@@ -236,8 +264,6 @@ ConstantQ::process(const vector<double> &td)
 	bool enough = true;
 	for (int i = 0; i < m_octaves; ++i) {
 	    int required = m_p.fftSize * pow(2, m_octaves - i - 1);
-//	    cerr << "for octave " << i << ", buf len =  "<< m_buffers[i].size() << " (need " << required << ")" << endl;
-
 	    if ((int)m_buffers[i].size() < required) {
 		enough = false;
 	    }
@@ -247,7 +273,7 @@ ConstantQ::process(const vector<double> &td)
         int base = out.size();
         int totalColumns = pow(2, m_octaves - 1) * m_p.atomsPerFrame;
         for (int i = 0; i < totalColumns; ++i) {
-            out.push_back(vector<double>());
+            out.push_back(ComplexColumn());
         }
 
         for (int octave = 0; octave < m_octaves; ++octave) {
@@ -255,7 +281,7 @@ ConstantQ::process(const vector<double> &td)
             int blocksThisOctave = pow(2, (m_octaves - octave - 1));
 
             for (int b = 0; b < blocksThisOctave; ++b) {
-                vector<vector<double> > block = processOctaveBlock(octave);
+                ComplexBlock block = processOctaveBlock(octave);
                 
                 for (int j = 0; j < m_p.atomsPerFrame; ++j) {
 
@@ -266,7 +292,7 @@ ConstantQ::process(const vector<double> &td)
 
                     while (int(out[target].size()) < 
                            m_p.binsPerOctave * (octave + 1)) {
-                        out[target].push_back(0.0);
+                        out[target].push_back(Complex());
                     }
                     
                     for (int i = 0; i < m_p.binsPerOctave; ++i) {
@@ -281,42 +307,42 @@ ConstantQ::process(const vector<double> &td)
     return out;
 }
 
-vector<vector<double> >
-ConstantQ::getRemainingBlocks()
+ConstantQ::ComplexBlock
+ConstantQ::getRemainingOutput()
 {
     // Same as padding added at start, though rounded up
     int pad = ceil(double(m_outputLatency) / m_bigBlockSize) * m_bigBlockSize;
-    vector<double> zeros(pad, 0.0);
+    RealSequence zeros(pad, 0.0);
     return process(zeros);
 }
 
-vector<vector<double> >
+ConstantQ::ComplexBlock
 ConstantQ::processOctaveBlock(int octave)
 {
-    vector<double> ro(m_p.fftSize, 0.0);
-    vector<double> io(m_p.fftSize, 0.0);
+    RealSequence ro(m_p.fftSize, 0.0);
+    RealSequence io(m_p.fftSize, 0.0);
 
     m_fft->forward(m_buffers[octave].data(), ro.data(), io.data());
 
-    vector<double> shifted;
+    RealSequence shifted;
     shifted.insert(shifted.end(), 
                    m_buffers[octave].begin() + m_p.fftHop,
                    m_buffers[octave].end());
     m_buffers[octave] = shifted;
 
-    vector<C> cv;
+    ComplexSequence cv;
     for (int i = 0; i < m_p.fftSize; ++i) {
-        cv.push_back(C(ro[i], io[i]));
+        cv.push_back(Complex(ro[i], io[i]));
     }
 
-    vector<C> cqrowvec = m_kernel->process(cv);
+    ComplexSequence cqrowvec = m_kernel->processForward(cv);
 
-    // Reform into a column matrix and use only the magnitude
-    vector<vector<double> > cqblock;
+    // Reform into a column matrix
+    ComplexBlock cqblock;
     for (int j = 0; j < m_p.atomsPerFrame; ++j) {
-        cqblock.push_back(vector<double>());
+        cqblock.push_back(ComplexColumn());
         for (int i = 0; i < m_p.binsPerOctave; ++i) {
-            cqblock[j].push_back(abs(cqrowvec[i * m_p.atomsPerFrame + j]));
+            cqblock[j].push_back(cqrowvec[i * m_p.atomsPerFrame + j]);
         }
     }
 

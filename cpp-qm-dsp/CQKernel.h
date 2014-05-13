@@ -59,7 +59,10 @@ public:
 
     Properties getProperties() const { return m_p; }
 
-    std::vector<std::complex<double> > process
+    std::vector<std::complex<double> > processForward
+        (const std::vector<std::complex<double> > &);
+
+    std::vector<std::complex<double> > processInverse
         (const std::vector<std::complex<double> > &);
 
 private:

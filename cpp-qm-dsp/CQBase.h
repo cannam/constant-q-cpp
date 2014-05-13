@@ -1,3 +1,4 @@
+/* -*- c-basic-offset: 4 indent-tabs-mode: nil -*-  vi:set ts=8 sts=4 sw=4: */
 /*
     Constant-Q library
     Copyright (c) 2013-2014 Queen Mary, University of London
@@ -28,49 +29,32 @@
     authorization.
 */
 
-#include "CQSpectrogram.h"
+#ifndef CQBASE_H
+#define CQBASE_H
 
-#include <iostream>
 #include <vector>
+#include <complex>
 
-using std::vector;
-using std::cerr;
-using std::cout;
-using std::endl;
-
-#include <cstdio>
-
-int main(int argc, char **argv)
+class CQBase // interface class
 {
-    vector<double> in;
+public:
+    typedef std::complex<double> Complex;
+    typedef std::vector<double> RealSequence;
+    typedef std::vector<double> RealColumn;
+    typedef std::vector<Complex> ComplexSequence;
+    typedef std::vector<Complex> ComplexColumn;
+    typedef std::vector<RealColumn> RealBlock;
+    typedef std::vector<ComplexColumn> ComplexBlock;
 
-    for (int i = 0; i < 64; ++i) {
-//	if (i == 0) in.push_back(1);
-//	else in.push_back(0);
-	in.push_back(sin(i * M_PI / 2.0));
-    }
+    virtual double getSampleRate() const = 0;
+    virtual int getBinsPerOctave() const = 0;
+    virtual int getOctaves() const = 0; 
+    virtual int getTotalBins() const = 0;
+    virtual int getColumnHop() const = 0;
+    virtual int getLatency() const = 0;
+    virtual double getMaxFrequency() const = 0;
+    virtual double getMinFrequency() const = 0; // actual min, not that passed to ctor
+    virtual double getBinFrequency(int bin) const = 0;
+};
 
-    CQSpectrogram k(8, 1, 4, 4, CQSpectrogram::InterpolateZeros);
-
-    vector<vector<double> > out = k.process(in);
-    vector<vector<double> > rest = k.getRemainingOutput();
-
-    out.insert(out.end(), rest.begin(), rest.end());
-
-    cerr << "got " << out.size() << " back (" << out[0].size() << " in each?)" << endl;
-
-    for (int b = 0; b < (int)out.size() / 8; ++b) {
-	printf("\nColumns %d to %d:\n\n", b * 8, b * 8 + 7);
-	for (int j = int(out[0].size()) - 1; j >= 0; --j) {
-	    for (int i = 0; i < 8; ++i) {
-		if (i + b * 8 < (int)out.size()) {
-		    double v = out[i + b * 8][j];
-		    if (v < 0.0001) printf("  0      ");
-		    else printf("  %.4f ", out[i + b * 8][j]);
-		}
-	    }
-	    printf("\n");
-	}
-    }
-}
-
+#endif

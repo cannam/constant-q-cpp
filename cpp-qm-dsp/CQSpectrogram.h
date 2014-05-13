@@ -29,51 +29,49 @@
     authorization.
 */
 
-#ifndef CQ_INTERPOLATED_H
-#define CQ_INTERPOLATED_H
+#ifndef CQSPECTROGRAM_H
+#define CQSPECTROGRAM_H
 
-#include <vector>
 #include "ConstantQ.h"
 
-class CQInterpolated
+class CQSpectrogram : public CQBase
 {
 public:
     enum Interpolation {
-	None, // leave empty cells empty
-	Hold, // repeat prior cell
-	Linear, // linear interpolation between consecutive time cells
+	InterpolateZeros, // leave empty cells as zero
+	InterpolateHold, // repeat prior cell
+	InterpolateLinear, // linear interpolation between consecutive time cells
     };
 
-    CQInterpolated(double sampleRate,
-		   double minFreq, double maxFreq,
-		   int binsPerOctave,
-		   Interpolation interpolation);
-    ~CQInterpolated();
+    CQSpectrogram(double sampleRate,
+                  double minFreq, double maxFreq,
+                  int binsPerOctave,
+                  Interpolation interpolation);
+    virtual ~CQSpectrogram();
 
-    double getSampleRate() const { return m_cq.getSampleRate(); }
-    int getBinsPerOctave() const { return m_cq.getBinsPerOctave(); }
-    int getOctaves() const { return m_cq.getOctaves(); }
-    int getTotalBins() const { return m_cq.getTotalBins(); }
-    int getColumnHop() const { return m_cq.getColumnHop(); }
-    int getLatency() const { return m_cq.getLatency(); } 
-    double getMaxFrequency() const { return m_cq.getMaxFrequency(); }
-    double getMinFrequency() const { return m_cq.getMinFrequency(); }
-    double getBinFrequency(int bin) const { return m_cq.getBinFrequency(bin); }
+    virtual double getSampleRate() const { return m_cq.getSampleRate(); }
+    virtual int getBinsPerOctave() const { return m_cq.getBinsPerOctave(); }
+    virtual int getOctaves() const { return m_cq.getOctaves(); }
+    virtual int getTotalBins() const { return m_cq.getTotalBins(); }
+    virtual int getColumnHop() const { return m_cq.getColumnHop(); }
+    virtual int getLatency() const { return m_cq.getLatency(); } 
+    virtual double getMaxFrequency() const { return m_cq.getMaxFrequency(); }
+    virtual double getMinFrequency() const { return m_cq.getMinFrequency(); }
+    virtual double getBinFrequency(int bin) const { return m_cq.getBinFrequency(bin); }
 
-    std::vector<std::vector<double> > process(const std::vector<double> &);
-    std::vector<std::vector<double> > getRemainingBlocks();
+    RealBlock process(const RealSequence &);
+    RealBlock getRemainingOutput();
 
 private:
     ConstantQ m_cq;
     Interpolation m_interpolation;
 
-    typedef std::vector<std::vector<double> > Grid;
-    Grid m_buffer;
-    Grid postProcess(const Grid &, bool insist);
-    Grid fetchHold(bool insist);
-    Grid fetchLinear(bool insist);
-    Grid linearInterpolated(const Grid &, int, int);
-    std::vector<double> m_prevColumn;
+    RealBlock m_buffer;
+    RealBlock postProcess(const ComplexBlock &, bool insist);
+    RealBlock fetchHold(bool insist);
+    RealBlock fetchLinear(bool insist);
+    RealBlock linearInterpolated(const RealBlock &, int, int);
+    RealColumn m_prevColumn;
 };
 
 #endif

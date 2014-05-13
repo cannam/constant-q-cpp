@@ -34,7 +34,7 @@
 
 #include <vamp-sdk/Plugin.h>
 
-#include "cpp-qm-dsp/CQInterpolated.h"
+#include "cpp-qm-dsp/CQSpectrogram.h"
 
 class ConstantQ;
 
@@ -75,9 +75,9 @@ protected:
     int m_maxMIDIPitch;
     float m_tuningFrequency;
     int m_bpo;
-    CQInterpolated::Interpolation m_interpolation;
+    CQSpectrogram::Interpolation m_interpolation;
 
-    CQInterpolated *m_cq;
+    CQSpectrogram *m_cq;
     float m_maxFrequency;
     float m_minFrequency;
     int m_stepSize;

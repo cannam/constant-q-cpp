@@ -29,17 +29,15 @@
     authorization.
 */
 
-#include "CQInterpolated.h"
+#include "CQSpectrogram.h"
 
 #include <iostream>
 #include <stdexcept>
 
-using std::vector;
-
 using std::cerr;
 using std::endl;
 
-CQInterpolated::CQInterpolated(double sampleRate,
+CQSpectrogram::CQSpectrogram(double sampleRate,
 			       double minFreq, double maxFreq,
 			       int binsPerOctave,
 			       Interpolation interpolation) :
@@ -48,53 +46,71 @@ CQInterpolated::CQInterpolated(double sampleRate,
 {
 }
 
-CQInterpolated::~CQInterpolated()
+CQSpectrogram::~CQSpectrogram()
 {
 }
 
-vector<vector<double> >
-CQInterpolated::process(const vector<double> &td)
+CQSpectrogram::RealBlock
+CQSpectrogram::process(const RealSequence &td)
 {
     return postProcess(m_cq.process(td), false);
 }
 
-vector<vector<double> >
-CQInterpolated::getRemainingBlocks()
+CQSpectrogram::RealBlock
+CQSpectrogram::getRemainingOutput()
 {
-    return postProcess(m_cq.getRemainingBlocks(), true);
+    return postProcess(m_cq.getRemainingOutput(), true);
 }
 
-vector<vector<double> >
-CQInterpolated::postProcess(const vector<vector<double> > &cq, bool insist)
+CQSpectrogram::RealBlock
+CQSpectrogram::postProcess(const ComplexBlock &cq, bool insist)
 {
-    if (m_interpolation == None) {
-	return cq;
-    }
-
     int width = cq.size();
 
+    // convert to magnitudes
+    RealBlock spec;
     for (int i = 0; i < width; ++i) {
-	m_buffer.push_back(cq[i]);
+        int height = cq[i].size();
+        RealColumn col(height, 0);
+        for (int j = 0; j < height; ++j) {
+            col[j] = abs(cq[i][j]);
+        }
+        spec.push_back(col);
+    }
+
+    if (m_interpolation == InterpolateZeros) {
+        for (int i = 0; i < width; ++i) {
+            int sh = spec[i].size();
+            int fh = getTotalBins();
+            for (int j = sh; j < fh; ++j) {
+                spec[i].push_back(0);
+            }
+        }
+	return spec;
+    }
+
+    for (int i = 0; i < width; ++i) {
+	m_buffer.push_back(spec[i]);
     }
     
-    if (m_interpolation == Hold) {
+    if (m_interpolation == InterpolateHold) {
 	return fetchHold(insist);
     } else {
 	return fetchLinear(insist);
     }
 }
 
-vector<vector<double> >
-CQInterpolated::fetchHold(bool)
+CQSpectrogram::RealBlock
+CQSpectrogram::fetchHold(bool)
 {
-    Grid out;
+    RealBlock out;
     
     int width = m_buffer.size();
     int height = getTotalBins();
 
     for (int i = 0; i < width; ++i) {
 	
-	vector<double> col = m_buffer[i];
+	RealColumn col = m_buffer[i];
 
 	int thisHeight = col.size();
 	int prevHeight = m_prevColumn.size();
@@ -116,10 +132,10 @@ CQInterpolated::fetchHold(bool)
     return out;
 }
 
-vector<vector<double> >
-CQInterpolated::fetchLinear(bool insist)
+CQSpectrogram::RealBlock
+CQSpectrogram::fetchLinear(bool insist)
 {
-    Grid out;
+    RealBlock out;
 
     //!!! This is surprisingly messy. I must be missing something.
 
@@ -168,9 +184,9 @@ CQInterpolated::fetchLinear(bool insist)
 	}
     } else if (firstFullHeight > 0) {
 	// can interpolate nothing, stash up to first full height & recurse
-	out = Grid(m_buffer.begin(), m_buffer.begin() + firstFullHeight);
-	m_buffer = Grid(m_buffer.begin() + firstFullHeight, m_buffer.end());
-	Grid more = fetchLinear(insist);
+	out = RealBlock(m_buffer.begin(), m_buffer.begin() + firstFullHeight);
+	m_buffer = RealBlock(m_buffer.begin() + firstFullHeight, m_buffer.end());
+	RealBlock more = fetchLinear(insist);
 	out.insert(out.end(), more.begin(), more.end());
 	return out;
     } else if (secondFullHeight < 0) {
@@ -186,15 +202,15 @@ CQInterpolated::fetchLinear(bool insist)
     } else {
 	// firstFullHeight == 0 and secondFullHeight also valid. Can interpolate
 	out = linearInterpolated(m_buffer, 0, secondFullHeight);
-	m_buffer = Grid(m_buffer.begin() + secondFullHeight, m_buffer.end());
-	Grid more = fetchLinear(insist);
+	m_buffer = RealBlock(m_buffer.begin() + secondFullHeight, m_buffer.end());
+	RealBlock more = fetchLinear(insist);
 	out.insert(out.end(), more.begin(), more.end());
 	return out;
     }
 }
 
-vector<vector<double> >
-CQInterpolated::linearInterpolated(const Grid &g, int x0, int x1)
+CQSpectrogram::RealBlock
+CQSpectrogram::linearInterpolated(const RealBlock &g, int x0, int x1)
 {
     // g must be a grid with full-height columns at x0 and x1
 
@@ -211,7 +227,7 @@ CQInterpolated::linearInterpolated(const Grid &g, int x0, int x1)
     int height = g[x0].size();
     int width = x1 - x0;
 
-    Grid out(g.begin() + x0, g.begin() + x1);
+    RealBlock out(g.begin() + x0, g.begin() + x1);
 
     for (int y = 0; y < height; ++y) {
 
