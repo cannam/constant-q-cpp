@@ -43,7 +43,7 @@ int main(int argc, char **argv)
     }
 
     sfinfoOut.channels = 1;
-    sfinfoOut.format = sfinfo.format;
+    sfinfoOut.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
     sfinfoOut.frames = sfinfo.frames;
     sfinfoOut.samplerate = sfinfo.samplerate;
     sfinfoOut.sections = sfinfo.sections;
