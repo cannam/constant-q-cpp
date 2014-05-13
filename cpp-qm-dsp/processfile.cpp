@@ -146,7 +146,9 @@ int main(int argc, char **argv)
 
 	if (doDiff) {
 	    for (int i = 0; i < (int)cqout.size(); ++i) {
-		cqout[i] -= buffer[outframe + i - latency];
+		if (outframe + i >= latency) {
+		    cqout[i] -= buffer[outframe + i - latency];
+		}
 	    }
 	    
 	    if (outframe >= latency) {
@@ -181,7 +183,9 @@ int main(int argc, char **argv)
     sf_writef_double(sndfileOut, r.data(), r.size());
     if (doDiff) {
 	for (int i = 0; i < (int)r.size(); ++i) {
-	    r[i] -= buffer[outframe + i - latency];
+	    if (outframe + i >= latency) {
+		r[i] -= buffer[outframe + i - latency];
+	    }
 	}
 	sf_writef_double(sndDiffFile, r.data(), r.size());
     }
