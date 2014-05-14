@@ -200,10 +200,14 @@ int main(int argc, char **argv)
 	if (doDiff) {
 	    for (int i = 0; i < (int)cqout.size(); ++i) {
 		if (outframe + i >= latency) {
-		    cqout[i] -= buffer[outframe + i - latency];
-		    if (fabs(cqout[i]) > maxdiff) {
+		    int dframe = outframe + i - latency;
+		    if (dframe >= (int)buffer.size()) cqout[i] = 0;
+		    else cqout[i] -= buffer[dframe];
+		    if (fabs(cqout[i]) > maxdiff &&
+			dframe > sfinfo.samplerate && // ignore first/last sec
+			dframe + sfinfo.samplerate < sfinfo.frames) {
 			maxdiff = fabs(cqout[i]);
-			maxdiffidx = outframe + i - latency;
+			maxdiffidx = dframe;
 		    }
 		}
 	    }
@@ -241,10 +245,14 @@ int main(int argc, char **argv)
     if (doDiff) {
 	for (int i = 0; i < (int)r.size(); ++i) {
 	    if (outframe + i >= latency) {
-		r[i] -= buffer[outframe + i - latency];
-		if (fabs(r[i]) > maxdiff) {
+		int dframe = outframe + i - latency;
+		if (dframe >= (int)buffer.size()) r[i] = 0;
+		else r[i] -= buffer[dframe];
+		if (fabs(r[i]) > maxdiff &&
+		    dframe > sfinfo.samplerate && // ignore first/last sec
+		    dframe + sfinfo.samplerate < sfinfo.frames) {
 		    maxdiff = fabs(r[i]);
-		    maxdiffidx = outframe + i - latency;
+		    maxdiffidx = dframe;
 		}
 	    }
 	}
@@ -262,7 +270,9 @@ int main(int argc, char **argv)
     cerr << "in: " << inframe << ", out: " << outframe - latency << endl;
 
     if (doDiff) {
-	cerr << "max diff is " << maxdiff
+	double db = 10 * log10(maxdiff);
+	cerr << "max diff [excluding first and last second of audio] is "
+	     << maxdiff << " (" << db << " dBFS)"
 	     << " at sample index " << maxdiffidx << endl;
     }
     
