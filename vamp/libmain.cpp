@@ -34,7 +34,26 @@
 
 #include "CQVamp.h"
 
-static Vamp::PluginAdapter<CQVamp> cqPluginAdapter;
+class CQVampPluginAdapter : public Vamp::PluginAdapterBase
+{
+public:
+    CQVampPluginAdapter(bool midiPitchParameters) :
+        PluginAdapterBase(),
+        m_midiPitchParameters(midiPitchParameters)
+    { }
+    
+    virtual ~CQVampPluginAdapter() { }
+
+protected:
+    bool m_midiPitchParameters;
+    
+    Vamp::Plugin *createPlugin(float inputSampleRate) {
+        return new CQVamp(inputSampleRate, m_midiPitchParameters);
+    }
+};
+
+static CQVampPluginAdapter midiAdapter(true);
+static CQVampPluginAdapter hzAdapter(false);
 
 const VampPluginDescriptor *
 vampGetPluginDescriptor(unsigned int version, unsigned int index)
@@ -42,7 +61,8 @@ vampGetPluginDescriptor(unsigned int version, unsigned int index)
     if (version < 1) return 0;
 
     switch (index) {
-    case  0: return cqPluginAdapter.getDescriptor();
+    case  0: return hzAdapter.getDescriptor();
+    case  1: return midiAdapter.getDescriptor();
     default: return 0;
     }
 }

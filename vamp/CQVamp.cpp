@@ -41,16 +41,28 @@ using std::vector;
 using std::cerr;
 using std::endl;
 
-CQVamp::CQVamp(float inputSampleRate) :
+// The plugin offers either MIDI pitch or frequency range parameters,
+// depending on the midiPitchParameters option given to the
+// constructor. It never offers both. So they can have different
+// defaults; if we're using MIDI pitch, the min and max frequencies
+// will come from those rather than from the m_minFrequency and
+// m_maxFrequency members.
+static const int defaultMinMIDIPitch = 36;
+static const int defaultMaxMIDIPitch = 96;
+static const int defaultBPO = 36;
+static const float defaultTuningFrequency = 440.f;
+
+CQVamp::CQVamp(float inputSampleRate, bool midiPitchParameters) :
     Vamp::Plugin(inputSampleRate),
-    m_minMIDIPitch(36),
-    m_maxMIDIPitch(84),
-    m_tuningFrequency(440),
-    m_bpo(24),
+    m_midiPitchParameters(midiPitchParameters),
+    m_minMIDIPitch(defaultMinMIDIPitch),
+    m_maxMIDIPitch(defaultMaxMIDIPitch),
+    m_tuningFrequency(defaultTuningFrequency),
+    m_bpo(defaultBPO),
     m_interpolation(CQSpectrogram::InterpolateLinear),
     m_cq(0),
-    m_maxFrequency(inputSampleRate/2),
-    m_minFrequency(46),
+    m_maxFrequency(14080),
+    m_minFrequency(100),
     m_haveStartTime(false),
     m_columnCount(0)
 {
@@ -64,19 +76,31 @@ CQVamp::~CQVamp()
 string
 CQVamp::getIdentifier() const
 {
-    return "cqvamp";
+    if (m_midiPitchParameters) {
+        return "cqvampmidi";
+    } else {
+        return "cqvamp";
+    }
 }
 
 string
 CQVamp::getName() const
 {
-    return "Constant-Q Spectrogram";
+    if (m_midiPitchParameters) {
+        return "Constant-Q Spectrogram (MIDI pitch range)";
+    } else {
+        return "Constant-Q Spectrogram (Hz range)";
+    }
 }
 
 string
 CQVamp::getDescription() const
 {
-    return "Extract a spectrogram with constant ratio of centre frequency to resolution from the input audio";
+    if (m_midiPitchParameters) {
+        return "Extract a spectrogram with constant ratio of centre frequency to resolution from the input audio, specifying the frequency range in MIDI pitch units.";
+    } else {
+        return "Extract a spectrogram with constant ratio of centre frequency to resolution from the input audio, specifying the frequency range in Hz.";
+    }
 }
 
 string
@@ -103,37 +127,63 @@ CQVamp::getParameterDescriptors() const
     ParameterList list;
 
     ParameterDescriptor desc;
-    desc.identifier = "minpitch";
-    desc.name = "Minimum Pitch";
-    desc.unit = "MIDI units";
-    desc.description = "MIDI pitch corresponding to the lowest frequency to be included in the constant-Q transform";
-    desc.minValue = 0;
-    desc.maxValue = 127;
-    desc.defaultValue = 36;
-    desc.isQuantized = true;
-    desc.quantizeStep = 1;
-    list.push_back(desc);
 
-    desc.identifier = "maxpitch";
-    desc.name = "Maximum Pitch";
-    desc.unit = "MIDI units";
-    desc.description = "MIDI pitch corresponding to the highest frequency to be included in the constant-Q transform";
-    desc.minValue = 0;
-    desc.maxValue = 127;
-    desc.defaultValue = 84;
-    desc.isQuantized = true;
-    desc.quantizeStep = 1;
-    list.push_back(desc);
+    if (m_midiPitchParameters) {
 
-    desc.identifier = "tuning";
-    desc.name = "Tuning Frequency";
-    desc.unit = "Hz";
-    desc.description = "Frequency of concert A";
-    desc.minValue = 360;
-    desc.maxValue = 500;
-    desc.defaultValue = 440;
-    desc.isQuantized = false;
-    list.push_back(desc);
+        desc.identifier = "minpitch";
+        desc.name = "Minimum Pitch";
+        desc.unit = "MIDI units";
+        desc.description = "MIDI pitch corresponding to the lowest frequency to be included in the constant-Q transform. (The actual minimum frequency may be lower, as the range always covers an integral number of octaves below the highest frequency.)";
+        desc.minValue = 0;
+        desc.maxValue = 127;
+        desc.defaultValue = 36;
+        desc.isQuantized = true;
+        desc.quantizeStep = 1;
+        list.push_back(desc);
+
+        desc.identifier = "maxpitch";
+        desc.name = "Maximum Pitch";
+        desc.unit = "MIDI units";
+        desc.description = "MIDI pitch corresponding to the highest frequency to be included in the constant-Q transform";
+        desc.minValue = 0;
+        desc.maxValue = 127;
+        desc.defaultValue = 84;
+        desc.isQuantized = true;
+        desc.quantizeStep = 1;
+        list.push_back(desc);
+
+        desc.identifier = "tuning";
+        desc.name = "Tuning Frequency";
+        desc.unit = "Hz";
+        desc.description = "Frequency of concert A";
+        desc.minValue = 360;
+        desc.maxValue = 500;
+        desc.defaultValue = 440;
+        desc.isQuantized = false;
+        list.push_back(desc);
+
+    } else {
+
+        desc.identifier = "minfreq";
+        desc.name = "Minimum Frequency";
+        desc.unit = "Hz";
+        desc.description = "Lowest frequency to be included in the constant-Q transform. (The actual minimum frequency may be lower, as the range always covers an integral number of octaves below the highest frequency.)";
+        desc.minValue = 1;
+        desc.maxValue = m_inputSampleRate / 2;
+        desc.defaultValue = 100;
+        desc.isQuantized = false;
+        list.push_back(desc);
+
+        desc.identifier = "maxfreq";
+        desc.name = "Maximum Frequency";
+        desc.unit = "Hz";
+        desc.description = "MIDI pitch corresponding to the highest frequency to be included in the constant-Q transform";
+        desc.minValue = 1;
+        desc.maxValue = m_inputSampleRate / 2;
+        desc.defaultValue = 14080;
+        desc.isQuantized = false;
+        list.push_back(desc);
+    }
     
     desc.identifier = "bpo";
     desc.name = "Bins per Octave";
@@ -141,7 +191,7 @@ CQVamp::getParameterDescriptors() const
     desc.description = "Number of constant-Q transform bins per octave";
     desc.minValue = 2;
     desc.maxValue = 480;
-    desc.defaultValue = 24;
+    desc.defaultValue = 60;
     desc.isQuantized = true;
     desc.quantizeStep = 1;
     list.push_back(desc);
@@ -166,13 +216,13 @@ CQVamp::getParameterDescriptors() const
 float
 CQVamp::getParameter(std::string param) const
 {
-    if (param == "minpitch") {
+    if (param == "minpitch" && m_midiPitchParameters) {
         return m_minMIDIPitch;
     }
-    if (param == "maxpitch") {
+    if (param == "maxpitch" && m_midiPitchParameters) {
         return m_maxMIDIPitch;
     }
-    if (param == "tuning") {
+    if (param == "tuning" && m_midiPitchParameters) {
         return m_tuningFrequency;
     }
     if (param == "bpo") {
@@ -180,6 +230,12 @@ CQVamp::getParameter(std::string param) const
     }
     if (param == "interpolation") {
         return (float)m_interpolation;
+    }
+    if (param == "minfreq" && !m_midiPitchParameters) {
+        return m_minFrequency;
+    }
+    if (param == "maxfreq" && !m_midiPitchParameters) {
+        return m_maxFrequency;
     }
     std::cerr << "WARNING: CQVamp::getParameter: unknown parameter \""
               << param << "\"" << std::endl;
@@ -189,16 +245,20 @@ CQVamp::getParameter(std::string param) const
 void
 CQVamp::setParameter(std::string param, float value)
 {
-    if (param == "minpitch") {
+    if (param == "minpitch" && m_midiPitchParameters) {
         m_minMIDIPitch = lrintf(value);
-    } else if (param == "maxpitch") {
+    } else if (param == "maxpitch" && m_midiPitchParameters) {
         m_maxMIDIPitch = lrintf(value);
-    } else if (param == "tuning") {
+    } else if (param == "tuning" && m_midiPitchParameters) {
         m_tuningFrequency = value;
     } else if (param == "bpo") {
         m_bpo = lrintf(value);
     } else if (param == "interpolation") {
         m_interpolation = (CQSpectrogram::Interpolation)lrintf(value);
+    } else if (param == "minfreq" && !m_midiPitchParameters) {
+        m_minFrequency = value;
+    } else if (param == "maxfreq" && !m_midiPitchParameters) {
+        m_maxFrequency = value;
     } else {
         std::cerr << "WARNING: CQVamp::setParameter: unknown parameter \""
                   << param << "\"" << std::endl;
@@ -219,10 +279,12 @@ CQVamp::initialise(size_t channels, size_t stepSize, size_t blockSize)
     m_stepSize = stepSize;
     m_blockSize = blockSize;
 
-    m_minFrequency = Pitch::getFrequencyForPitch
-        (m_minMIDIPitch, 0, m_tuningFrequency);
-    m_maxFrequency = Pitch::getFrequencyForPitch
-        (m_maxMIDIPitch, 0, m_tuningFrequency);
+    if (m_midiPitchParameters) {
+        m_minFrequency = Pitch::getFrequencyForPitch
+            (m_minMIDIPitch, 0, m_tuningFrequency);
+        m_maxFrequency = Pitch::getFrequencyForPitch
+            (m_maxMIDIPitch, 0, m_tuningFrequency);
+    }
 
     m_cq = new CQSpectrogram
 	(m_inputSampleRate, m_minFrequency, m_maxFrequency, m_bpo,
@@ -257,6 +319,33 @@ CQVamp::getPreferredBlockSize() const
     return 0;
 }
 
+std::string
+CQVamp::noteName(int i) const
+{
+    static const char *names[] = {
+        "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"
+    };
+
+    const char *n = names[i % 12];
+    int oct = i / 12 - 1;
+    char buf[20];
+    sprintf(buf, "%s%d", n, oct);
+
+    return buf;
+}
+
+float
+CQVamp::noteFrequency(int note) const
+{
+    return m_tuningFrequency * pow(2.0, (note - 69) / 12.0);
+}
+
+int
+CQVamp::noteNumber(float freq) const
+{
+    return int(round(57.0 + (12.0 * log(freq / (m_tuningFrequency / 2.0)) / log(2.0))));
+}
+
 CQVamp::OutputList
 CQVamp::getOutputDescriptors() const
 {
@@ -275,7 +364,12 @@ CQVamp::getOutputDescriptors() const
         for (int i = 0; i < (int)d.binCount; ++i) {
             float freq = m_cq->getBinFrequency(i);
             sprintf(name, "%.1f Hz", freq);
-            d.binNames.push_back(name);
+            if (fabs(noteFrequency(noteNumber(freq)) - freq) < 0.01) {
+                d.binNames.push_back(name + std::string(": ") +
+                                     noteName(noteNumber(freq)));
+            } else {
+                d.binNames.push_back(name);
+            }
         }
     }
 

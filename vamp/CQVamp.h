@@ -41,7 +41,7 @@ class ConstantQ;
 class CQVamp : public Vamp::Plugin
 {
 public:
-    CQVamp(float inputSampleRate);
+    CQVamp(float inputSampleRate, bool midiPitchParameters);
     virtual ~CQVamp();
 
     bool initialise(size_t channels, size_t stepSize, size_t blockSize);
@@ -71,6 +71,7 @@ public:
     FeatureSet getRemainingFeatures();
 
 protected:
+    bool m_midiPitchParameters;
     int m_minMIDIPitch;
     int m_maxMIDIPitch;
     float m_tuningFrequency;
@@ -86,6 +87,10 @@ protected:
     Vamp::RealTime m_startTime;
     bool m_haveStartTime;
     int m_columnCount;
+
+    std::string noteName(int i) const;
+    float noteFrequency(int i) const;
+    int noteNumber(float freq) const;
 
     std::vector<float> m_prevFeature;
     FeatureSet convertToFeatures(const std::vector<std::vector<double> > &);
