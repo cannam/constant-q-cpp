@@ -43,8 +43,8 @@ using std::vector;
 using std::cerr;
 using std::endl;
 
-static const int defaultLowestOctave = 1;
-static const int defaultOctaveCount = 8;
+static const int defaultLowestOctave = 0;
+static const int defaultOctaveCount = 7;
 static const int defaultBPO = 36;
 static const float defaultTuningFrequency = 440.f;
 
@@ -208,15 +208,23 @@ CQChromaVamp::initialise(size_t channels, size_t stepSize, size_t blockSize)
     m_blockSize = blockSize;
 
     int highestOctave = m_lowestOctave + m_octaveCount - 1;
-    int highestMIDIPitch = (1 + highestOctave) * 12 + 11;
 
-    m_maxFrequency = Pitch::getFrequencyForPitch
-        (highestMIDIPitch, 0, m_tuningFrequency);
-    m_minFrequency = m_maxFrequency / pow(2, m_octaveCount + 1) *
-        pow(2, 1.0 / m_bpo);
+    int midiPitchLimit = (1 + highestOctave) * 12 + 12; // C just beyond top
+    double midiPitchLimitFreq = 
+        Pitch::getFrequencyForPitch(midiPitchLimit, 0, m_tuningFrequency);
+
+    // Max frequency is frequency of the MIDI pitch just beyond the
+    // top octave range (midiPitchLimit) minus one bin, then minus
+    // floor(bins per semitone / 2)
+    int bps = m_bpo / 12;
+    m_maxFrequency = midiPitchLimitFreq / pow(2, (1.0 + floor(bps/2)) / m_bpo);
+
+    // Min frequency is frequency of midiPitchLimit lowered by the
+    // appropriate number of octaves.
+    m_minFrequency = midiPitchLimitFreq / pow(2, m_octaveCount + 1);
 
     cerr << "lowest octave: " << m_lowestOctave << ", highest octave: "
-         << highestOctave << ", highest midi pitch: " << highestMIDIPitch
+         << highestOctave << ", limit midi pitch: " << midiPitchLimit
          << ", min freq " << m_minFrequency << ", max freq " << m_maxFrequency
          << endl;
 
