@@ -43,8 +43,8 @@ using std::vector;
 using std::cerr;
 using std::endl;
 
-static const int defaultLowestOctave = 0;
-static const int defaultOctaveCount = 10;
+static const int defaultLowestOctave = 1;
+static const int defaultOctaveCount = 8;
 static const int defaultBPO = 36;
 static const float defaultTuningFrequency = 440.f;
 
