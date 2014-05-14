@@ -108,7 +108,7 @@ CQInverse::initialise()
         int factor = pow(2, i);
 
         Resampler *r = new Resampler
-            (sourceRate / factor, sourceRate, 60, 0.02);
+            (sourceRate / factor, sourceRate, 50, 0.05);
 
 #ifdef DEBUG_CQ
         cerr << "inverse: octave " << i << ": resample from " << sourceRate/factor << " to " << sourceRate << endl;
