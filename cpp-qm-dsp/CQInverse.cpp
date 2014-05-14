@@ -286,8 +286,10 @@ CQInverse::drawFromBuffers()
 CQInverse::RealSequence
 CQInverse::getRemainingOutput()
 {
-    for (int i = 0; i < (m_p.fftSize - m_p.fftHop) / m_p.fftHop; ++i) {
-        for (int j = 0; j < m_octaves; ++j) {
+    for (int j = 0; j < m_octaves; ++j) {
+        int factor = pow(2, j);
+        int latency = (j > 0 ? m_upsamplers[j]->getLatency() : 0) / factor;
+        for (int i = 0; i < (latency + m_p.fftSize) / m_p.fftHop; ++i) {
             overlapAddAndResample(j, RealSequence(m_olaBufs[j].size(), 0));
         }
     }
