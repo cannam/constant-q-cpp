@@ -1,0 +1,7 @@
+ @inproceedings{christian2010a,
+  author = {Christian Schörkhuber and Anssi Klapuri},
+  title = {Constant-Q transform toolbox for music processing},
+  booktitle = {Proceedings of the 7th Sound and Music Computing Conference, Barcelona, Spain},
+  month = {July},
+  year = {2010}
+} 
