@@ -79,6 +79,18 @@ CQKernel::generateKernel()
         (m_p.Q * m_p.sampleRate /
          (m_p.minFrequency * pow(2, (bpo - 1.0) / bpo)));
 
+    if (minNK == 0 || maxNK == 0) {
+        // most likely pathological parameters of some sort
+        cerr << "WARNING: CQKernel::generateKernel: minNK or maxNK is zero (minNK == " << minNK << ", maxNK == " << maxNK << "), not generating a kernel" << endl;
+        m_p.atomSpacing = 0;
+        m_p.firstCentre = 0;
+        m_p.fftSize = 0;
+        m_p.atomsPerFrame = 0;
+        m_p.lastCentre = 0;
+        m_p.fftHop = 0;
+        return;
+    }
+
     m_p.atomSpacing = round(minNK * atomHopFactor);
     m_p.firstCentre = m_p.atomSpacing * ceil(ceil(maxNK / 2.0) / m_p.atomSpacing);
     m_p.fftSize = MathUtilities::nextPowerOfTwo
@@ -87,7 +99,7 @@ CQKernel::generateKernel()
     m_p.atomsPerFrame = floor
         (1.0 + (m_p.fftSize - ceil(maxNK / 2.0) - m_p.firstCentre) / m_p.atomSpacing);
 
-    cerr << "atomsPerFrame = " << m_p.atomsPerFrame << " (atomHopFactor = " << atomHopFactor << ")" << endl;
+    cerr << "atomsPerFrame = " << m_p.atomsPerFrame << " (atomHopFactor = " << atomHopFactor << ", atomSpacing = " << m_p.atomSpacing << ", fftSize = " << m_p.fftSize << ", maxNK = " << maxNK << ", firstCentre = " << m_p.firstCentre << ")" << endl;
 
     m_p.lastCentre = m_p.firstCentre + (m_p.atomsPerFrame - 1) * m_p.atomSpacing;
 
@@ -280,6 +292,8 @@ CQKernel::processForward(const vector<C> &cv)
     // straightforward matrix multiply (taking into account m_kernel's
     // slightly-sparse representation)
 
+    if (m_kernel.data.empty()) return vector<C>();
+
     int nrows = m_p.binsPerOctave * m_p.atomsPerFrame;
 
     vector<C> rv(nrows, C());
@@ -301,6 +315,8 @@ CQKernel::processInverse(const vector<C> &cv)
     // actually the original kernel as calculated, we just stored the
     // conjugate-transpose of the kernel because we expect to be doing
     // more forward transforms than inverse ones.
+
+    if (m_kernel.data.empty()) return vector<C>();
 
     int ncols = m_p.binsPerOctave * m_p.atomsPerFrame;
     int nrows = m_p.fftSize;
