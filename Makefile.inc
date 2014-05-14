@@ -25,8 +25,8 @@ PF	:= $(LIB_DIR)/processfile
 LIB_HEADERS := $(LIB_DIR)/CQBase.h $(LIB_DIR)/CQKernel.h $(LIB_DIR)/ConstantQ.h $(LIB_DIR)/CQSpectrogram.h $(LIB_DIR)/CQInverse.h
 LIB_SOURCES := $(LIB_DIR)/CQKernel.cpp $(LIB_DIR)/ConstantQ.cpp $(LIB_DIR)/CQSpectrogram.cpp $(LIB_DIR)/CQInverse.cpp
 
-VAMP_HEADERS := $(VAMP_DIR)/CQVamp.h
-VAMP_SOURCES := $(VAMP_DIR)/CQVamp.cpp $(VAMP_DIR)/libmain.cpp
+VAMP_HEADERS := $(VAMP_DIR)/CQVamp.h $(VAMP_DIR)/CQChromaVamp.h
+VAMP_SOURCES := $(VAMP_DIR)/CQVamp.cpp $(VAMP_DIR)/CQChromaVamp.cpp $(VAMP_DIR)/libmain.cpp
 
 HEADERS	     := $(LIB_HEADERS) $(VAMP_HEADERS)
 SOURCES	     := $(LIB_SOURCES) $(VAMP_SOURCES)
@@ -72,6 +72,9 @@ cpp-qm-dsp/CQInverse.o: cpp-qm-dsp/CQKernel.h
 vamp/CQVamp.o: vamp/CQVamp.h cpp-qm-dsp/CQSpectrogram.h
 vamp/CQVamp.o: cpp-qm-dsp/ConstantQ.h cpp-qm-dsp/CQBase.h
 vamp/CQVamp.o: cpp-qm-dsp/CQKernel.h
+vamp/CQChromaVamp.o: vamp/CQChromaVamp.h cpp-qm-dsp/CQSpectrogram.h
+vamp/CQChromaVamp.o: cpp-qm-dsp/ConstantQ.h cpp-qm-dsp/CQBase.h
+vamp/CQChromaVamp.o: cpp-qm-dsp/CQKernel.h
 vamp/libmain.o: vamp/CQVamp.h cpp-qm-dsp/CQSpectrogram.h
 vamp/libmain.o: cpp-qm-dsp/ConstantQ.h cpp-qm-dsp/CQBase.h
 vamp/libmain.o: cpp-qm-dsp/CQKernel.h

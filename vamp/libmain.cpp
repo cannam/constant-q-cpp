@@ -33,6 +33,7 @@
 #include <vamp-sdk/PluginAdapter.h>
 
 #include "CQVamp.h"
+#include "CQChromaVamp.h"
 
 class CQVampPluginAdapter : public Vamp::PluginAdapterBase
 {
@@ -54,6 +55,7 @@ protected:
 
 static CQVampPluginAdapter midiAdapter(true);
 static CQVampPluginAdapter hzAdapter(false);
+static Vamp::PluginAdapter<CQChromaVamp> chromaAdapter;
 
 const VampPluginDescriptor *
 vampGetPluginDescriptor(unsigned int version, unsigned int index)
@@ -63,6 +65,7 @@ vampGetPluginDescriptor(unsigned int version, unsigned int index)
     switch (index) {
     case  0: return hzAdapter.getDescriptor();
     case  1: return midiAdapter.getDescriptor();
+    case  2: return chromaAdapter.getDescriptor();
     default: return 0;
     }
 }

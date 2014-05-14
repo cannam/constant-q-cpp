@@ -191,7 +191,7 @@ CQVamp::getParameterDescriptors() const
     desc.description = "Number of constant-Q transform bins per octave";
     desc.minValue = 2;
     desc.maxValue = 480;
-    desc.defaultValue = 60;
+    desc.defaultValue = defaultBPO;
     desc.isQuantized = true;
     desc.quantizeStep = 1;
     list.push_back(desc);
@@ -302,7 +302,6 @@ CQVamp::reset()
 	    (m_inputSampleRate, m_minFrequency, m_maxFrequency, m_bpo,
              m_interpolation);
     }
-    m_prevFeature.clear();
     m_haveStartTime = false;
     m_columnCount = 0;
 }
@@ -329,21 +328,9 @@ CQVamp::noteName(int i) const
     const char *n = names[i % 12];
     int oct = i / 12 - 1;
     char buf[20];
-    sprintf(buf, "%s%d", n, oct);
+    sprintf(buf, "%d %s%d", i, n, oct);
 
     return buf;
-}
-
-float
-CQVamp::noteFrequency(int note) const
-{
-    return m_tuningFrequency * pow(2.0, (note - 69) / 12.0);
-}
-
-int
-CQVamp::noteNumber(float freq) const
-{
-    return int(round(57.0 + (12.0 * log(freq / (m_tuningFrequency / 2.0)) / log(2.0))));
 }
 
 CQVamp::OutputList
@@ -364,9 +351,11 @@ CQVamp::getOutputDescriptors() const
         for (int i = 0; i < (int)d.binCount; ++i) {
             float freq = m_cq->getBinFrequency(i);
             sprintf(name, "%.1f Hz", freq);
-            if (fabs(noteFrequency(noteNumber(freq)) - freq) < 0.01) {
-                d.binNames.push_back(name + std::string(": ") +
-                                     noteName(noteNumber(freq)));
+            int note = Pitch::getPitchForFrequency(freq, 0, m_tuningFrequency);
+            float nearestFreq =
+                Pitch::getFrequencyForPitch(note, 0, m_tuningFrequency);
+            if (fabs(freq - nearestFreq) < 0.01) {
+                d.binNames.push_back(name + std::string(" ") + noteName(note));
             } else {
                 d.binNames.push_back(name);
             }
@@ -430,8 +419,6 @@ CQVamp::convertToFeatures(const vector<vector<double> > &cqout)
 
         // put low frequencies at the start
         std::reverse(column.begin(), column.end());
-
-	m_prevFeature = column;
 
 	Feature feature;
 	feature.hasTimestamp = true;

@@ -29,20 +29,18 @@
     authorization.
 */
 
-#ifndef CQVAMP_H
-#define CQVAMP_H
+#ifndef CQCHROMAVAMP_H
+#define CQCHROMAVAMP_H
 
 #include <vamp-sdk/Plugin.h>
 
-#include "cpp-qm-dsp/CQSpectrogram.h"
+class CQSpectrogram;
 
-class ConstantQ;
-
-class CQVamp : public Vamp::Plugin
+class CQChromaVamp : public Vamp::Plugin
 {
 public:
-    CQVamp(float inputSampleRate, bool midiPitchParameters);
-    virtual ~CQVamp();
+    CQChromaVamp(float inputSampleRate);
+    virtual ~CQChromaVamp();
 
     bool initialise(size_t channels, size_t stepSize, size_t blockSize);
     void reset();
@@ -71,12 +69,10 @@ public:
     FeatureSet getRemainingFeatures();
 
 protected:
-    bool m_midiPitchParameters;
-    int m_minMIDIPitch;
-    int m_maxMIDIPitch;
+    int m_lowestOctave;
+    int m_octaveCount;
     float m_tuningFrequency;
     int m_bpo;
-    CQSpectrogram::Interpolation m_interpolation;
 
     CQSpectrogram *m_cq;
     float m_maxFrequency;
@@ -88,9 +84,6 @@ protected:
     bool m_haveStartTime;
     int m_columnCount;
 
-    std::string noteName(int i) const;
-
-    std::vector<float> m_prevFeature;
     FeatureSet convertToFeatures(const std::vector<std::vector<double> > &);
 };
 
