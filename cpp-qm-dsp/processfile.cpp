@@ -12,19 +12,70 @@ using std::endl;
 
 #include <cstring>
 
+#include <getopt.h>
 #include <unistd.h>
 #include <sys/time.h>
+#include <cstdlib>
 
 int main(int argc, char **argv)
 {
-    if (argc < 3 || argc > 4) {
-	cerr << "Usage: " << argv[0] << " infile.wav outfile.wav [differencefile.wav]" << endl;
+    double maxFreq = 0;
+    double minFreq = 0;
+    int bpo = 0;
+    bool help = false;
+    
+    int c;
+
+    while (1) {
+	int optionIndex = 0;
+	
+	static struct option longOpts[] = {
+	    { "help", 0, 0, 'h', },
+	    { "maxfreq", 1, 0, 'x', },
+	    { "minfreq", 1, 0, 'n', },
+	    { "bpo", 1, 0, 'b' },
+	    { 0, 0, 0, 0 },
+	};
+
+	c = getopt_long(argc, argv,
+			"hx:n:b:",
+			longOpts, &optionIndex);
+	if (c == -1) break;
+
+	switch (c) {
+	case 'h': help = true; break;
+	case 'x': maxFreq = atof(optarg); break;
+	case 'n': minFreq = atof(optarg); break;
+	case 'b': bpo = atoi(optarg); break;
+	default: help = true; break;
+	}
+    }
+
+    if (help || (optind + 2 != argc && optind + 3 != argc)) {
+	cerr << endl;
+	cerr << "Usage: " << argv[0] << " [options] infile.wav outfile.wav [differencefile.wav]" << endl;
+	cerr << endl;
+	cerr << "Options:" << endl;
+	cerr << "  -x<X>, --maxfreq <X>  Maximum frequency (default = sample rate / 3)" << endl;
+	cerr << "  -n<X>, --minfreq <X>  Minimum frequency (default = 100, actual min may vary)" << endl;
+	cerr << "  -b<X>, --bpo <X>      Bins per octave   (default = 60)" << endl;
+	cerr << "  -h, --help            Print this help" << endl;
+	cerr << endl;
+	cerr << "This rather useless program simply performs a forward Constant-Q transform with" << endl;
+	cerr << "the requested parameters, followed by its inverse, and writes the result to the" << endl;
+	cerr << "output file. If a diff file name is provided, the difference between input and" << endl;
+	cerr << "output signals is also written to that. All this accomplishes is to produce a" << endl;
+	cerr << "signal that approximates the input: it's intended for test purposes only." << endl;
+	cerr << endl;
+	cerr << "(Want to calculate and obtain a Constant-Q spectrogram? Use the CQVamp plugin" << endl;
+	cerr << "in a Vamp plugin host.)" << endl;
+	cerr << endl;
 	return 2;
     }
 
-    char *fileName = strdup(argv[1]);
-    char *fileNameOut = strdup(argv[2]);
-    char *diffFileName = (argc == 4 ? strdup(argv[3]) : 0);
+    char *fileName = strdup(argv[optind++]);
+    char *fileNameOut = strdup(argv[optind++]);
+    char *diffFileName = (optind < argc ? strdup(argv[optind++]) : 0);
     bool doDiff = (diffFileName != 0);
 
     SNDFILE *sndfile;
@@ -70,13 +121,12 @@ int main(int argc, char **argv)
     int channels = sfinfo.channels;
     float *fbuf = new float[channels * ibs];
 
-    ConstantQ cq(sfinfo.samplerate,
-		 100, sfinfo.samplerate / 3,
-		 60);
+    if (maxFreq == 0.0) maxFreq = sfinfo.samplerate / 3;
+    if (minFreq == 0.0) minFreq = 100;
+    if (bpo == 0) bpo = 60;
 
-    CQInverse cqi(sfinfo.samplerate,
-		 100, sfinfo.samplerate / 3,
-		 60);
+    ConstantQ cq(sfinfo.samplerate, minFreq, maxFreq, bpo);
+    CQInverse cqi(sfinfo.samplerate, minFreq, maxFreq, bpo);
 
     cerr << "max freq = " << cq.getMaxFrequency() << ", min freq = "
 	 << cq.getMinFrequency() << ", octaves = " << cq.getOctaves() << endl;
@@ -92,6 +142,9 @@ int main(int argc, char **argv)
     int latency = cq.getLatency() + cqi.getLatency();
 
     vector<double> buffer;
+
+    double maxdiff = 0.0;
+    int maxdiffidx = 0;
 
     cerr << "forward latency = " << cq.getLatency() << ", inverse latency = " 
 	 << cqi.getLatency() << ", total = " << latency << endl;
@@ -148,6 +201,10 @@ int main(int argc, char **argv)
 	    for (int i = 0; i < (int)cqout.size(); ++i) {
 		if (outframe + i >= latency) {
 		    cqout[i] -= buffer[outframe + i - latency];
+		    if (fabs(cqout[i]) > maxdiff) {
+			maxdiff = fabs(cqout[i]);
+			maxdiffidx = outframe + i - latency;
+		    }
 		}
 	    }
 	    
@@ -185,6 +242,10 @@ int main(int argc, char **argv)
 	for (int i = 0; i < (int)r.size(); ++i) {
 	    if (outframe + i >= latency) {
 		r[i] -= buffer[outframe + i - latency];
+		if (fabs(r[i]) > maxdiff) {
+		    maxdiff = fabs(r[i]);
+		    maxdiffidx = outframe + i - latency;
+		}
 	    }
 	}
 	sf_writef_double(sndDiffFile, r.data(), r.size());
@@ -200,6 +261,11 @@ int main(int argc, char **argv)
 
     cerr << "in: " << inframe << ", out: " << outframe - latency << endl;
 
+    if (doDiff) {
+	cerr << "max diff is " << maxdiff
+	     << " at sample index " << maxdiffidx << endl;
+    }
+    
     timeval etv;
     (void)gettimeofday(&etv, 0);
         
