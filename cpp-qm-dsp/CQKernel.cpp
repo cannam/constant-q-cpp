@@ -285,7 +285,8 @@ CQKernel::processForward(const vector<C> &cv)
     vector<C> rv(nrows, C());
 
     for (int i = 0; i < nrows; ++i) {
-        for (int j = 0; j < (int)m_kernel.data[i].size(); ++j) {
+        int len = m_kernel.data[i].size();
+        for (int j = 0; j < len; ++j) {
             rv[i] += cv[j + m_kernel.origin[i]] * m_kernel.data[i][j];
         }
     }
