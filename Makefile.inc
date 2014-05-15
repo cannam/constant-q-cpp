@@ -28,7 +28,7 @@ PF	:= $(TEST_DIR)/processfile
 
 LIB_HEADERS	:= \
 	$(INC_DIR)/CQBase.h \
-	$(LIB_DIR)/CQKernel.h \
+	$(INC_DIR)/CQKernel.h \
 	$(INC_DIR)/ConstantQ.h \
 	$(INC_DIR)/CQSpectrogram.h \
 	$(INC_DIR)/CQInverse.h \
@@ -107,15 +107,36 @@ depend:
 
 # DO NOT DELETE
 
-src/CQKernel.o: src/CQKernel.h src/dsp/MathUtilities.h src/dsp/nan-inf.h
-src/CQKernel.o: src/dsp/FFT.h src/dsp/Window.h
-src/ConstantQ.o: src/CQKernel.h src/dsp/Resampler.h src/dsp/MathUtilities.h
+src/CQKernel.o: src/dsp/MathUtilities.h src/dsp/nan-inf.h src/dsp/FFT.h
+src/CQKernel.o: src/dsp/Window.h
+src/ConstantQ.o: src/dsp/Resampler.h src/dsp/MathUtilities.h
 src/ConstantQ.o: src/dsp/nan-inf.h src/dsp/FFT.h
 src/CQInverse.o: src/dsp/Resampler.h src/dsp/MathUtilities.h
 src/CQInverse.o: src/dsp/nan-inf.h src/dsp/FFT.h
-vamp/CQVamp.o: vamp/CQVamp.h
-vamp/CQChromaVamp.o: vamp/CQChromaVamp.h
-vamp/libmain.o: vamp/CQVamp.h vamp/CQChromaVamp.h
-cq/ConstantQ.o: cq/CQBase.h src/CQKernel.h
-cq/CQSpectrogram.o: cq/ConstantQ.h cq/CQBase.h src/CQKernel.h
-cq/CQInverse.o: cq/CQBase.h src/CQKernel.h
+src/dsp/FFT.o: src/dsp/FFT.h src/dsp/MathUtilities.h src/dsp/nan-inf.h
+src/dsp/KaiserWindow.o: src/dsp/KaiserWindow.h src/dsp/MathUtilities.h
+src/dsp/KaiserWindow.o: src/dsp/nan-inf.h
+src/dsp/MathUtilities.o: src/dsp/MathUtilities.h src/dsp/nan-inf.h
+src/dsp/Resampler.o: src/dsp/Resampler.h src/dsp/MathUtilities.h
+src/dsp/Resampler.o: src/dsp/nan-inf.h src/dsp/KaiserWindow.h
+src/dsp/Resampler.o: src/dsp/SincWindow.h
+src/dsp/SincWindow.o: src/dsp/SincWindow.h
+src/ext/kissfft/kiss_fft.o: src/ext/kissfft/_kiss_fft_guts.h
+src/ext/kissfft/kiss_fft.o: src/ext/kissfft/kiss_fft.h
+src/ext/kissfft/tools/kiss_fftr.o: src/ext/kissfft/tools/kiss_fftr.h
+src/ext/kissfft/tools/kiss_fftr.o: src/ext/kissfft/kiss_fft.h
+src/ext/kissfft/tools/kiss_fftr.o: src/ext/kissfft/_kiss_fft_guts.h
+vamp/CQVamp.o: vamp/CQVamp.h cq/CQSpectrogram.h cq/ConstantQ.h cq/CQBase.h
+vamp/CQVamp.o: cq/CQKernel.h vamp/Pitch.h
+vamp/CQChromaVamp.o: vamp/CQChromaVamp.h cq/CQSpectrogram.h cq/ConstantQ.h
+vamp/CQChromaVamp.o: cq/CQBase.h cq/CQKernel.h vamp/Pitch.h
+vamp/libmain.o: vamp/CQVamp.h cq/CQSpectrogram.h cq/ConstantQ.h cq/CQBase.h
+vamp/libmain.o: cq/CQKernel.h vamp/CQChromaVamp.h
+vamp/Pitch.o: vamp/Pitch.h
+test/processfile.o: cq/ConstantQ.h cq/CQBase.h cq/CQKernel.h
+cq/ConstantQ.o: cq/CQBase.h cq/CQKernel.h
+cq/CQSpectrogram.o: cq/ConstantQ.h cq/CQBase.h cq/CQKernel.h
+cq/CQInverse.o: cq/CQBase.h cq/CQKernel.h
+src/dsp/MathUtilities.o: src/dsp/nan-inf.h
+src/ext/kissfft/tools/kiss_fftr.o: src/ext/kissfft/kiss_fft.h
+vamp/CQVamp.o: cq/CQSpectrogram.h cq/ConstantQ.h cq/CQBase.h cq/CQKernel.h
