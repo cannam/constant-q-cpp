@@ -31,9 +31,9 @@
 
 #include "CQKernel.h"
 
-#include "maths/MathUtilities.h"
-#include "dsp/transforms/FFT.h"
-#include "base/Window.h"
+#include "dsp/MathUtilities.h"
+#include "dsp/FFT.h"
+#include "dsp/Window.h"
 
 #include <cmath>
 #include <cassert>

@@ -31,9 +31,9 @@
 
 #include "CQChromaVamp.h"
 
-#include "cpp-qm-dsp/CQSpectrogram.h"
+#include "cq/CQSpectrogram.h"
 
-#include "base/Pitch.h"
+#include "Pitch.h"
 
 #include <algorithm>
 #include <cstdio>

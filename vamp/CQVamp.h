@@ -34,7 +34,7 @@
 
 #include <vamp-sdk/Plugin.h>
 
-#include "cpp-qm-dsp/CQSpectrogram.h"
+#include "cq/CQSpectrogram.h"
 
 class ConstantQ;
 
