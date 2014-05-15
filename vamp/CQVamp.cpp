@@ -31,7 +31,7 @@
 
 #include "CQVamp.h"
 
-#include "base/Pitch.h"
+#include "Pitch.h"
 
 #include <algorithm>
 #include <cstdio>

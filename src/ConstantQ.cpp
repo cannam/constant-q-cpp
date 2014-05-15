@@ -33,9 +33,9 @@
 
 #include "CQKernel.h"
 
-#include "dsp/rateconversion/Resampler.h"
-#include "maths/MathUtilities.h"
-#include "dsp/transforms/FFT.h"
+#include "dsp/Resampler.h"
+#include "dsp/MathUtilities.h"
+#include "dsp/FFT.h"
 
 #include <algorithm>
 #include <iostream>
