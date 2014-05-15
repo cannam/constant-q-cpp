@@ -31,15 +31,16 @@
 
 #include "Resampler.h"
 
-#include "maths/MathUtilities.h"
-#include "base/KaiserWindow.h"
-#include "base/SincWindow.h"
-#include "thread/Thread.h"
+#include "MathUtilities.h"
+#include "KaiserWindow.h"
+#include "SincWindow.h"
 
 #include <iostream>
 #include <vector>
 #include <map>
 #include <cassert>
+
+#include <pthread.h>
 
 using std::vector;
 using std::map;
@@ -73,8 +74,8 @@ Resampler::~Resampler()
 static map<double, map<int, map<double, vector<double> > > >
 knownFilters;
 
-static Mutex
-knownFilterMutex;
+static pthread_mutex_t
+knownFilterMutex = PTHREAD_MUTEX_INITIALIZER;
 
 void
 Resampler::initialise(double snr, double bandwidth)
@@ -102,7 +103,8 @@ Resampler::initialise(double snr, double bandwidth)
     m_filterLength = params.length;
 
     vector<double> filter;
-    knownFilterMutex.lock();
+
+    pthread_mutex_lock(&knownFilterMutex);
 
     if (knownFilters[m_peakToPole][m_filterLength].find(params.beta) ==
 	knownFilters[m_peakToPole][m_filterLength].end()) {
@@ -119,7 +121,8 @@ Resampler::initialise(double snr, double bandwidth)
     }
 
     filter = knownFilters[m_peakToPole][m_filterLength][params.beta];
-    knownFilterMutex.unlock();
+    
+    pthread_mutex_unlock(&knownFilterMutex);
 
     int inputSpacing = m_targetRate / m_gcd;
     int outputSpacing = m_sourceRate / m_gcd;

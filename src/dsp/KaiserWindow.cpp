@@ -31,7 +31,7 @@
 
 #include "KaiserWindow.h"
 
-#include "maths/MathUtilities.h"
+#include "MathUtilities.h"
 
 KaiserWindow::Parameters
 KaiserWindow::parametersForTransitionWidth(double attenuation,

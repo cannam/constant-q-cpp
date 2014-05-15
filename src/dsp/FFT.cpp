@@ -31,7 +31,7 @@
 
 #include "FFT.h"
 
-#include "maths/MathUtilities.h"
+#include "MathUtilities.h"
 
 #include "kiss_fft.h"
 #include "kiss_fftr.h"

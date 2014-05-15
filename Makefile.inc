@@ -3,6 +3,7 @@ LIB_DIR	  := src
 INC_DIR	  := cq
 TEST_DIR  := test
 VAMP_DIR  := vamp
+KFFT_DIR  := src/ext/kissfft
 
 VAMPSDK_DIR  ?= ../vamp-plugin-sdk
 
@@ -11,8 +12,9 @@ PLUGIN_EXT	?= .so
 CXX	?= g++
 CC	?= gcc
 
-CFLAGS := $(CFLAGS) 
-CXXFLAGS := -I. -I$(VAMPSDK_DIR) -I$(INC_DIR) -I$(LIB_DIR) $(CXXFLAGS)
+GENERAL_FLAGS	:= -I. -I$(VAMPSDK_DIR) -I$(INC_DIR) -I$(LIB_DIR) -I$(KFFT_DIR) -I$(KFFT_DIR)/tools -Dkiss_fft_scalar=double
+CFLAGS := $(GENERAL_FLAGS) $(CFLAGS) 
+CXXFLAGS := $(GENERAL_FLAGS) $(CXXFLAGS)
 
 LDFLAGS := $(LDFLAGS) 
 PLUGIN_LDFLAGS := $(LDFLAGS) $(PLUGIN_LDFLAGS)
@@ -23,8 +25,8 @@ PLUGIN	:= cqvamp$(PLUGIN_EXT)
 TEST	:= $(TEST_DIR)/test
 PF	:= $(TEST_DIR)/processfile
 
-LIB_HEADERS := $(INC_DIR)/CQBase.h $(LIB_DIR)/CQKernel.h $(INC_DIR)/ConstantQ.h $(INC_DIR)/CQSpectrogram.h $(INC_DIR)/CQInverse.h
-LIB_SOURCES := $(LIB_DIR)/CQKernel.cpp $(LIB_DIR)/ConstantQ.cpp $(LIB_DIR)/CQSpectrogram.cpp $(LIB_DIR)/CQInverse.cpp
+LIB_HEADERS := $(INC_DIR)/CQBase.h $(LIB_DIR)/CQKernel.h $(INC_DIR)/ConstantQ.h $(INC_DIR)/CQSpectrogram.h $(INC_DIR)/CQInverse.h $(LIB_DIR)/dsp/FFT.h $(LIB_DIR)/dsp/KaiserWindow.h $(LIB_DIR)/dsp/MathUtilities.h $(LIB_DIR)/dsp/nan-inf.h $(LIB_DIR)/dsp/Resampler.h $(LIB_DIR)/dsp/SincWindow.h $(LIB_DIR)/dsp/Window.h $(KFFT_DIR)/kiss_fft.h $(KFFT_DIR)/tools/kiss_fftr.h
+LIB_SOURCES := $(LIB_DIR)/CQKernel.cpp $(LIB_DIR)/ConstantQ.cpp $(LIB_DIR)/CQSpectrogram.cpp $(LIB_DIR)/CQInverse.cpp $(LIB_DIR)/dsp/FFT.cpp $(LIB_DIR)/dsp/KaiserWindow.cpp $(LIB_DIR)/dsp/MathUtilities.cpp $(LIB_DIR)/dsp/Resampler.cpp $(LIB_DIR)/dsp/SincWindow.cpp $(KFFT_DIR)/kiss_fft.c $(KFFT_DIR)/tools/kiss_fftr.c
 
 VAMP_HEADERS := $(VAMP_DIR)/CQVamp.h $(VAMP_DIR)/CQChromaVamp.h $(VAMP_DIR)/Pitch.h
 VAMP_SOURCES := $(VAMP_DIR)/CQVamp.cpp $(VAMP_DIR)/CQChromaVamp.cpp $(VAMP_DIR)/libmain.cpp $(VAMP_DIR)/Pitch.cpp
@@ -32,6 +34,7 @@ VAMP_SOURCES := $(VAMP_DIR)/CQVamp.cpp $(VAMP_DIR)/CQChromaVamp.cpp $(VAMP_DIR)/
 HEADERS	     := $(LIB_HEADERS) $(VAMP_HEADERS)
 SOURCES	     := $(LIB_SOURCES) $(VAMP_SOURCES)
 OBJECTS	     := $(SOURCES:.cpp=.o)
+OBJECTS	     := $(OBJECTS:.c=.o)
 
 TEST_SOURCES := $(TEST_DIR)/test.cpp 
 TEST_OBJECTS := $(TEST_SOURCES:.cpp=.o) $(OBJECTS)
