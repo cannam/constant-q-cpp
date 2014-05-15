@@ -174,11 +174,11 @@ CQSpectrogram::fetchLinear(bool insist)
 	}
     }
 
+//    cerr << "fetchLinear: firstFullHeight = " << firstFullHeight << ", secondFullHeight = " << secondFullHeight << endl;
+
     if (firstFullHeight < 0) {
 	if (insist) {
-	    out = m_buffer;
-	    m_buffer.clear();
-	    return out;
+            return fetchHold(true);
 	} else {
 	    return out;
 	}
@@ -193,9 +193,7 @@ CQSpectrogram::fetchLinear(bool insist)
 	// firstFullHeight == 0, but there is no second full height --
 	// wait for it unless insist flag is set
 	if (insist) {
-	    out = m_buffer;
-	    m_buffer.clear();
-	    return out;
+            return fetchHold(true);
 	} else {
 	    return out;
 	}
