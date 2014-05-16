@@ -100,7 +100,7 @@ CQChromaVamp::getPluginVersion() const
 string
 CQChromaVamp::getCopyright() const
 {
-    return "Plugin by Chris Cannam. Method by Christian Schörkhuber and Anssi Klapuri. Copyright (c) 2013 QMUL. BSD/MIT licence.";
+    return "Plugin by Chris Cannam. Method by Christian Schörkhuber and Anssi Klapuri. Copyright (c) 2014 QMUL. BSD/MIT licence.";
 }
 
 CQChromaVamp::ParameterList

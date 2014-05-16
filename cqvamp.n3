@@ -15,52 +15,54 @@
 
 :cqvamp a  vamp:PluginLibrary ;
     vamp:identifier "cqvamp"  ; 
+    vamp:available_plugin plugbase:cqchromavamp ; 
     vamp:available_plugin plugbase:cqvamp ; 
-#   foaf:page <Place more-information HTML page URL here and uncomment> ;
+    vamp:available_plugin plugbase:cqvampmidi ; 
+    foaf:page <http://code.soundsoftware.ac.uk/projects/constant-q-cpp> ;
     .
 
-plugbase:cqvamp a   vamp:Plugin ;
-    dc:title              "Constant-Q Spectrogram" ;
-    vamp:name             "Constant-Q Spectrogram" ;
-    dc:description        """Extract a spectrogram with constant ratio of centre frequency to resolution from the input audio""" ;
+plugbase:cqchromavamp a   vamp:Plugin ;
+    dc:title              "Chromagram" ;
+    vamp:name             "Chromagram" ;
+    dc:description        """Extract a Constant-Q spectrogram with constant ratio of centre frequency to resolution from the audio, then wrapping it around into a single-octave chromagram.""" ;
     foaf:maker            [ foaf:name "Queen Mary, University of London" ] ; # FIXME could give plugin author's URI here
-    dc:rights             """Plugin by Chris Cannam. Method by Christian Schörkhuber and Anssi Klapuri. Copyright (c) 2013 QMUL""" ;
+    dc:rights             """Plugin by Chris Cannam. Method by Christian Schörkhuber and Anssi Klapuri. Copyright (c) 2014 QMUL""" ;
 #   cc:license            <Place plugin license URI here and uncomment> ; 
-    vamp:identifier       "cqvamp" ;
+    vamp:identifier       "cqchromavamp" ;
     vamp:vamp_API_version vamp:api_version_2 ;
     owl:versionInfo       "1" ;
     vamp:input_domain     vamp:TimeDomain ;
 
-    vamp:parameter   plugbase:cqvamp_param_minpitch ;
-    vamp:parameter   plugbase:cqvamp_param_maxpitch ;
-    vamp:parameter   plugbase:cqvamp_param_tuning ;
-    vamp:parameter   plugbase:cqvamp_param_bpo ;
+    vamp:parameter   plugbase:cqchromavamp_param_lowestoct ;
+    vamp:parameter   plugbase:cqchromavamp_param_octaves ;
+    vamp:parameter   plugbase:cqchromavamp_param_tuning ;
+    vamp:parameter   plugbase:cqchromavamp_param_bpo ;
 
-    vamp:output      plugbase:cqvamp_output_constantq ;
+    vamp:output      plugbase:cqchromavamp_output_chromagram ;
     .
-plugbase:cqvamp_param_minpitch a  vamp:QuantizedParameter ;
-    vamp:identifier     "minpitch" ;
-    dc:title            "Minimum Pitch" ;
-    dc:format           "MIDI units" ;
-    vamp:min_value       0 ;
-    vamp:max_value       127 ;
-    vamp:unit           "MIDI units" ;
+plugbase:cqchromavamp_param_lowestoct a  vamp:QuantizedParameter ;
+    vamp:identifier     "lowestoct" ;
+    dc:title            "Lowest Contributing Octave" ;
+    dc:format           "" ;
+    vamp:min_value       -1 ;
+    vamp:max_value       12 ;
+    vamp:unit           "" ;
     vamp:quantize_step   1  ;
-    vamp:default_value   36 ;
+    vamp:default_value   0 ;
     vamp:value_names     ();
     .
-plugbase:cqvamp_param_maxpitch a  vamp:QuantizedParameter ;
-    vamp:identifier     "maxpitch" ;
-    dc:title            "Maximum Pitch" ;
-    dc:format           "MIDI units" ;
-    vamp:min_value       0 ;
-    vamp:max_value       127 ;
-    vamp:unit           "MIDI units" ;
+plugbase:cqchromavamp_param_octaves a  vamp:QuantizedParameter ;
+    vamp:identifier     "octaves" ;
+    dc:title            "Contributing Octave Count" ;
+    dc:format           "octaves" ;
+    vamp:min_value       1 ;
+    vamp:max_value       12 ;
+    vamp:unit           "octaves" ;
     vamp:quantize_step   1  ;
-    vamp:default_value   84 ;
+    vamp:default_value   7 ;
     vamp:value_names     ();
     .
-plugbase:cqvamp_param_tuning a  vamp:Parameter ;
+plugbase:cqchromavamp_param_tuning a  vamp:Parameter ;
     vamp:identifier     "tuning" ;
     dc:title            "Tuning Frequency" ;
     dc:format           "Hz" ;
@@ -68,6 +70,67 @@ plugbase:cqvamp_param_tuning a  vamp:Parameter ;
     vamp:max_value       500 ;
     vamp:unit           "Hz"  ;
     vamp:default_value   440 ;
+    vamp:value_names     ();
+    .
+plugbase:cqchromavamp_param_bpo a  vamp:QuantizedParameter ;
+    vamp:identifier     "bpo" ;
+    dc:title            "Bins per Octave" ;
+    dc:format           "bins" ;
+    vamp:min_value       2 ;
+    vamp:max_value       480 ;
+    vamp:unit           "bins" ;
+    vamp:quantize_step   1  ;
+    vamp:default_value   36 ;
+    vamp:value_names     ();
+    .
+plugbase:cqchromavamp_output_chromagram a  vamp:DenseOutput ;
+    vamp:identifier       "chromagram" ;
+    dc:title              "Chromagram" ;
+    dc:description        """Chromagram obtained from output of constant-Q transform, folding over each process block into a single-octave vector"""  ;
+    vamp:fixed_bin_count  "true" ;
+    vamp:unit             "" ;
+    vamp:bin_count        36 ;
+#   vamp:computes_event_type   <Place event type URI here and uncomment> ;
+#   vamp:computes_feature      <Place feature attribute URI here and uncomment> ;
+#   vamp:computes_signal_type  <Place signal type URI here and uncomment> ;
+    .
+plugbase:cqvamp a   vamp:Plugin ;
+    dc:title              "Constant-Q Spectrogram (Hz range)" ;
+    vamp:name             "Constant-Q Spectrogram (Hz range)" ;
+    dc:description        """Extract a spectrogram with constant ratio of centre frequency to resolution from the input audio, specifying the frequency range in Hz.""" ;
+    foaf:maker            [ foaf:name "Queen Mary, University of London" ] ; # FIXME could give plugin author's URI here
+    dc:rights             """Plugin by Chris Cannam. Method by Christian Schörkhuber and Anssi Klapuri. Copyright (c) 2014 QMUL""" ;
+#   cc:license            <Place plugin license URI here and uncomment> ; 
+    vamp:identifier       "cqvamp" ;
+    vamp:vamp_API_version vamp:api_version_2 ;
+    owl:versionInfo       "1" ;
+    vamp:input_domain     vamp:TimeDomain ;
+
+    vamp:parameter   plugbase:cqvamp_param_minfreq ;
+    vamp:parameter   plugbase:cqvamp_param_maxfreq ;
+    vamp:parameter   plugbase:cqvamp_param_bpo ;
+    vamp:parameter   plugbase:cqvamp_param_interpolation ;
+
+    vamp:output      plugbase:cqvamp_output_constantq ;
+    .
+plugbase:cqvamp_param_minfreq a  vamp:Parameter ;
+    vamp:identifier     "minfreq" ;
+    dc:title            "Minimum Frequency" ;
+    dc:format           "Hz" ;
+    vamp:min_value       1 ;
+    vamp:max_value       24000 ;
+    vamp:unit           "Hz"  ;
+    vamp:default_value   100 ;
+    vamp:value_names     ();
+    .
+plugbase:cqvamp_param_maxfreq a  vamp:Parameter ;
+    vamp:identifier     "maxfreq" ;
+    dc:title            "Maximum Frequency" ;
+    dc:format           "Hz" ;
+    vamp:min_value       1 ;
+    vamp:max_value       24000 ;
+    vamp:unit           "Hz"  ;
+    vamp:default_value   14080 ;
     vamp:value_names     ();
     .
 plugbase:cqvamp_param_bpo a  vamp:QuantizedParameter ;
@@ -78,14 +141,114 @@ plugbase:cqvamp_param_bpo a  vamp:QuantizedParameter ;
     vamp:max_value       480 ;
     vamp:unit           "bins" ;
     vamp:quantize_step   1  ;
-    vamp:default_value   24 ;
+    vamp:default_value   36 ;
     vamp:value_names     ();
+    .
+plugbase:cqvamp_param_interpolation a  vamp:QuantizedParameter ;
+    vamp:identifier     "interpolation" ;
+    dc:title            "Interpolation" ;
+    dc:format           "" ;
+    vamp:min_value       0 ;
+    vamp:max_value       2 ;
+    vamp:unit           "" ;
+    vamp:quantize_step   1  ;
+    vamp:default_value   2 ;
+    vamp:value_names     ( "None, leave as zero" "None, repeat prior value" "Linear interpolation");
     .
 plugbase:cqvamp_output_constantq a  vamp:DenseOutput ;
     vamp:identifier       "constantq" ;
     dc:title              "Constant-Q Spectrogram" ;
     dc:description        """Output of constant-Q transform, as a single vector per process block"""  ;
+    vamp:fixed_bin_count  "true" ;
     vamp:unit             "" ;
-    vamp:computes_signal_type  af:Spectrogram ;
+    vamp:bin_count        216 ;
+#   vamp:computes_event_type   <Place event type URI here and uncomment> ;
+#   vamp:computes_feature      <Place feature attribute URI here and uncomment> ;
+#   vamp:computes_signal_type  <Place signal type URI here and uncomment> ;
+    .
+plugbase:cqvampmidi a   vamp:Plugin ;
+    dc:title              "Constant-Q Spectrogram (MIDI pitch range)" ;
+    vamp:name             "Constant-Q Spectrogram (MIDI pitch range)" ;
+    dc:description        """Extract a spectrogram with constant ratio of centre frequency to resolution from the input audio, specifying the frequency range in MIDI pitch units.""" ;
+    foaf:maker            [ foaf:name "Queen Mary, University of London" ] ; # FIXME could give plugin author's URI here
+    dc:rights             """Plugin by Chris Cannam. Method by Christian Schörkhuber and Anssi Klapuri. Copyright (c) 2014 QMUL""" ;
+#   cc:license            <Place plugin license URI here and uncomment> ; 
+    vamp:identifier       "cqvampmidi" ;
+    vamp:vamp_API_version vamp:api_version_2 ;
+    owl:versionInfo       "1" ;
+    vamp:input_domain     vamp:TimeDomain ;
+
+    vamp:parameter   plugbase:cqvampmidi_param_minpitch ;
+    vamp:parameter   plugbase:cqvampmidi_param_maxpitch ;
+    vamp:parameter   plugbase:cqvampmidi_param_tuning ;
+    vamp:parameter   plugbase:cqvampmidi_param_bpo ;
+    vamp:parameter   plugbase:cqvampmidi_param_interpolation ;
+
+    vamp:output      plugbase:cqvampmidi_output_constantq ;
+    .
+plugbase:cqvampmidi_param_minpitch a  vamp:QuantizedParameter ;
+    vamp:identifier     "minpitch" ;
+    dc:title            "Minimum Pitch" ;
+    dc:format           "MIDI units" ;
+    vamp:min_value       0 ;
+    vamp:max_value       127 ;
+    vamp:unit           "MIDI units" ;
+    vamp:quantize_step   1  ;
+    vamp:default_value   36 ;
+    vamp:value_names     ();
+    .
+plugbase:cqvampmidi_param_maxpitch a  vamp:QuantizedParameter ;
+    vamp:identifier     "maxpitch" ;
+    dc:title            "Maximum Pitch" ;
+    dc:format           "MIDI units" ;
+    vamp:min_value       0 ;
+    vamp:max_value       127 ;
+    vamp:unit           "MIDI units" ;
+    vamp:quantize_step   1  ;
+    vamp:default_value   84 ;
+    vamp:value_names     ();
+    .
+plugbase:cqvampmidi_param_tuning a  vamp:Parameter ;
+    vamp:identifier     "tuning" ;
+    dc:title            "Tuning Frequency" ;
+    dc:format           "Hz" ;
+    vamp:min_value       360 ;
+    vamp:max_value       500 ;
+    vamp:unit           "Hz"  ;
+    vamp:default_value   440 ;
+    vamp:value_names     ();
+    .
+plugbase:cqvampmidi_param_bpo a  vamp:QuantizedParameter ;
+    vamp:identifier     "bpo" ;
+    dc:title            "Bins per Octave" ;
+    dc:format           "bins" ;
+    vamp:min_value       2 ;
+    vamp:max_value       480 ;
+    vamp:unit           "bins" ;
+    vamp:quantize_step   1  ;
+    vamp:default_value   36 ;
+    vamp:value_names     ();
+    .
+plugbase:cqvampmidi_param_interpolation a  vamp:QuantizedParameter ;
+    vamp:identifier     "interpolation" ;
+    dc:title            "Interpolation" ;
+    dc:format           "" ;
+    vamp:min_value       0 ;
+    vamp:max_value       2 ;
+    vamp:unit           "" ;
+    vamp:quantize_step   1  ;
+    vamp:default_value   2 ;
+    vamp:value_names     ( "None, leave as zero" "None, repeat prior value" "Linear interpolation");
+    .
+plugbase:cqvampmidi_output_constantq a  vamp:DenseOutput ;
+    vamp:identifier       "constantq" ;
+    dc:title              "Constant-Q Spectrogram" ;
+    dc:description        """Output of constant-Q transform, as a single vector per process block"""  ;
+    vamp:fixed_bin_count  "true" ;
+    vamp:unit             "" ;
+    vamp:bin_count        216 ;
+#   vamp:computes_event_type   <Place event type URI here and uncomment> ;
+#   vamp:computes_feature      <Place feature attribute URI here and uncomment> ;
+#   vamp:computes_signal_type  <Place signal type URI here and uncomment> ;
     .
 

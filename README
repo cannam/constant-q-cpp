@@ -2,8 +2,8 @@
 Constant-Q Library
 ==================
 
-A C++ library and Vamp plugin implementing the Constant-Q transform of
-a time-domain signal.
+A C++ library and Vamp plugin implementing the Constant-Q transform
+of a time-domain signal.
 
 https://code.soundsoftware.ac.uk/projects/constant-q-cpp
 
