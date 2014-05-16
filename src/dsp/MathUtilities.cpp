@@ -105,7 +105,7 @@ double MathUtilities::median(const double *src, unsigned int len)
     if (len == 0) return 0;
     
     std::vector<double> scratch;
-    for (int i = 0; i < len; ++i) scratch.push_back(src[i]);
+    for (int i = 0; i < (int)len; ++i) scratch.push_back(src[i]);
     std::sort(scratch.begin(), scratch.end());
 
     int middle = len/2;

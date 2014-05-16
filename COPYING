@@ -1,5 +1,5 @@
 
-This library is provided to you under the following licence:
+This library is distributed under the following licence:
 
     Copyright (c) 2013-2014 Queen Mary, University of London
 
@@ -28,7 +28,7 @@ This library is provided to you under the following licence:
     use or other dealings in this Software without prior written
     authorization.
 
-The code in src/ext/kissfft is under the following licence:
+The code in src/ext/kissfft is distributed under the following licence:
 
     Copyright (c) 2003-2010 Mark Borgerding
 

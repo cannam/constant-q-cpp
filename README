@@ -1,0 +1,39 @@
+
+Constant-Q Library
+==================
+
+A C++ library and Vamp plugin implementing the Constant-Q transform of
+a time-domain signal.
+
+https://code.soundsoftware.ac.uk/projects/constant-q-cpp
+
+The Constant-Q transform is a time-to-frequency-domain transform
+related to the short-time Fourier transform, but with output bins
+spaced logarithmically in frequency, rather than linearly. The output
+bins are therefore linearly spaced in terms of musical pitch.
+
+This library provides:
+
+ * Forward transform: time-domain to complex Constant-Q bins
+ * Forward spectrogram: time-domain to interpolated Constant-Q
+   magnitude spectrogram
+ * Inverse transform: complex Constant-Q bins to time domain
+
+The method is drawn from Christian Schörkhuber and Anssi Klapuri,
+"Constant-Q transform toolbox for music processing", SMC 2010. See the
+file CITATION for details. If you use this code in research work,
+please cite this paper.
+
+The implementation is reasonably fast and is causal, operating
+block-by-block on the input, though with quite high latency
+depending on the frequency range specified. By default it produces
+output at a higher time resolution than some other implementations,
+using multiple kernel atoms per time block. The inverse transform is
+approximate rather than exact (see the paper for details).
+
+The C++ implementation is by Chris Cannam, Copyright 2014 Queen Mary,
+University of London.
+
+The library is provided under a liberal BSD/MIT-style open source
+licence. See the file COPYING for more information.
+
