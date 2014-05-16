@@ -118,7 +118,7 @@ CQVamp::getPluginVersion() const
 string
 CQVamp::getCopyright() const
 {
-    return "Plugin by Chris Cannam. Method by Christian Schörkhuber and Anssi Klapuri. Copyright (c) 2013 QMUL";
+    return "Plugin by Chris Cannam. Method by Christian Schörkhuber and Anssi Klapuri. Copyright (c) 2013 QMUL. BSD/MIT licence.";
 }
 
 CQVamp::ParameterList
