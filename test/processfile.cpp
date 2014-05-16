@@ -125,8 +125,9 @@ int main(int argc, char **argv)
     if (minFreq == 0.0) minFreq = 100;
     if (bpo == 0) bpo = 60;
 
-    ConstantQ cq(sfinfo.samplerate, minFreq, maxFreq, bpo);
-    CQInverse cqi(sfinfo.samplerate, minFreq, maxFreq, bpo);
+    CQParameters params(sfinfo.samplerate, minFreq, maxFreq, bpo);
+    ConstantQ cq(params);
+    CQInverse cqi(params);
 
     cerr << "max freq = " << cq.getMaxFrequency() << ", min freq = "
 	 << cq.getMinFrequency() << ", octaves = " << cq.getOctaves() << endl;

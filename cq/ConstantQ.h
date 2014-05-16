@@ -33,6 +33,7 @@
 #define CONSTANTQ_H
 
 #include "CQBase.h"
+#include "CQParameters.h"
 #include "CQKernel.h"
 
 class Resampler;
@@ -48,9 +49,7 @@ class FFTReal;
 class ConstantQ : public CQBase
 {
 public:
-    ConstantQ(double sampleRate, 
-	      double minFreq, double maxFreq, 
-	      int binsPerOctave);
+    ConstantQ(CQParameters params);
     virtual ~ConstantQ();
 
     virtual double getSampleRate() const { return m_sampleRate; }
@@ -92,12 +91,13 @@ public:
     ComplexBlock getRemainingOutput();
 
 private:
-    double m_sampleRate;
-    double m_maxFrequency;
-    double m_minFrequency;
-    int m_binsPerOctave;
-    int m_octaves;
+    const CQParameters m_inparams;
+    const double m_sampleRate;
+    const double m_maxFrequency;
+    const double m_minFrequency;
+    const int m_binsPerOctave;
 
+    int m_octaves;
     CQKernel *m_kernel;
     CQKernel::Properties m_p;
     int m_bigBlockSize;

@@ -286,9 +286,8 @@ CQVamp::initialise(size_t channels, size_t stepSize, size_t blockSize)
             (m_maxMIDIPitch, 0, m_tuningFrequency);
     }
 
-    m_cq = new CQSpectrogram
-	(m_inputSampleRate, m_minFrequency, m_maxFrequency, m_bpo,
-         m_interpolation);
+    CQParameters p(m_inputSampleRate, m_minFrequency, m_maxFrequency, m_bpo);
+    m_cq = new CQSpectrogram(p, m_interpolation);
 
     return true;
 }
@@ -298,9 +297,8 @@ CQVamp::reset()
 {
     if (m_cq) {
 	delete m_cq;
-	m_cq = new CQSpectrogram
-	    (m_inputSampleRate, m_minFrequency, m_maxFrequency, m_bpo,
-             m_interpolation);
+        CQParameters p(m_inputSampleRate, m_minFrequency, m_maxFrequency, m_bpo);
+        m_cq = new CQSpectrogram(p, m_interpolation);
     }
     m_haveStartTime = false;
     m_columnCount = 0;

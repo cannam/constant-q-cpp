@@ -48,12 +48,13 @@ using std::endl;
 
 typedef std::complex<double> C;
 
-CQKernel::CQKernel(double sampleRate, double maxFreq, int binsPerOctave) :
+CQKernel::CQKernel(CQParameters params) :
+    m_inparams(params),
     m_fft(0)
 {
-    m_p.sampleRate = sampleRate;
-    m_p.maxFrequency = maxFreq;
-    m_p.binsPerOctave = binsPerOctave;
+    m_p.sampleRate = params.sampleRate;
+    m_p.maxFrequency = params.maxFrequency;
+    m_p.binsPerOctave = params.binsPerOctave;
     generateKernel();
 }
 
@@ -62,12 +63,60 @@ CQKernel::~CQKernel()
     delete m_fft;
 }
 
+vector<double>
+CQKernel::makeWindow(int len) const
+{
+    // The MATLAB version uses a symmetric window, but our windows
+    // are periodic. A symmetric window of size N is a periodic
+    // one of size N-1 with the first element stuck on the end.
+
+    WindowType wt(BlackmanHarrisWindow);
+
+    switch (m_inparams.window) {
+    case CQParameters::SqrtBlackmanHarris:
+    case CQParameters::BlackmanHarris:
+        wt = BlackmanHarrisWindow;
+        break;
+    case CQParameters::SqrtBlackman:
+    case CQParameters::Blackman:
+        wt = BlackmanWindow;
+        break;
+    case CQParameters::SqrtHann:
+    case CQParameters::Hann:
+        wt = HanningWindow;
+        break;
+    }
+
+    Window<double> w(wt, len-1);
+    vector<double> win = w.getWindowData();
+    win.push_back(win[0]);
+
+    switch (m_inparams.window) {
+    case CQParameters::SqrtBlackmanHarris:
+    case CQParameters::SqrtBlackman:
+    case CQParameters::SqrtHann:
+        for (int i = 0; i < (int)win.size(); ++i) {
+            win[i] = sqrt(win[i]) / len;
+        }
+        break;
+    case CQParameters::BlackmanHarris:
+    case CQParameters::Blackman:
+    case CQParameters::Hann:
+        for (int i = 0; i < (int)win.size(); ++i) {
+            win[i] = win[i] / len;
+        }
+        break;
+    }
+
+    return win;
+}
+
 void
 CQKernel::generateKernel()
 {
-    double q = 1;
-    double atomHopFactor = 0.25;
-    double thresh = 0.0005;
+    double q = m_inparams.q;
+    double atomHopFactor = m_inparams.atomHopFactor;
+    double thresh = m_inparams.threshold;
 
     double bpo = m_p.binsPerOctave;
 
@@ -99,7 +148,7 @@ CQKernel::generateKernel()
     m_p.atomsPerFrame = floor
         (1.0 + (m_p.fftSize - ceil(maxNK / 2.0) - m_p.firstCentre) / m_p.atomSpacing);
 
-    cerr << "atomsPerFrame = " << m_p.atomsPerFrame << " (atomHopFactor = " << atomHopFactor << ", atomSpacing = " << m_p.atomSpacing << ", fftSize = " << m_p.fftSize << ", maxNK = " << maxNK << ", firstCentre = " << m_p.firstCentre << ")" << endl;
+    cerr << "atomsPerFrame = " << m_p.atomsPerFrame << " (q = " << q << ", Q = " << m_p.Q << ", atomHopFactor = " << atomHopFactor << ", atomSpacing = " << m_p.atomSpacing << ", fftSize = " << m_p.fftSize << ", maxNK = " << maxNK << ", firstCentre = " << m_p.firstCentre << ")" << endl;
 
     m_p.lastCentre = m_p.firstCentre + (m_p.atomsPerFrame - 1) * m_p.atomSpacing;
 
@@ -114,16 +163,7 @@ CQKernel::generateKernel()
         int nk = round(m_p.Q * m_p.sampleRate /
                        (m_p.minFrequency * pow(2, ((k-1.0) / bpo))));
 
-        // The MATLAB version uses a symmetric window, but our windows
-        // are periodic. A symmetric window of size N is a periodic
-        // one of size N-1 with the first element stuck on the end
-        Window<double> w(BlackmanHarrisWindow, nk-1);
-        vector<double> win = w.getWindowData();
-        win.push_back(win[0]);
-
-        for (int i = 0; i < (int)win.size(); ++i) {
-            win[i] = sqrt(win[i]) / nk;
-        }
+        vector<double> win = makeWindow(nk);
 
         double fk = m_p.minFrequency * pow(2, ((k-1.0) / bpo));
 
@@ -242,7 +282,7 @@ CQKernel::finaliseKernel()
     }
 
     vector<double> wK;
-    double q = 1; //!!! duplicated from constructor
+    double q = m_inparams.q;
     for (int i = round(1.0/q); i < ncols - round(1.0/q) - 2; ++i) {
         wK.push_back(abs(square[i][i]));
     }

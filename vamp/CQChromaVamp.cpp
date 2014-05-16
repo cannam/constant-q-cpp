@@ -228,9 +228,8 @@ CQChromaVamp::initialise(size_t channels, size_t stepSize, size_t blockSize)
          << ", min freq " << m_minFrequency << ", max freq " << m_maxFrequency
          << endl;
 
-    m_cq = new CQSpectrogram
-	(m_inputSampleRate, m_minFrequency, m_maxFrequency, m_bpo,
-         CQSpectrogram::InterpolateLinear);
+    CQParameters p(m_inputSampleRate, m_minFrequency, m_maxFrequency, m_bpo);
+    m_cq = new CQSpectrogram(p, CQSpectrogram::InterpolateLinear);
 
     return true;
 }
@@ -240,9 +239,8 @@ CQChromaVamp::reset()
 {
     if (m_cq) {
 	delete m_cq;
-	m_cq = new CQSpectrogram
-	    (m_inputSampleRate, m_minFrequency, m_maxFrequency, m_bpo,
-             CQSpectrogram::InterpolateLinear);
+        CQParameters p(m_inputSampleRate, m_minFrequency, m_maxFrequency, m_bpo);
+        m_cq = new CQSpectrogram(p, CQSpectrogram::InterpolateLinear);
     }
     m_haveStartTime = false;
     m_columnCount = 0;

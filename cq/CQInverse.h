@@ -41,9 +41,7 @@ class FFTReal;
 class CQInverse : public CQBase
 {
 public:
-    CQInverse(double sampleRate,
-	      double minFreq, double maxFreq,
-	      int binsPerOctave);
+    CQInverse(CQParameters params);
     virtual ~CQInverse();
 
     virtual double getSampleRate() const { return m_sampleRate; }
@@ -64,12 +62,13 @@ public:
     RealSequence getRemainingOutput();
 
 private:
-    double m_sampleRate;
-    double m_maxFrequency;
-    double m_minFrequency;
-    int m_binsPerOctave;
-    int m_octaves;
+    const CQParameters m_inparams;
+    const double m_sampleRate;
+    const double m_maxFrequency;
+    const double m_minFrequency;
+    const int m_binsPerOctave;
 
+    int m_octaves;
     CQKernel *m_kernel;
     CQKernel::Properties m_p;
 

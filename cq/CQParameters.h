@@ -29,46 +29,47 @@
     authorization.
 */
 
-#ifndef CQSPECTROGRAM_H
-#define CQSPECTROGRAM_H
+#ifndef CQ_PARAMETERS_H
+#define CQ_PARAMETERS_H
 
-#include "ConstantQ.h"
-
-class CQSpectrogram : public CQBase
+class CQParameters
 {
 public:
-    enum Interpolation {
-	InterpolateZeros, // leave empty cells as zero
-	InterpolateHold, // repeat prior cell
-	InterpolateLinear, // linear interpolation between consecutive time cells
+    enum WindowType {
+	SqrtBlackmanHarris,
+	SqrtBlackman,
+	SqrtHann,
+	BlackmanHarris,
+	Blackman,
+	Hann,
     };
 
-    CQSpectrogram(CQParameters params, Interpolation interpolation);
-    virtual ~CQSpectrogram();
+    CQParameters(double _sampleRate, 
+		 double _minFrequency, 
+		 double _maxFrequency,
+		 int _binsPerOctave) :
+	sampleRate(_sampleRate),
+	minFrequency(_minFrequency),
+	maxFrequency(_maxFrequency),
+	binsPerOctave(_binsPerOctave),
+	q(1.0),                    // Q scaling factor
+	atomHopFactor(0.25),       // hop size of shortest temporal atom
+	threshold(0.0005),         // sparsity threshold for resulting kernel
+	window(SqrtBlackmanHarris) // window shape
+    { }
 
-    virtual double getSampleRate() const { return m_cq.getSampleRate(); }
-    virtual int getBinsPerOctave() const { return m_cq.getBinsPerOctave(); }
-    virtual int getOctaves() const { return m_cq.getOctaves(); }
-    virtual int getTotalBins() const { return m_cq.getTotalBins(); }
-    virtual int getColumnHop() const { return m_cq.getColumnHop(); }
-    virtual int getLatency() const { return m_cq.getLatency(); } 
-    virtual double getMaxFrequency() const { return m_cq.getMaxFrequency(); }
-    virtual double getMinFrequency() const { return m_cq.getMinFrequency(); }
-    virtual double getBinFrequency(int bin) const { return m_cq.getBinFrequency(bin); }
+    double sampleRate;
+    double minFrequency;
+    double maxFrequency;
+    int binsPerOctave;
 
-    RealBlock process(const RealSequence &);
-    RealBlock getRemainingOutput();
-
-private:
-    ConstantQ m_cq;
-    Interpolation m_interpolation;
-
-    RealBlock m_buffer;
-    RealBlock postProcess(const ComplexBlock &, bool insist);
-    RealBlock fetchHold(bool insist);
-    RealBlock fetchLinear(bool insist);
-    RealBlock linearInterpolated(const RealBlock &, int, int);
-    RealColumn m_prevColumn;
+    double q;
+    double atomHopFactor;
+    double threshold;
+    WindowType window;
 };
 
 #endif
+
+
+    

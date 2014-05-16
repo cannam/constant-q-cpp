@@ -47,17 +47,15 @@ using std::endl;
 
 //#define DEBUG_CQ 1
 
-ConstantQ::ConstantQ(double sampleRate,
-                     double minFreq,
-                     double maxFreq,
-                     int binsPerOctave) :
-    m_sampleRate(sampleRate),
-    m_maxFrequency(maxFreq),
-    m_minFrequency(minFreq),
-    m_binsPerOctave(binsPerOctave),
+ConstantQ::ConstantQ(CQParameters params) :
+    m_inparams(params),
+    m_sampleRate(params.sampleRate),
+    m_maxFrequency(params.maxFrequency),
+    m_minFrequency(params.minFrequency),
+    m_binsPerOctave(params.binsPerOctave),
     m_fft(0)
 {
-    if (minFreq <= 0.0 || maxFreq <= 0.0) {
+    if (m_minFrequency <= 0.0 || m_maxFrequency <= 0.0) {
         throw std::invalid_argument("Frequency extents must be positive");
     }
 
@@ -89,7 +87,7 @@ void
 ConstantQ::initialise()
 {
     m_octaves = int(ceil(log2(m_maxFrequency / m_minFrequency)));
-    m_kernel = new CQKernel(m_sampleRate, m_maxFrequency, m_binsPerOctave);
+    m_kernel = new CQKernel(m_inparams);
     m_p = m_kernel->getProperties();
     
     // Use exact powers of two for resampling rates. They don't have

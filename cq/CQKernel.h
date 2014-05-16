@@ -32,6 +32,8 @@
 #ifndef CQ_KERNEL_H
 #define CQ_KERNEL_H
 
+#include "CQParameters.h"
+
 #include <vector>
 #include <complex>
 
@@ -40,7 +42,7 @@ class FFT;
 class CQKernel
 {
 public:
-    CQKernel(double sampleRate, double maxFreq, int binsPerOctave);
+    CQKernel(CQParameters params);
     ~CQKernel();
     
     struct Properties {
@@ -66,6 +68,7 @@ public:
         (const std::vector<std::complex<double> > &);
 
 private:
+    const CQParameters m_inparams;
     Properties m_p;
     FFT *m_fft;
 
@@ -75,6 +78,7 @@ private:
     };
     KernelMatrix m_kernel;
 
+    std::vector<double> makeWindow(int len) const;
     void generateKernel();
     void finaliseKernel();
 };

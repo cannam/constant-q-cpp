@@ -37,11 +37,9 @@
 using std::cerr;
 using std::endl;
 
-CQSpectrogram::CQSpectrogram(double sampleRate,
-			       double minFreq, double maxFreq,
-			       int binsPerOctave,
-			       Interpolation interpolation) :
-    m_cq(sampleRate, minFreq, maxFreq, binsPerOctave),
+CQSpectrogram::CQSpectrogram(CQParameters params,
+                             Interpolation interpolation) :
+    m_cq(params),
     m_interpolation(interpolation)
 {
 }
