@@ -1,0 +1,11 @@
+CFLAGS := -Wall -O3 -ftree-vectorize -mmacosx-version-min=10.7 -arch i386 -arch x86_64
+CXXFLAGS  := $(CFLAGS)
+
+PLUGIN_LDFLAGS	  := -mmacosx-version-min=10.7 -arch i386 -arch x86_64 -dynamiclib -exported_symbols_list vamp/vamp-plugin.list
+
+VAMPSDK_DIR := ../vamp-plugin-sdk
+
+PLUGIN_EXT := .dylib
+
+include Makefile.inc
+

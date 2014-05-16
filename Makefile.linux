@@ -4,8 +4,9 @@ CFLAGS := -Wall -O3 -fPIC -I../vamp-plugin-sdk/
 
 CXXFLAGS := $(CFLAGS)
 
-VAMPSDK_DIR := ../../vamp-plugin-sdk
 PLUGIN_LDFLAGS := -shared -Wl,--version-script=vamp/vamp-plugin.map
+
+VAMPSDK_DIR := ../vamp-plugin-sdk
 
 PLUGIN_EXT := .so
 
