@@ -42,7 +42,8 @@ binForFrequency(double freq)
 }
 
 void
-checkCQFreqColumn(int i, vector<double> column, double freq)
+checkCQFreqColumn(int i, vector<double> column,
+                  double freq, CQSpectrogram::Interpolation interp)
 {
     double maxval = 0.0;
     int maxidx = -1;
@@ -53,20 +54,24 @@ checkCQFreqColumn(int i, vector<double> column, double freq)
             maxidx = j;
         }
     }
+
+    int nonZeroHeight = height;
+    if (interp == CQSpectrogram::InterpolateZeros && i % 2 == 1) {
+        nonZeroHeight = height / 2;
+    }
+
     int expected = binForFrequency(freq);
     if (maxval < threshold) {
         return; // ignore these columns at start and end
-    } else {
-        if (maxidx != expected) {
-            cerr << "ERROR: In column " << i << ", maximum value for frequency "
-                 << freq << " found at index " << maxidx << endl
-                 << "(expected index " << expected << ")" << endl;
-            cerr << "column contains: ";
-            for (int j = 0; j < height; ++j) {
-                cerr << column[j] << " ";
-            }
-            cerr << endl;
+    } else if (expected < nonZeroHeight && maxidx != expected) {
+        cerr << "ERROR: In column " << i << ", maximum value for frequency "
+             << freq << " found at index " << maxidx << endl
+             << "(expected index " << expected << ")" << endl;
+        cerr << "column contains: ";
+        for (int j = 0; j < height; ++j) {
+            cerr << column[j] << " ";
         }
+        cerr << endl;
         BOOST_CHECK_EQUAL(maxidx, expected);
     }
 }
@@ -74,26 +79,37 @@ checkCQFreqColumn(int i, vector<double> column, double freq)
 void
 testCQFrequency(double freq)
 {
-    CQParameters params(sampleRate, cqmin, cqmax, bpo);
-    CQSpectrogram cq(params, CQSpectrogram::InterpolateLinear);
+    vector<CQSpectrogram::Interpolation> interpolationTypes;
+    interpolationTypes.push_back(CQSpectrogram::InterpolateZeros);
+    interpolationTypes.push_back(CQSpectrogram::InterpolateHold);
+    interpolationTypes.push_back(CQSpectrogram::InterpolateLinear);
 
-    BOOST_CHECK_EQUAL(cq.getBinsPerOctave(), bpo);
-    BOOST_CHECK_EQUAL(cq.getOctaves(), 2);
+    for (int k = 0; k < int(interpolationTypes.size()); ++k) {
 
-    vector<double> input;
-    for (int i = 0; i < duration; ++i) {
-        input.push_back(sin((i * 2 * M_PI * freq) / sampleRate));
-    }
-    Window<double>(HanningWindow, duration).cut(input.data());
+        CQSpectrogram::Interpolation interp = interpolationTypes[k];
 
-    CQSpectrogram::RealBlock output = cq.process(input);
-    CQSpectrogram::RealBlock rest = cq.getRemainingOutput();
-    output.insert(output.end(), rest.begin(), rest.end());
+        CQParameters params(sampleRate, cqmin, cqmax, bpo);
+        CQSpectrogram cq(params, interp);
 
-    BOOST_CHECK_EQUAL(output[0].size(), cq.getBinsPerOctave() * cq.getOctaves());
+        BOOST_CHECK_EQUAL(cq.getBinsPerOctave(), bpo);
+        BOOST_CHECK_EQUAL(cq.getOctaves(), 2);
 
-    for (int i = 0; i < int(output.size()); ++i) {
-        checkCQFreqColumn(i, output[i], freq);
+        vector<double> input;
+        for (int i = 0; i < duration; ++i) {
+            input.push_back(sin((i * 2 * M_PI * freq) / sampleRate));
+        }
+        Window<double>(HanningWindow, duration).cut(input.data());
+
+        CQSpectrogram::RealBlock output = cq.process(input);
+        CQSpectrogram::RealBlock rest = cq.getRemainingOutput();
+        output.insert(output.end(), rest.begin(), rest.end());
+
+        BOOST_CHECK_EQUAL(output[0].size(), 
+                          cq.getBinsPerOctave() * cq.getOctaves());
+
+        for (int i = 0; i < int(output.size()); ++i) {
+            checkCQFreqColumn(i, output[i], freq, interp);
+        }
     }
 }
 

@@ -69,6 +69,7 @@ VAMP_SOURCES	:= \
 
 TEST_SOURCES	:= \
 	$(TEST_DIR)/TestCQFrequency.cpp \
+	$(TEST_DIR)/TestCQTime.cpp \
 	$(TEST_DIR)/TestFFT.cpp \
 	$(TEST_DIR)/TestMathUtilities.cpp \
 	$(TEST_DIR)/TestResampler.cpp \
@@ -146,6 +147,8 @@ vamp/libmain.o: cq/CQParameters.h cq/CQKernel.h vamp/CQChromaVamp.h
 vamp/Pitch.o: vamp/Pitch.h
 test/TestCQFrequency.o: cq/CQSpectrogram.h cq/ConstantQ.h cq/CQBase.h
 test/TestCQFrequency.o: cq/CQParameters.h cq/CQKernel.h src/dsp/Window.h
+test/TestCQTime.o: cq/CQSpectrogram.h cq/ConstantQ.h cq/CQBase.h
+test/TestCQTime.o: cq/CQParameters.h cq/CQKernel.h src/dsp/Window.h
 test/TestFFT.o: src/dsp/FFT.h
 test/TestMathUtilities.o: src/dsp/MathUtilities.h src/dsp/nan-inf.h
 test/TestResampler.o: src/dsp/Resampler.h src/dsp/Window.h src/dsp/FFT.h
