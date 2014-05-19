@@ -6,8 +6,11 @@
 
 #include <cmath>
 #include <vector>
+#include <iostream>
 
 using std::vector;
+using std::cerr;
+using std::endl;
 
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MAIN
@@ -30,13 +33,39 @@ static const double cqmax = 40;
 static const double bpo = 4;
 static const int duration = sampleRate * 2;
 
-// Fairly arbitrary max value for CQ bins other than the "correct" one
+// Threshold below which to ignore a column completely
 static const double threshold = 0.08;
 
-void
-checkCQFreqOutput(const CQSpectrogram::RealBlock &output, double freq)
+int
+binForFrequency(double freq)
 {
-    
+    int bin = (2 * bpo) - round(bpo * log2(freq / cqmin));
+    cerr << "binForFrequency: " << freq << " -> " << bin << endl;
+    return bin;
+}
+
+void
+checkCQFreqColumn(int i, vector<double> column, double freq)
+{
+    double maxval = 0.0;
+    int maxidx = -1;
+    int height = column.size();
+    for (int j = 0; j < height; ++j) {
+        if (j == 0 || column[j] > maxval) {
+            maxval = column[j];
+            maxidx = j;
+        }
+    }
+    cerr << "maxval = " << maxval << " at " << maxidx << endl;
+    int expected = binForFrequency(freq);
+    if (maxval < threshold) {
+        return; // ignore these columns at start and end
+    } else if (expected < 0 || expected >= height) {
+        cerr << "maxval = " << maxval << endl;
+        BOOST_CHECK(maxval < threshold);
+    } else {
+        BOOST_CHECK_EQUAL(maxidx, expected);
+    }
 }
 
 void
@@ -44,6 +73,9 @@ testCQFrequency(double freq)
 {
     CQParameters params(sampleRate, cqmin, cqmax, bpo);
     CQSpectrogram cq(params, CQSpectrogram::InterpolateLinear);
+
+    BOOST_CHECK_EQUAL(cq.getBinsPerOctave(), bpo);
+    BOOST_CHECK_EQUAL(cq.getOctaves(), 2);
 
     vector<double> input;
     for (int i = 0; i < duration; ++i) {
@@ -55,10 +87,13 @@ testCQFrequency(double freq)
     CQSpectrogram::RealBlock rest = cq.getRemainingOutput();
     output.insert(output.end(), rest.begin(), rest.end());
 
-    checkCQFreqOutput(output, freq);
+    BOOST_CHECK_EQUAL(output[0].size(), cq.getBinsPerOctave() * cq.getOctaves());
+
+    for (int i = 0; i < int(output.size()); ++i) {
+        checkCQFreqColumn(i, output[i], freq);
+    }
 }
 
-BOOST_AUTO_TEST_CASE(freq_0) { testCQFrequency(0); }
 BOOST_AUTO_TEST_CASE(freq_5) { testCQFrequency(5); }
 BOOST_AUTO_TEST_CASE(freq_10) { testCQFrequency(10); }
 BOOST_AUTO_TEST_CASE(freq_15) { testCQFrequency(15); }
