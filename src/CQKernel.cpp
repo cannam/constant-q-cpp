@@ -48,6 +48,8 @@ using std::endl;
 
 typedef std::complex<double> C;
 
+//#define DEBUG_CQ_KERNEL 1
+
 CQKernel::CQKernel(CQParameters params) :
     m_inparams(params),
     m_fft(0)
@@ -148,13 +150,17 @@ CQKernel::generateKernel()
     m_p.atomsPerFrame = floor
         (1.0 + (m_p.fftSize - ceil(maxNK / 2.0) - m_p.firstCentre) / m_p.atomSpacing);
 
+#ifdef DEBUG_CQ_KERNEL
     cerr << "atomsPerFrame = " << m_p.atomsPerFrame << " (q = " << q << ", Q = " << m_p.Q << ", atomHopFactor = " << atomHopFactor << ", atomSpacing = " << m_p.atomSpacing << ", fftSize = " << m_p.fftSize << ", maxNK = " << maxNK << ", firstCentre = " << m_p.firstCentre << ")" << endl;
+#endif
 
     m_p.lastCentre = m_p.firstCentre + (m_p.atomsPerFrame - 1) * m_p.atomSpacing;
 
     m_p.fftHop = (m_p.lastCentre + m_p.atomSpacing) - m_p.firstCentre;
 
+#ifdef DEBUG_CQ_KERNEL
     cerr << "fftHop = " << m_p.fftHop << endl;
+#endif
 
     m_fft = new FFT(m_p.fftSize);
 
@@ -228,12 +234,16 @@ CQKernel::generateKernel()
         }
     }
 
+#ifdef DEBUG_CQ_KERNEL
     cerr << "size = " << m_kernel.data.size() << "*" << m_kernel.data[0].size() << " (fft size = " << m_p.fftSize << ")" << endl;
+#endif
 
     assert((int)m_kernel.data.size() == m_p.binsPerOctave * m_p.atomsPerFrame);
     assert((int)m_kernel.data[0].size() == m_p.fftSize);
 
+#ifdef DEBUG_CQ_KERNEL
     cerr << "density = " << double(nnz) / double(m_p.binsPerOctave * m_p.atomsPerFrame * m_p.fftSize) << " (" << nnz << " of " << m_p.binsPerOctave * m_p.atomsPerFrame * m_p.fftSize << ")" << endl;
+#endif
 
     finaliseKernel();
 }
@@ -290,8 +300,10 @@ CQKernel::finaliseKernel()
     double weight = double(m_p.fftHop) / m_p.fftSize;
     weight /= MathUtilities::mean(wK.data(), wK.size());
     weight = sqrt(weight);
-    
+
+#ifdef DEBUG_CQ_KERNEL    
     cerr << "weight = " << weight << endl;
+#endif
 
     // apply normalisation weight, make sparse, and store conjugate
     // (we use the adjoint or conjugate transpose of the kernel matrix
