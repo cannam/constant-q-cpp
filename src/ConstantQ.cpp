@@ -80,6 +80,8 @@ ConstantQ::getMinFrequency() const
 double
 ConstantQ::getBinFrequency(int bin) const
 {
+    // our bins are returned in high->low order
+    bin = (getBinsPerOctave() * getOctaves()) - bin - 1;
     return getMinFrequency() * pow(2, (double(bin) / getBinsPerOctave()));
 }
 
