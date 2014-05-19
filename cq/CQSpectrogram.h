@@ -56,7 +56,32 @@ public:
     virtual double getMinFrequency() const { return m_cq.getMinFrequency(); }
     virtual double getBinFrequency(int bin) const { return m_cq.getBinFrequency(bin); }
 
+    /**
+     * Given a series of time-domain samples, return a series of
+     * constant-Q magnitude columns. Any samples left over (that did
+     * not fit into a constant-Q processing block) are saved for the
+     * next call to process or getRemainingBlocks.
+     *
+     * Each column contains a series of constant-Q bin value
+     * magnitudes, ordered from highest to lowest frequency.
+     *  
+     * The columns are all of the same height, but they might not all
+     * be populated, depending on the interpolation mode: in
+     * InterpolateZeros mode, the lower octaves (which are spaced more
+     * widely in the raw constant-Q than the highest octave) will
+     * contain zeros for the undefined values, but in the other
+     * interpolation modes every cell will be filled.
+     *
+     * To obtain raw, complex constant-Q bin values, use the ConstantQ
+     * class.
+     */
     RealBlock process(const RealSequence &);
+
+    /**
+     * Return the remaining constant-Q magnitude columns following the
+     * end of processing. Any buffered input is padded so as to ensure
+     * that all input provided to process() will have been returned.
+     */
     RealBlock getRemainingOutput();
 
 private:
