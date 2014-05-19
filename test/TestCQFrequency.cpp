@@ -26,7 +26,7 @@ BOOST_AUTO_TEST_SUITE(TestCQFrequency)
 // Set up fs/2 = 50, frequency range 10 -> 40 i.e. 2 octaves, fixed
 // duration of 2 seconds
 static const double sampleRate = 100;
-static const double cqmin = 10;
+static const double cqmin = 11.8921;
 static const double cqmax = 40;
 static const double bpo = 4;
 static const int duration = sampleRate * 2;
@@ -37,7 +37,7 @@ static const double threshold = 0.08;
 int
 binForFrequency(double freq)
 {
-    int bin = (2 * bpo) - round(bpo * log2(freq / cqmin));
+    int bin = (bpo * 2) - round(bpo * log2(freq / cqmin)) - 1;
     return bin;
 }
 
@@ -48,25 +48,24 @@ checkCQFreqColumn(int i, vector<double> column,
     double maxval = 0.0;
     int maxidx = -1;
     int height = column.size();
-    for (int j = 0; j < height; ++j) {
+
+    int nonZeroHeight = ((i % 2 == 1) ? height/2 : height);
+
+    for (int j = 0; j < nonZeroHeight; ++j) {
         if (j == 0 || column[j] > maxval) {
             maxval = column[j];
             maxidx = j;
         }
     }
 
-    int nonZeroHeight = height;
-    if (interp == CQSpectrogram::InterpolateZeros && i % 2 == 1) {
-        nonZeroHeight = height / 2;
-    }
-
     int expected = binForFrequency(freq);
     if (maxval < threshold) {
         return; // ignore these columns at start and end
     } else if (expected < nonZeroHeight && maxidx != expected) {
-        cerr << "ERROR: In column " << i << ", maximum value for frequency "
-             << freq << " found at index " << maxidx << endl
-             << "(expected index " << expected << ")" << endl;
+        cerr << "ERROR: In column " << i << " with interpolation " << interp
+             << ", maximum value for frequency " << freq
+             << "\n       found at index " << maxidx
+             << " (expected index " << expected << ")" << endl;
         cerr << "column contains: ";
         for (int j = 0; j < height; ++j) {
             cerr << column[j] << " ";
@@ -91,8 +90,19 @@ testCQFrequency(double freq)
         CQParameters params(sampleRate, cqmin, cqmax, bpo);
         CQSpectrogram cq(params, interp);
 
+        cerr << "cq freq " << freq << ", binForFrequency " << binForFrequency(freq) << endl;
+        
+        cerr << "bin freqs: ";
+        for (int i = 0; i < cq.getBinsPerOctave() * cq.getOctaves(); ++i) {
+            cerr << i << ": " << cq.getBinFrequency(i) << ", ";
+        }
+        cerr << endl;
+
         BOOST_CHECK_EQUAL(cq.getBinsPerOctave(), bpo);
         BOOST_CHECK_EQUAL(cq.getOctaves(), 2);
+        BOOST_CHECK_CLOSE(cq.getBinFrequency(0), 40, 1e-10);
+        BOOST_CHECK_CLOSE(cq.getBinFrequency(4), 20, 1e-10);
+        BOOST_CHECK_CLOSE(cq.getBinFrequency(7), cqmin, 1e-3);
 
         vector<double> input;
         for (int i = 0; i < duration; ++i) {
@@ -114,11 +124,10 @@ testCQFrequency(double freq)
 }
 
 BOOST_AUTO_TEST_CASE(freq_11) { testCQFrequency(11); }
-BOOST_AUTO_TEST_CASE(freq_15) { testCQFrequency(15); }
-BOOST_AUTO_TEST_CASE(freq_20) { testCQFrequency(20); }
-BOOST_AUTO_TEST_CASE(freq_25) { testCQFrequency(25); }
-BOOST_AUTO_TEST_CASE(freq_30) { testCQFrequency(30); }
-BOOST_AUTO_TEST_CASE(freq_35) { testCQFrequency(35); }
+BOOST_AUTO_TEST_CASE(freq_16) { testCQFrequency(16); }
+BOOST_AUTO_TEST_CASE(freq_23) { testCQFrequency(23); }
+BOOST_AUTO_TEST_CASE(freq_27) { testCQFrequency(27); }
+BOOST_AUTO_TEST_CASE(freq_33) { testCQFrequency(33); }
 BOOST_AUTO_TEST_CASE(freq_40) { testCQFrequency(40); }
 
 BOOST_AUTO_TEST_SUITE_END()

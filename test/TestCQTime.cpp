@@ -43,15 +43,19 @@ testCQTime(double t)
 
     for (int k = 0; k < int(interpolationTypes.size()); ++k) {
 
+        CQSpectrogram::Interpolation interp = interpolationTypes[k];
+
         CQParameters params(sampleRate, cqmin, cqmax, bpo);
-        CQSpectrogram cq(params, interpolationTypes[k]);
+        CQSpectrogram cq(params, interp);
 
         BOOST_CHECK_EQUAL(cq.getBinsPerOctave(), bpo);
         BOOST_CHECK_EQUAL(cq.getOctaves(), 2);
 
         //!!! generate input signal
-        vector<double> input;
-
+        vector<double> input(duration, 0.0);
+        int ix = int(floor(t * sampleRate));
+        if (ix >= duration) ix = duration-1;
+        input[ix] = 1.0;
 
         CQSpectrogram::RealBlock output = cq.process(input);
         CQSpectrogram::RealBlock rest = cq.getRemainingOutput();
@@ -60,7 +64,40 @@ testCQTime(double t)
         BOOST_CHECK_EQUAL(output[0].size(), 
                           cq.getBinsPerOctave() * cq.getOctaves());
 
-        //!!! test output signal
+        for (int j = 0; j < int(output[0].size()); ++j) {
+
+            int maxidx = -1;
+            double max = 0.0;
+            for (int i = 0; i < int(output.size()); ++i) {
+                double value = output[i][j];
+                if (i == 0 || value > max) {
+                    max = value;
+                    maxidx = i;
+                }
+            }
+
+            int expected = round((ix + cq.getLatency()) / cq.getColumnHop());
+
+            if (maxidx != expected) {
+                cerr << "ERROR: In row " << j << " (bin freq "
+                     << cq.getBinFrequency(j) << "), interpolation " << interp
+                     << ", maximum value for time " << t 
+                     << "\n       found at index " << maxidx 
+                     << " of " << output.size() << " (expected index "
+                     << expected << ")\n       [latency = " << cq.getLatency()
+                     << ", hop = " << cq.getColumnHop() << ", duration = "
+                     << duration << "]" << endl;
+                cerr << "row contains: ";
+                for (int i = 0; i < int(output.size()); ++i) {
+                    if (i == expected) cerr << "*";
+                    if (i == maxidx) cerr << "**";
+                    cerr << output[i][j] << " ";
+                }
+                cerr << endl;
+
+                BOOST_CHECK_EQUAL(maxidx, expected);
+            }
+        }
     }
 }
 
