@@ -21,9 +21,7 @@ BOOST_AUTO_TEST_SUITE(TestCQFrequency)
 
 // The principle here is to feed a single windowed sinusoid into a
 // small CQ transform and check that the output has its peak bin at
-// the correct frequency. We can repeat for different frequencies both
-// inside and outside the frequency range supported by the CQ. We
-// should also repeat for CQSpectrogram outputs as well as the raw CQ.
+// the correct frequency. 
 
 // Set up fs/2 = 50, frequency range 10 -> 40 i.e. 2 octaves, fixed
 // duration of 2 seconds
@@ -40,7 +38,6 @@ int
 binForFrequency(double freq)
 {
     int bin = (2 * bpo) - round(bpo * log2(freq / cqmin));
-    cerr << "binForFrequency: " << freq << " -> " << bin << endl;
     return bin;
 }
 
@@ -56,14 +53,20 @@ checkCQFreqColumn(int i, vector<double> column, double freq)
             maxidx = j;
         }
     }
-    cerr << "maxval = " << maxval << " at " << maxidx << endl;
     int expected = binForFrequency(freq);
     if (maxval < threshold) {
         return; // ignore these columns at start and end
-    } else if (expected < 0 || expected >= height) {
-        cerr << "maxval = " << maxval << endl;
-        BOOST_CHECK(maxval < threshold);
     } else {
+        if (maxidx != expected) {
+            cerr << "ERROR: In column " << i << ", maximum value for frequency "
+                 << freq << " found at index " << maxidx << endl
+                 << "(expected index " << expected << ")" << endl;
+            cerr << "column contains: ";
+            for (int j = 0; j < height; ++j) {
+                cerr << column[j] << " ";
+            }
+            cerr << endl;
+        }
         BOOST_CHECK_EQUAL(maxidx, expected);
     }
 }
@@ -94,16 +97,13 @@ testCQFrequency(double freq)
     }
 }
 
-BOOST_AUTO_TEST_CASE(freq_5) { testCQFrequency(5); }
-BOOST_AUTO_TEST_CASE(freq_10) { testCQFrequency(10); }
+BOOST_AUTO_TEST_CASE(freq_11) { testCQFrequency(11); }
 BOOST_AUTO_TEST_CASE(freq_15) { testCQFrequency(15); }
 BOOST_AUTO_TEST_CASE(freq_20) { testCQFrequency(20); }
 BOOST_AUTO_TEST_CASE(freq_25) { testCQFrequency(25); }
 BOOST_AUTO_TEST_CASE(freq_30) { testCQFrequency(30); }
 BOOST_AUTO_TEST_CASE(freq_35) { testCQFrequency(35); }
 BOOST_AUTO_TEST_CASE(freq_40) { testCQFrequency(40); }
-BOOST_AUTO_TEST_CASE(freq_45) { testCQFrequency(45); }
-BOOST_AUTO_TEST_CASE(freq_50) { testCQFrequency(50); }
 
 BOOST_AUTO_TEST_SUITE_END()
 
