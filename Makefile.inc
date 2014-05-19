@@ -11,8 +11,10 @@ PLUGIN_EXT	?= .so
 
 CXX	?= g++
 CC	?= gcc
+VALGRIND	?= valgrind -q
 
 GENERAL_FLAGS	:= -I. -I$(VAMPSDK_DIR) -I$(INC_DIR) -I$(LIB_DIR) -I$(KFFT_DIR) -I$(KFFT_DIR)/tools -Dkiss_fft_scalar=double
+
 CFLAGS := $(GENERAL_FLAGS) $(CFLAGS) 
 CXXFLAGS := $(GENERAL_FLAGS) $(CXXFLAGS)
 
@@ -23,7 +25,6 @@ PF_LDFLAGS := $(LDFLAGS) -lsndfile
 
 LIB	:= libcq.a
 PLUGIN	:= cqvamp$(PLUGIN_EXT)
-TEST	:= $(TEST_DIR)/test
 PF	:= $(TEST_DIR)/processfile
 
 LIB_HEADERS	:= \
@@ -66,28 +67,34 @@ VAMP_SOURCES	:= \
 	$(VAMP_DIR)/libmain.cpp \
 	$(VAMP_DIR)/Pitch.cpp
 
+TEST_SOURCES	:= \
+	$(TEST_DIR)/TestCQFrequency.cpp \
+	$(TEST_DIR)/TestFFT.cpp \
+	$(TEST_DIR)/TestMathUtilities.cpp \
+	$(TEST_DIR)/TestResampler.cpp \
+	$(TEST_DIR)/TestWindow.cpp
+
 HEADERS	     := $(LIB_HEADERS) $(VAMP_HEADERS)
 SOURCES	     := $(LIB_SOURCES) $(VAMP_SOURCES)
+
 LIB_OBJECTS  := $(LIB_SOURCES:.cpp=.o)
 LIB_OBJECTS  := $(LIB_OBJECTS:.c=.o)
+
 OBJECTS	     := $(SOURCES:.cpp=.o)
 OBJECTS	     := $(OBJECTS:.c=.o)
 
-TEST_SOURCES := $(TEST_DIR)/test.cpp 
-TEST_OBJECTS := $(TEST_SOURCES:.cpp=.o) $(OBJECTS)
+TEST_TARGETS	:= $(TEST_SOURCES:.cpp=)
 
 PF_SOURCES := $(TEST_DIR)/processfile.cpp
 PF_OBJECTS := $(PF_SOURCES:.cpp=.o) $(OBJECTS)
 
 LIBS	:= $(VAMPSDK_DIR)/libvamp-sdk.a -lpthread
 
-all: $(LIB) $(PLUGIN) $(TEST) $(PF)
+all: $(LIB) $(PLUGIN) $(TEST_TARGETS) $(PF)
+	for t in $(TEST_TARGETS); do echo; echo "Running $$t"; $(VALGRIND) ./"$$t" || exit 1; done
 
 $(PLUGIN):	$(OBJECTS)
 	$(CXX) -o $@ $^ $(LIBS) $(PLUGIN_LDFLAGS)
-
-$(TEST):	$(TEST_OBJECTS)
-	$(CXX) -o $@ $^ $(LIBS) $(TEST_LDFLAGS)
 
 $(PF):	$(PF_OBJECTS)
 	$(CXX) -o $@ $^ $(LIBS) $(PF_LDFLAGS)
@@ -95,6 +102,9 @@ $(PF):	$(PF_OBJECTS)
 $(LIB):	$(LIB_OBJECTS)
 	ar cr $@ $^
 	ranlib $@
+
+Test%:	Test%.o
+	$(CXX) -o $@ $^ $(LIB) $(LIBS) $(TEST_LDFLAGS)
 
 clean:		
 	rm -f $(OBJECTS) $(TEST_OBJECTS) $(PF_OBJECTS)

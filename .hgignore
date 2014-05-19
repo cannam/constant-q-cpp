@@ -2,5 +2,10 @@ syntax: glob
 *~
 *.o
 *.so
-cpp-qm-dsp/test
+*.a
+*.dylib
+*.dll
 *.class
+
+syntax: re
+^test/Test[^.]*$
