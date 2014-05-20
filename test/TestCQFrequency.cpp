@@ -90,14 +90,6 @@ testCQFrequency(double freq)
         CQParameters params(sampleRate, cqmin, cqmax, bpo);
         CQSpectrogram cq(params, interp);
 
-        cerr << "cq freq " << freq << ", binForFrequency " << binForFrequency(freq) << endl;
-        
-        cerr << "bin freqs: ";
-        for (int i = 0; i < cq.getBinsPerOctave() * cq.getOctaves(); ++i) {
-            cerr << i << ": " << cq.getBinFrequency(i) << ", ";
-        }
-        cerr << endl;
-
         BOOST_CHECK_EQUAL(cq.getBinsPerOctave(), bpo);
         BOOST_CHECK_EQUAL(cq.getOctaves(), 2);
         BOOST_CHECK_CLOSE(cq.getBinFrequency(0), 40, 1e-10);
@@ -124,8 +116,8 @@ testCQFrequency(double freq)
 }
 
 BOOST_AUTO_TEST_CASE(freq_11) { testCQFrequency(11); }
-BOOST_AUTO_TEST_CASE(freq_16) { testCQFrequency(16); }
-BOOST_AUTO_TEST_CASE(freq_23) { testCQFrequency(23); }
+BOOST_AUTO_TEST_CASE(freq_17) { testCQFrequency(17); }
+BOOST_AUTO_TEST_CASE(freq_24) { testCQFrequency(24); }
 BOOST_AUTO_TEST_CASE(freq_27) { testCQFrequency(27); }
 BOOST_AUTO_TEST_CASE(freq_33) { testCQFrequency(33); }
 BOOST_AUTO_TEST_CASE(freq_40) { testCQFrequency(40); }
