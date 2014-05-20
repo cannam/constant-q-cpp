@@ -76,6 +76,37 @@ checkCQFreqColumn(int i, vector<double> column,
 }
 
 void
+testCQFrequencyWith(CQParameters params,
+                    CQSpectrogram::Interpolation interp,
+                    double freq)
+{
+    CQSpectrogram cq(params, interp);
+
+    BOOST_CHECK_EQUAL(cq.getBinsPerOctave(), bpo);
+    BOOST_CHECK_EQUAL(cq.getOctaves(), 2);
+    BOOST_CHECK_CLOSE(cq.getBinFrequency(0), 40, 1e-10);
+    BOOST_CHECK_CLOSE(cq.getBinFrequency(4), 20, 1e-10);
+    BOOST_CHECK_CLOSE(cq.getBinFrequency(7), cqmin, 1e-3);
+    
+    vector<double> input;
+    for (int i = 0; i < duration; ++i) {
+        input.push_back(sin((i * 2 * M_PI * freq) / sampleRate));
+    }
+    Window<double>(HanningWindow, duration).cut(input.data());
+    
+    CQSpectrogram::RealBlock output = cq.process(input);
+    CQSpectrogram::RealBlock rest = cq.getRemainingOutput();
+    output.insert(output.end(), rest.begin(), rest.end());
+    
+    BOOST_CHECK_EQUAL(output[0].size(), 
+                      cq.getBinsPerOctave() * cq.getOctaves());
+    
+    for (int i = 0; i < int(output.size()); ++i) {
+        checkCQFreqColumn(i, output[i], freq, interp);
+    }
+}
+
+void
 testCQFrequency(double freq)
 {
     vector<CQSpectrogram::Interpolation> interpolationTypes;
@@ -84,34 +115,9 @@ testCQFrequency(double freq)
     interpolationTypes.push_back(CQSpectrogram::InterpolateLinear);
 
     for (int k = 0; k < int(interpolationTypes.size()); ++k) {
-
         CQSpectrogram::Interpolation interp = interpolationTypes[k];
-
         CQParameters params(sampleRate, cqmin, cqmax, bpo);
-        CQSpectrogram cq(params, interp);
-
-        BOOST_CHECK_EQUAL(cq.getBinsPerOctave(), bpo);
-        BOOST_CHECK_EQUAL(cq.getOctaves(), 2);
-        BOOST_CHECK_CLOSE(cq.getBinFrequency(0), 40, 1e-10);
-        BOOST_CHECK_CLOSE(cq.getBinFrequency(4), 20, 1e-10);
-        BOOST_CHECK_CLOSE(cq.getBinFrequency(7), cqmin, 1e-3);
-
-        vector<double> input;
-        for (int i = 0; i < duration; ++i) {
-            input.push_back(sin((i * 2 * M_PI * freq) / sampleRate));
-        }
-        Window<double>(HanningWindow, duration).cut(input.data());
-
-        CQSpectrogram::RealBlock output = cq.process(input);
-        CQSpectrogram::RealBlock rest = cq.getRemainingOutput();
-        output.insert(output.end(), rest.begin(), rest.end());
-
-        BOOST_CHECK_EQUAL(output[0].size(), 
-                          cq.getBinsPerOctave() * cq.getOctaves());
-
-        for (int i = 0; i < int(output.size()); ++i) {
-            checkCQFreqColumn(i, output[i], freq, interp);
-        }
+        testCQFrequencyWith(params, interp, freq);
     }
 }
 
