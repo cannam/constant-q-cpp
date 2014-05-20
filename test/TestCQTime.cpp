@@ -64,38 +64,49 @@ testCQTime(double t)
         BOOST_CHECK_EQUAL(output[0].size(), 
                           cq.getBinsPerOctave() * cq.getOctaves());
 
+        vector<int> peaks;
+        double eps = 1e-8;
+
         for (int j = 0; j < int(output[0].size()); ++j) {
 
             int maxidx = -1;
             double max = 0.0;
             for (int i = 0; i < int(output.size()); ++i) {
                 double value = output[i][j];
-                if (i == 0 || value > max) {
+                if (i == 0 || value + eps > max) {
                     max = value;
                     maxidx = i;
                 }
             }
 
-            int expected = round((ix + cq.getLatency()) / cq.getColumnHop());
+            peaks.push_back(maxidx);
+        }
 
-            if (maxidx != expected) {
+        for (int j = 1; j < int(peaks.size()); ++j) {
+            int oct = j / bpo;
+            int spacing = (1 << oct);
+            int actual = peaks[j]/spacing;
+            int expected = int(round(double(peaks[0])/spacing));
+            if (actual != expected) {
                 cerr << "ERROR: In row " << j << " (bin freq "
                      << cq.getBinFrequency(j) << "), interpolation " << interp
                      << ", maximum value for time " << t 
-                     << "\n       found at index " << maxidx 
-                     << " of " << output.size() << " (expected index "
-                     << expected << ")\n       [latency = " << cq.getLatency()
+                     << "\n       found at index " << peaks[j] 
+                     << " of " << output.size() << " which does not align with"
+                     << " highest frequency\n       bin peak at " << peaks[0]
+                     << " given octave spacing of " << spacing
+                     << "\n       [latency = " << cq.getLatency()
                      << ", hop = " << cq.getColumnHop() << ", duration = "
-                     << duration << "]" << endl;
+                     << duration << ", ix = " << ix << "]" << endl;
                 cerr << "row contains: ";
                 for (int i = 0; i < int(output.size()); ++i) {
-                    if (i == expected) cerr << "*";
-                    if (i == maxidx) cerr << "**";
+                    if (i == expected * spacing) cerr << "*";
+                    if (i == peaks[j]) cerr << "**";
                     cerr << output[i][j] << " ";
                 }
                 cerr << endl;
 
-                BOOST_CHECK_EQUAL(maxidx, expected);
+                BOOST_CHECK_EQUAL(actual, expected);
             }
         }
     }
