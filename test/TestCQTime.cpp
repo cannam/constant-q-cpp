@@ -51,7 +51,6 @@ testCQTime(double t)
         BOOST_CHECK_EQUAL(cq.getBinsPerOctave(), bpo);
         BOOST_CHECK_EQUAL(cq.getOctaves(), 2);
 
-        //!!! generate input signal
         vector<double> input(duration, 0.0);
         int ix = int(floor(t * sampleRate));
         if (ix >= duration) ix = duration-1;

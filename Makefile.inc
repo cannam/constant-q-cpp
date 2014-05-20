@@ -68,12 +68,13 @@ VAMP_SOURCES	:= \
 	$(VAMP_DIR)/Pitch.cpp
 
 TEST_SOURCES	:= \
-	$(TEST_DIR)/TestCQFrequency.cpp \
-	$(TEST_DIR)/TestCQTime.cpp \
 	$(TEST_DIR)/TestFFT.cpp \
 	$(TEST_DIR)/TestMathUtilities.cpp \
 	$(TEST_DIR)/TestResampler.cpp \
-	$(TEST_DIR)/TestWindow.cpp
+	$(TEST_DIR)/TestWindow.cpp \
+	$(TEST_DIR)/TestCQKernel.cpp \
+	$(TEST_DIR)/TestCQFrequency.cpp \
+	$(TEST_DIR)/TestCQTime.cpp
 
 HEADERS	     := $(LIB_HEADERS) $(VAMP_HEADERS)
 SOURCES	     := $(LIB_SOURCES) $(VAMP_SOURCES)
@@ -93,7 +94,7 @@ PF_OBJECTS := $(PF_SOURCES:.cpp=.o) $(OBJECTS)
 LIBS	:= $(VAMPSDK_DIR)/libvamp-sdk.a -lpthread
 
 all: $(LIB) $(PLUGIN) $(TEST_TARGETS) $(PF)
-	for t in $(TEST_TARGETS); do echo; echo "Running $$t"; $(VALGRIND) ./"$$t" || exit 1; done
+	for t in $(TEST_TARGETS); do echo; echo "Running $$t"; $(VALGRIND) ./"$$t" || exit 1; done && echo && $(VALGRIND) "./test/test-inverse.sh" && echo 'Tests complete'
 
 $(PLUGIN):	$(OBJECTS)
 	$(CXX) -o $@ $^ $(LIBS) $(PLUGIN_LDFLAGS)
