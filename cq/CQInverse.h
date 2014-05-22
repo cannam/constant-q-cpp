@@ -52,7 +52,7 @@ public:
     virtual int getLatency() const { return m_outputLatency; } 
     virtual double getMaxFrequency() const { return m_p.maxFrequency; }
     virtual double getMinFrequency() const; // actual min, not that passed to ctor
-    virtual double getBinFrequency(int bin) const;
+    virtual double getBinFrequency(double bin) const;
 
     // Input is the format produced by ConstantQ class,
     // i.e. uninterpolated complex, not the real-valued stuff produced

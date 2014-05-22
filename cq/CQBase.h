@@ -54,7 +54,7 @@ public:
     virtual int getLatency() const = 0;
     virtual double getMaxFrequency() const = 0;
     virtual double getMinFrequency() const = 0; // actual min, not that passed to ctor
-    virtual double getBinFrequency(int bin) const = 0;
+    virtual double getBinFrequency(double bin) const = 0;
 };
 
 #endif

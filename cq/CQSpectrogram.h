@@ -54,7 +54,7 @@ public:
     virtual int getLatency() const { return m_cq.getLatency(); } 
     virtual double getMaxFrequency() const { return m_cq.getMaxFrequency(); }
     virtual double getMinFrequency() const { return m_cq.getMinFrequency(); }
-    virtual double getBinFrequency(int bin) const { return m_cq.getBinFrequency(bin); }
+    virtual double getBinFrequency(double bin) const { return m_cq.getBinFrequency(bin); }
 
     /**
      * Given a series of time-domain samples, return a series of

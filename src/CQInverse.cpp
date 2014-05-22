@@ -76,9 +76,11 @@ CQInverse::getMinFrequency() const
 }
 
 double
-CQInverse::getBinFrequency(int bin) const
+CQInverse::getBinFrequency(double bin) const
 {
-    return getMinFrequency() * pow(2, (double(bin) / getBinsPerOctave()));
+    // our bins are returned in high->low order
+    bin = (getBinsPerOctave() * getOctaves()) - bin - 1;
+    return getMinFrequency() * pow(2, (bin / getBinsPerOctave()));
 }
 
 void
