@@ -6,6 +6,7 @@
 @prefix dc:       <http://purl.org/dc/elements/1.1/> .
 @prefix af:       <http://purl.org/ontology/af/> .
 @prefix foaf:     <http://xmlns.com/foaf/0.1/> .
+@prefix doap: 	  <http://usefulinc.com/ns/doap#> .
 @prefix cc:       <http://web.resource.org/cc/> .
 @prefix :         <#> .
 
@@ -13,8 +14,16 @@
     foaf:maker          <http://www.vamp-plugins.org/doap.rdf#template-generator> ;
     foaf:primaryTopic   <http://vamp-plugins.org/rdf/plugins/cqvamp> .
 
+:library_maker
+    foaf:name "Queen Mary, University of London" ;
+    foaf:logo <http://vamp-plugins.org/rdf/plugins/makers/qm.png> ;
+    foaf:page <http://c4dm.eecs.qmul.ac.uk/> .
+
 :cqvamp a  vamp:PluginLibrary ;
     vamp:identifier "cqvamp"  ; 
+    dc:title "Constant-Q" ;
+    dc:description "A plugin implementing the Constant-Q transform of a time-domain signal." ;
+    foaf:maker :library_maker ;
     vamp:available_plugin plugbase:cqchromavamp ; 
     vamp:available_plugin plugbase:cqvamp ; 
     vamp:available_plugin plugbase:cqvampmidi ; 
@@ -25,8 +34,8 @@ plugbase:cqchromavamp a   vamp:Plugin ;
     dc:title              "Chromagram" ;
     vamp:name             "Chromagram" ;
     dc:description        """Extract a Constant-Q spectrogram with constant ratio of centre frequency to resolution from the audio, then wrapping it around into a single-octave chromagram.""" ;
-    foaf:maker            [ foaf:name "Queen Mary, University of London" ] ; # FIXME could give plugin author's URI here
-    dc:rights             """Plugin by Chris Cannam. Method by Christian Schörkhuber and Anssi Klapuri. Copyright (c) 2014 QMUL""" ;
+    foaf:maker            :library_maker ;
+    dc:rights             """Plugin by Chris Cannam. Method by Christian Schörkhuber and Anssi Klapuri. Copyright (c) 2014 QMUL. BSD/MIT licence.""" ;
 #   cc:license            <Place plugin license URI here and uncomment> ; 
     vamp:identifier       "cqchromavamp" ;
     vamp:vamp_API_version vamp:api_version_2 ;
@@ -98,8 +107,8 @@ plugbase:cqvamp a   vamp:Plugin ;
     dc:title              "Constant-Q Spectrogram (Hz range)" ;
     vamp:name             "Constant-Q Spectrogram (Hz range)" ;
     dc:description        """Extract a spectrogram with constant ratio of centre frequency to resolution from the input audio, specifying the frequency range in Hz.""" ;
-    foaf:maker            [ foaf:name "Queen Mary, University of London" ] ; # FIXME could give plugin author's URI here
-    dc:rights             """Plugin by Chris Cannam. Method by Christian Schörkhuber and Anssi Klapuri. Copyright (c) 2014 QMUL""" ;
+    foaf:maker            :library_maker ;
+    dc:rights             """Plugin by Chris Cannam. Method by Christian Schörkhuber and Anssi Klapuri. Copyright (c) 2014 QMUL. BSD/MIT licence.""" ;
 #   cc:license            <Place plugin license URI here and uncomment> ; 
     vamp:identifier       "cqvamp" ;
     vamp:vamp_API_version vamp:api_version_2 ;
@@ -170,8 +179,8 @@ plugbase:cqvampmidi a   vamp:Plugin ;
     dc:title              "Constant-Q Spectrogram (MIDI pitch range)" ;
     vamp:name             "Constant-Q Spectrogram (MIDI pitch range)" ;
     dc:description        """Extract a spectrogram with constant ratio of centre frequency to resolution from the input audio, specifying the frequency range in MIDI pitch units.""" ;
-    foaf:maker            [ foaf:name "Queen Mary, University of London" ] ; # FIXME could give plugin author's URI here
-    dc:rights             """Plugin by Chris Cannam. Method by Christian Schörkhuber and Anssi Klapuri. Copyright (c) 2014 QMUL""" ;
+    foaf:maker            :library_maker ;
+    dc:rights             """Plugin by Chris Cannam. Method by Christian Schörkhuber and Anssi Klapuri. Copyright (c) 2014 QMUL. BSD/MIT licence.""" ;
 #   cc:license            <Place plugin license URI here and uncomment> ; 
     vamp:identifier       "cqvampmidi" ;
     vamp:vamp_API_version vamp:api_version_2 ;
