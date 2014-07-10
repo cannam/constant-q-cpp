@@ -32,6 +32,10 @@
 #ifndef CQ_PARAMETERS_H
 #define CQ_PARAMETERS_H
 
+/**
+ * Common parameters for constructing Constant-Q implementation
+ * objects (both forward and inverse transforms).
+ */
 class CQParameters
 {
 public:
@@ -44,6 +48,13 @@ public:
 	Hann,
     };
 
+    /**
+     * Construct a set of parameters with the given input signal
+     * sample rate, frequency range, and number of bins per
+     * octave. The remaining parameters will take their usual
+     * defaults; if you want to change them, just assign the
+     * respective data members after construction.
+     */
     CQParameters(double _sampleRate, 
 		 double _minFrequency, 
 		 double _maxFrequency,
@@ -58,18 +69,52 @@ public:
 	window(SqrtBlackmanHarris) // window shape
     { }
 
+    /**
+     * Sampling rate of input signal.
+     */
     double sampleRate;
+
+    /**
+     * Minimum frequency desired to include in Constant-Q output. The
+     * actual minimum will normally be calculated as a round number of
+     * octaves below the maximum frequency, and may differ from this.
+     */
     double minFrequency;
+
+    /**
+     * Maximum frequency to include in Constant-Q output.
+     */
     double maxFrequency;
+
+    /**
+     * Number of output frequency bins per octave.
+     */
     int binsPerOctave;
 
+    /**
+     * Spectral atom bandwidth scaling factor. q == 1 is optimal for
+     * reconstruction, q < 1 increases redundancy (smearing) in the
+     * frequency domain but improves time resolution.
+     */
     double q;
+
+    /**
+     * Hop size between temporal atoms, where 1 == no overlap and
+     * smaller values indicate overlapping atoms.
+     */
     double atomHopFactor;
+
+    /**
+     * Sparsity threshold for Constant-Q kernel: values with magnitude
+     * smaller than this are truncated to zero.
+     */
     double threshold;
+
+    /**
+     * Window shape to use for the Constant-Q kernel atoms.
+     */
     WindowType window;
 };
 
 #endif
 
-
-    
