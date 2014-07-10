@@ -41,17 +41,25 @@ class FFTReal;
 
 /**
  * Calculate a complex sparse constant-Q representation from
- * time-domain input.
+ * time-domain input. The input of each \ref process call is a single
+ * frame of time-domain samples; the output is a series of columns of
+ * varying height. See \ref process for details.
  *
- * For a real (magnitude-only) or interpolated representation, see
+ * For a real (magnitude-only) interpolated dense representation, see
  * CQSpectrogram.
  */
 class ConstantQ : public CQBase
 {
 public:
+    /**
+     * Construct a complex Constant-Q transform object using the given
+     * transform parameters.
+     */
     ConstantQ(CQParameters params);
     virtual ~ConstantQ();
 
+    // CQBase methods, see CQBase.h for documentation
+    virtual bool isValid() const { return m_kernel && m_kernel->isValid(); }
     virtual double getSampleRate() const { return m_sampleRate; }
     virtual int getBinsPerOctave() const { return m_binsPerOctave; }
     virtual int getOctaves() const { return m_octaves; }
@@ -66,20 +74,25 @@ public:
      * Given a series of time-domain samples, return a series of
      * constant-Q columns. Any samples left over (that did not fit
      * into a constant-Q processing block) are saved for the next call
-     * to process or getRemainingBlocks.
+     * to process or getRemainingBlocks. 
      *
-     * Each column contains a series of constant-Q bin values ordered
-     * from highest to lowest frequency.
+     * The input is assumed to be a single frame of time-domain sample
+     * values, such that consecutive calls to \ref process receive
+     * contiguous frames from the source signal. Each frame may be of
+     * any length in samples.
      *
-     * Columns are of variable height: each will contain at least
-     * getBinsPerOctave() values, because the highest-frequency octave
-     * is always present, but a second octave (if requested) will
-     * appear only in alternate columns, a third octave only in every
-     * fourth column, and so on.
+     * Each output column contains a series of constant-Q bin values
+     * ordered from highest to lowest frequency.
+     *
+     * Output columns are of varying height: each will contain at
+     * least getBinsPerOctave() values, because the highest-frequency
+     * octave is always present, but a second octave (if requested)
+     * will appear only in alternate columns, a third octave only in
+     * every fourth column, and so on.
      *
      * If you need a format in which all columns are of equal height
-     * and every bin contains a value, use CQInterpolated instead of
-     * ConstantQ.
+     * and every bin contains a value, use \ref CQSpectrogram instead
+     * of ConstantQ.
      */
     ComplexBlock process(const RealSequence &);
 

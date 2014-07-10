@@ -71,6 +71,14 @@ CQSpectrogram::postProcess(const ComplexBlock &cq, bool insist)
         int height = cq[i].size();
         RealColumn col(height, 0);
         for (int j = 0; j < height; ++j) {
+
+            if (isnan(cq[i][j].real())) {
+                cerr << "WARNING: NaN in real at (" << i << "," << j << ")" << endl;
+            }
+            if (isnan(cq[i][j].imag())) {
+                cerr << "WARNING: NaN in imag at (" << i << "," << j << ")" << endl;
+            }
+
             col[j] = abs(cq[i][j]);
         }
         spec.push_back(col);

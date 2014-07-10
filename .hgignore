@@ -6,6 +6,7 @@ syntax: glob
 *.dylib
 *.dll
 *.class
+doc/
 
 syntax: re
 ^test/Test[^.]*$

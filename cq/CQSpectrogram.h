@@ -34,18 +34,36 @@
 
 #include "ConstantQ.h"
 
+/**
+ * Calculate a dense constant-Q magnitude spectrogram from time-domain
+ * input. The input of each \ref process call is a single frame of
+ * time-domain samples; the output is a series of fixed-height
+ * columns. See \ref process for details.
+ *
+ * If you need the full complex-valued constant-Q output, you must use
+ * the \ref ConstantQ class instead.
+ */
 class CQSpectrogram : public CQBase
 {
 public:
     enum Interpolation {
-	InterpolateZeros, // leave empty cells as zero
-	InterpolateHold, // repeat prior cell
-	InterpolateLinear, // linear interpolation between consecutive time cells
+        /// leave empty cells as zero
+	InterpolateZeros,
+        /// replace empty cells with a repeat of the previous column
+	InterpolateHold,
+        /// perform linear interpolation between consecutive time cells
+	InterpolateLinear,
     };
 
+    /**
+     * Construct a Constant-Q magnitude spectrogram object using the
+     * given transform parameters.
+     */
     CQSpectrogram(CQParameters params, Interpolation interpolation);
     virtual ~CQSpectrogram();
 
+    // CQBase methods, see CQBase.h for documentation
+    virtual bool isValid() const { return m_cq.isValid(); }
     virtual double getSampleRate() const { return m_cq.getSampleRate(); }
     virtual int getBinsPerOctave() const { return m_cq.getBinsPerOctave(); }
     virtual int getOctaves() const { return m_cq.getOctaves(); }
@@ -62,7 +80,12 @@ public:
      * not fit into a constant-Q processing block) are saved for the
      * next call to process or getRemainingBlocks.
      *
-     * Each column contains a series of constant-Q bin value
+     * The input is assumed to be a single frame of time-domain sample
+     * values, such that consecutive calls to \ref process receive
+     * contiguous frames from the source signal. Each frame may be of
+     * any length in samples.
+     *
+     * Each output column contains a series of constant-Q bin value
      * magnitudes, ordered from highest to lowest frequency.
      *  
      * The columns are all of the same height, but they might not all

@@ -286,8 +286,12 @@ CQVamp::initialise(size_t channels, size_t stepSize, size_t blockSize)
             (m_maxMIDIPitch, 0, m_tuningFrequency);
     }
 
-    CQParameters p(m_inputSampleRate, m_minFrequency, m_maxFrequency, m_bpo);
-    m_cq = new CQSpectrogram(p, m_interpolation);
+    reset();
+
+    if (!m_cq || !m_cq->isValid()) {
+        cerr << "CQVamp::initialise: Constant-Q parameters not valid! Not initialising" << endl;
+        return false;
+    }
 
     return true;
 }
@@ -295,11 +299,9 @@ CQVamp::initialise(size_t channels, size_t stepSize, size_t blockSize)
 void
 CQVamp::reset()
 {
-    if (m_cq) {
-	delete m_cq;
-        CQParameters p(m_inputSampleRate, m_minFrequency, m_maxFrequency, m_bpo);
-        m_cq = new CQSpectrogram(p, m_interpolation);
-    }
+    delete m_cq;
+    CQParameters p(m_inputSampleRate, m_minFrequency, m_maxFrequency, m_bpo);
+    m_cq = new CQSpectrogram(p, m_interpolation);
     m_haveStartTime = false;
     m_columnCount = 0;
 }

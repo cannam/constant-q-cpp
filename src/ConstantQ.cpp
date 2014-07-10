@@ -92,6 +92,10 @@ ConstantQ::initialise()
     m_kernel = new CQKernel(m_inparams);
     m_p = m_kernel->getProperties();
     
+    if (!m_kernel->isValid()) {
+        return;
+    }
+
     // Use exact powers of two for resampling rates. They don't have
     // to be related to our actual samplerate: the resampler only
     // cares about the ratio, but it only accepts integer source and

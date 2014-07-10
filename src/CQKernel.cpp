@@ -52,12 +52,13 @@ typedef std::complex<double> C;
 
 CQKernel::CQKernel(CQParameters params) :
     m_inparams(params),
+    m_valid(false),
     m_fft(0)
 {
     m_p.sampleRate = params.sampleRate;
     m_p.maxFrequency = params.maxFrequency;
     m_p.binsPerOctave = params.binsPerOctave;
-    generateKernel();
+    m_valid = generateKernel();
 }
 
 CQKernel::~CQKernel()
@@ -113,7 +114,7 @@ CQKernel::makeWindow(int len) const
     return win;
 }
 
-void
+bool
 CQKernel::generateKernel()
 {
     double q = m_inparams.q;
@@ -139,7 +140,7 @@ CQKernel::generateKernel()
         m_p.atomsPerFrame = 0;
         m_p.lastCentre = 0;
         m_p.fftHop = 0;
-        return;
+        return false;
     }
 
     m_p.atomSpacing = round(minNK * atomHopFactor);
@@ -246,6 +247,7 @@ CQKernel::generateKernel()
 #endif
 
     finaliseKernel();
+    return true;
 }
 
 static bool ccomparator(C &c1, C &c2)
@@ -298,11 +300,13 @@ CQKernel::finaliseKernel()
     }
 
     double weight = double(m_p.fftHop) / m_p.fftSize;
-    weight /= MathUtilities::mean(wK.data(), wK.size());
+    if (!wK.empty()) {
+        weight /= MathUtilities::mean(wK.data(), wK.size());
+    }
     weight = sqrt(weight);
 
 #ifdef DEBUG_CQ_KERNEL    
-    cerr << "weight = " << weight << endl;
+    cerr << "weight = " << weight << " (from " << wK.size() << " elements in wK, ncols = " << ncols << ", q = " << q << ")" << endl;
 #endif
 
     // apply normalisation weight, make sparse, and store conjugate

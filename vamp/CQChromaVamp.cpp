@@ -223,13 +223,17 @@ CQChromaVamp::initialise(size_t channels, size_t stepSize, size_t blockSize)
     // appropriate number of octaves.
     m_minFrequency = midiPitchLimitFreq / pow(2, m_octaveCount + 1);
 
-    cerr << "lowest octave: " << m_lowestOctave << ", highest octave: "
-         << highestOctave << ", limit midi pitch: " << midiPitchLimit
-         << ", min freq " << m_minFrequency << ", max freq " << m_maxFrequency
-         << endl;
+//    cerr << "lowest octave: " << m_lowestOctave << ", highest octave: "
+//         << highestOctave << ", limit midi pitch: " << midiPitchLimit
+//         << ", min freq " << m_minFrequency << ", max freq " << m_maxFrequency
+//         << endl;
 
-    CQParameters p(m_inputSampleRate, m_minFrequency, m_maxFrequency, m_bpo);
-    m_cq = new CQSpectrogram(p, CQSpectrogram::InterpolateLinear);
+    reset();
+
+    if (!m_cq || !m_cq->isValid()) {
+        cerr << "CQVamp::initialise: Constant-Q parameters not valid! Not initialising" << endl;
+        return false;
+    }
 
     return true;
 }
@@ -237,12 +241,14 @@ CQChromaVamp::initialise(size_t channels, size_t stepSize, size_t blockSize)
 void
 CQChromaVamp::reset()
 {
-    if (m_cq) {
-	delete m_cq;
-        CQParameters p(m_inputSampleRate, m_minFrequency, m_maxFrequency, m_bpo);
-        m_cq = new CQSpectrogram(p, CQSpectrogram::InterpolateLinear);
-    }
+    cerr << "reset: rate " << m_inputSampleRate << ", minf " << m_minFrequency << ", maxf " << m_maxFrequency << ", bpo " << m_bpo << endl;
+
+    delete m_cq;
+    CQParameters p(m_inputSampleRate, m_minFrequency, m_maxFrequency, m_bpo);
+    m_cq = new CQSpectrogram(p, CQSpectrogram::InterpolateLinear);
+
     m_haveStartTime = false;
+    m_startTime = Vamp::RealTime::zeroTime;
     m_columnCount = 0;
 }
 
@@ -344,6 +350,7 @@ CQChromaVamp::convertToFeatures(const vector<vector<double> > &cqout)
         // fold and invert to put low frequencies at the start
 
         int thisHeight = cqout[i].size();
+
 	for (int j = 0; j < thisHeight; ++j) {
 	    column[m_bpo - (j % m_bpo) - 1] += cqout[i][j];
 	}

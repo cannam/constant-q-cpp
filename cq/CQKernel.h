@@ -44,6 +44,8 @@ class CQKernel
 public:
     CQKernel(CQParameters params);
     ~CQKernel();
+
+    bool isValid() const { return m_valid; }
     
     struct Properties {
         double sampleRate;
@@ -70,6 +72,7 @@ public:
 private:
     const CQParameters m_inparams;
     Properties m_p;
+    bool m_valid;
     FFT *m_fft;
 
     struct KernelMatrix {
@@ -79,7 +82,7 @@ private:
     KernelMatrix m_kernel;
 
     std::vector<double> makeWindow(int len) const;
-    void generateKernel();
+    bool generateKernel();
     void finaliseKernel();
 };
 

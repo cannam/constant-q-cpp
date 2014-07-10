@@ -11,7 +11,7 @@ PLUGIN_EXT	?= .so
 
 CXX	?= g++
 CC	?= gcc
-VALGRIND	?= valgrind -q
+#VALGRIND	?= valgrind -q
 
 GENERAL_FLAGS	:= -I. -I$(VAMPSDK_DIR) -I$(INC_DIR) -I$(LIB_DIR) -I$(KFFT_DIR) -I$(KFFT_DIR)/tools -Dkiss_fft_scalar=double
 

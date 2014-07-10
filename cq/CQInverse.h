@@ -38,12 +38,32 @@
 class Resampler;
 class FFTReal;
 
+/**
+ * Calculate an inverse constant-Q transform. The input must be the
+ * same representation as returned as output of a \ref ConstantQ
+ * object with the same parameters. The output is a time-domain
+ * signal.
+ *
+ * Note that you cannot perform an inverse transform from the
+ * magnitude-only output of \ref CQSpectrogram; you need the complex
+ * valued data from \ref ConstantQ.
+ *
+ * Our implementation of the Constant-Q transform is not exactly
+ * invertible, and this produces only an approximation of the original
+ * signal (see publications for details).
+ */
 class CQInverse : public CQBase
 {
 public:
+    /**
+     * Construct an inverse Constant-Q transform object using the
+     * given transform parameters.
+     */
     CQInverse(CQParameters params);
     virtual ~CQInverse();
 
+    // CQBase methods, see CQBase.h for documentation
+    virtual bool isValid() const { return m_kernel && m_kernel->isValid(); }
     virtual double getSampleRate() const { return m_sampleRate; }
     virtual int getBinsPerOctave() const { return m_binsPerOctave; }
     virtual int getOctaves() const { return m_octaves; }
@@ -54,11 +74,18 @@ public:
     virtual double getMinFrequency() const; // actual min, not that passed to ctor
     virtual double getBinFrequency(double bin) const;
 
-    // Input is the format produced by ConstantQ class,
-    // i.e. uninterpolated complex, not the real-valued stuff produced
-    // by CQSpectrogram
-
+    /**
+     * Given a series of constant-Q columns in the form produced by
+     * the \ref ConstantQ class, return a series of time-domain
+     * samples resulting from approximately inverting the constant-Q
+     * transform.
+     */
     RealSequence process(const ComplexBlock &);
+
+    /**
+     * Return the remaining time-domain samples following the end of
+     * processing.
+     */
     RealSequence getRemainingOutput();
 
 private:
