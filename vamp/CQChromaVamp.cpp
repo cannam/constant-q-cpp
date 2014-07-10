@@ -241,8 +241,6 @@ CQChromaVamp::initialise(size_t channels, size_t stepSize, size_t blockSize)
 void
 CQChromaVamp::reset()
 {
-    cerr << "reset: rate " << m_inputSampleRate << ", minf " << m_minFrequency << ", maxf " << m_maxFrequency << ", bpo " << m_bpo << endl;
-
     delete m_cq;
     CQParameters p(m_inputSampleRate, m_minFrequency, m_maxFrequency, m_bpo);
     m_cq = new CQSpectrogram(p, CQSpectrogram::InterpolateLinear);

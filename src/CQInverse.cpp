@@ -87,6 +87,12 @@ void
 CQInverse::initialise()
 {
     m_octaves = int(ceil(log2(m_maxFrequency / m_minFrequency)));
+
+    if (m_octaves < 1) {
+        m_kernel = 0; // incidentally causing isValid() to return false
+        return;
+    }
+
     m_kernel = new CQKernel(m_inparams);
     m_p = m_kernel->getProperties();
     
