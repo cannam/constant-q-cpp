@@ -61,8 +61,8 @@ CQVamp::CQVamp(float inputSampleRate, bool midiPitchParameters) :
     m_bpo(defaultBPO),
     m_interpolation(CQSpectrogram::InterpolateLinear),
     m_cq(0),
-    m_maxFrequency(14080),
-    m_minFrequency(100),
+    m_maxFrequency(m_inputSampleRate/3),
+    m_minFrequency(m_inputSampleRate/400),
     m_haveStartTime(false),
     m_columnCount(0)
 {
@@ -136,7 +136,7 @@ CQVamp::getParameterDescriptors() const
         desc.description = "MIDI pitch corresponding to the lowest frequency to be included in the constant-Q transform. (The actual minimum frequency may be lower, as the range always covers an integral number of octaves below the highest frequency.)";
         desc.minValue = 0;
         desc.maxValue = 127;
-        desc.defaultValue = 36;
+        desc.defaultValue = defaultMinMIDIPitch;
         desc.isQuantized = true;
         desc.quantizeStep = 1;
         list.push_back(desc);
@@ -147,7 +147,7 @@ CQVamp::getParameterDescriptors() const
         desc.description = "MIDI pitch corresponding to the highest frequency to be included in the constant-Q transform";
         desc.minValue = 0;
         desc.maxValue = 127;
-        desc.defaultValue = 84;
+        desc.defaultValue = defaultMaxMIDIPitch;
         desc.isQuantized = true;
         desc.quantizeStep = 1;
         list.push_back(desc);
@@ -158,7 +158,7 @@ CQVamp::getParameterDescriptors() const
         desc.description = "Frequency of concert A";
         desc.minValue = 360;
         desc.maxValue = 500;
-        desc.defaultValue = 440;
+        desc.defaultValue = defaultTuningFrequency;
         desc.isQuantized = false;
         list.push_back(desc);
 
@@ -170,7 +170,7 @@ CQVamp::getParameterDescriptors() const
         desc.description = "Lowest frequency to be included in the constant-Q transform. (The actual minimum frequency may be lower, as the range always covers an integral number of octaves below the highest frequency.)";
         desc.minValue = 1;
         desc.maxValue = m_inputSampleRate / 2;
-        desc.defaultValue = 100;
+        desc.defaultValue = m_inputSampleRate / 3;
         desc.isQuantized = false;
         list.push_back(desc);
 
@@ -180,7 +180,7 @@ CQVamp::getParameterDescriptors() const
         desc.description = "MIDI pitch corresponding to the highest frequency to be included in the constant-Q transform";
         desc.minValue = 1;
         desc.maxValue = m_inputSampleRate / 2;
-        desc.defaultValue = 14080;
+        desc.defaultValue = m_inputSampleRate / 400;
         desc.isQuantized = false;
         list.push_back(desc);
     }

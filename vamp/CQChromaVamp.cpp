@@ -138,7 +138,7 @@ CQChromaVamp::getParameterDescriptors() const
     desc.description = "Frequency of concert A";
     desc.minValue = 360;
     desc.maxValue = 500;
-    desc.defaultValue = 440;
+    desc.defaultValue = defaultTuningFrequency;
     desc.isQuantized = false;
     list.push_back(desc);
     
