@@ -169,8 +169,8 @@ CQVamp::getParameterDescriptors() const
         desc.unit = "Hz";
         desc.description = "Lowest frequency to be included in the constant-Q transform. (The actual minimum frequency may be lower, as the range always covers an integral number of octaves below the highest frequency.)";
         desc.minValue = 1;
-        desc.maxValue = m_inputSampleRate / 2;
-        desc.defaultValue = m_inputSampleRate / 400;
+        desc.maxValue = 22050;
+        desc.defaultValue = 110;
         desc.isQuantized = false;
         list.push_back(desc);
 
@@ -179,8 +179,8 @@ CQVamp::getParameterDescriptors() const
         desc.unit = "Hz";
         desc.description = "MIDI pitch corresponding to the highest frequency to be included in the constant-Q transform";
         desc.minValue = 1;
-        desc.maxValue = m_inputSampleRate / 2;
-        desc.defaultValue = m_inputSampleRate / 3;
+        desc.maxValue = 22050;
+        desc.defaultValue = 14700;
         desc.isQuantized = false;
         list.push_back(desc);
     }
