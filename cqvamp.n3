@@ -33,7 +33,7 @@
 plugbase:cqchromavamp a   vamp:Plugin ;
     dc:title              "Chromagram" ;
     vamp:name             "Chromagram" ;
-    dc:description        """Extract a Constant-Q spectrogram with constant ratio of centre frequency to resolution from the audio, then wrapping it around into a single-octave chromagram.""" ;
+    dc:description        """Extract a Constant-Q spectrogram with constant ratio of centre frequency to resolution from the audio, then wrap it around into a single-octave chromagram.""" ;
     foaf:maker            :library_maker ;
     dc:rights             """Plugin by Chris Cannam. Method by Christian Schörkhuber and Anssi Klapuri. Copyright (c) 2014 QMUL. BSD/MIT licence.""" ;
 #   cc:license            <Place plugin license URI here and uncomment> ; 

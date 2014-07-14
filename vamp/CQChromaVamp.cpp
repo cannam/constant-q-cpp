@@ -82,7 +82,7 @@ CQChromaVamp::getName() const
 string
 CQChromaVamp::getDescription() const
 {
-    return "Extract a Constant-Q spectrogram with constant ratio of centre frequency to resolution from the audio, then wrapping it around into a single-octave chromagram.";
+    return "Extract a Constant-Q spectrogram with constant ratio of centre frequency to resolution from the audio, then wrap it around into a single-octave chromagram.";
 }
 
 string
