@@ -50,6 +50,8 @@ using std::endl;
 static const int defaultMinMIDIPitch = 36;
 static const int defaultMaxMIDIPitch = 96;
 static const int defaultBPO = 36;
+static const float defaultMinFrequency = 110;
+static const float defaultMaxFrequency = 14700;
 static const float defaultTuningFrequency = 440.f;
 
 CQVamp::CQVamp(float inputSampleRate, bool midiPitchParameters) :
@@ -61,8 +63,8 @@ CQVamp::CQVamp(float inputSampleRate, bool midiPitchParameters) :
     m_bpo(defaultBPO),
     m_interpolation(CQSpectrogram::InterpolateLinear),
     m_cq(0),
-    m_maxFrequency(m_inputSampleRate/3),
-    m_minFrequency(m_inputSampleRate/400),
+    m_maxFrequency(defaultMaxFrequency),
+    m_minFrequency(defaultMinFrequency),
     m_haveStartTime(false),
     m_columnCount(0)
 {
@@ -170,7 +172,7 @@ CQVamp::getParameterDescriptors() const
         desc.description = "Lowest frequency to be included in the constant-Q transform. (The actual minimum frequency may be lower, as the range always covers an integral number of octaves below the highest frequency.)";
         desc.minValue = 1;
         desc.maxValue = 22050;
-        desc.defaultValue = 110;
+        desc.defaultValue = defaultMinFrequency;
         desc.isQuantized = false;
         list.push_back(desc);
 
@@ -180,7 +182,7 @@ CQVamp::getParameterDescriptors() const
         desc.description = "MIDI pitch corresponding to the highest frequency to be included in the constant-Q transform";
         desc.minValue = 1;
         desc.maxValue = 22050;
-        desc.defaultValue = 14700;
+        desc.defaultValue = defaultMaxFrequency;
         desc.isQuantized = false;
         list.push_back(desc);
     }
