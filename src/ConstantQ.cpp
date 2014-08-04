@@ -53,6 +53,7 @@ ConstantQ::ConstantQ(CQParameters params) :
     m_maxFrequency(params.maxFrequency),
     m_minFrequency(params.minFrequency),
     m_binsPerOctave(params.binsPerOctave),
+    m_kernel(0),
     m_fft(0)
 {
     if (m_minFrequency <= 0.0 || m_maxFrequency <= 0.0) {

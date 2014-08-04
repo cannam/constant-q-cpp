@@ -37,6 +37,8 @@
 using std::cerr;
 using std::endl;
 
+//#define DEBUG_CQSPECTROGRAM 1
+
 CQSpectrogram::CQSpectrogram(CQParameters params,
                              Interpolation interpolation) :
     m_cq(params),
@@ -71,14 +73,14 @@ CQSpectrogram::postProcess(const ComplexBlock &cq, bool insist)
         int height = cq[i].size();
         RealColumn col(height, 0);
         for (int j = 0; j < height; ++j) {
-
+#ifdef DEBUG_CQSPECTROGRAM
             if (isnan(cq[i][j].real())) {
                 cerr << "WARNING: NaN in real at (" << i << "," << j << ")" << endl;
             }
             if (isnan(cq[i][j].imag())) {
                 cerr << "WARNING: NaN in imag at (" << i << "," << j << ")" << endl;
             }
-
+#endif
             col[j] = abs(cq[i][j]);
         }
         spec.push_back(col);
