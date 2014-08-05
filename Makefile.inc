@@ -11,6 +11,9 @@ PLUGIN_EXT	?= .so
 
 CXX	?= g++
 CC	?= gcc
+AR	?= ar
+RANLIB	?= ranlib
+
 #VALGRIND	?= valgrind -q
 
 GENERAL_FLAGS	:= -I. -I$(VAMPSDK_DIR) -I$(INC_DIR) -I$(LIB_DIR) -I$(KFFT_DIR) -I$(KFFT_DIR)/tools -Dkiss_fft_scalar=double
@@ -93,7 +96,13 @@ PF_OBJECTS := $(PF_SOURCES:.cpp=.o) $(OBJECTS)
 
 LIBS	:= $(VAMPSDK_DIR)/libvamp-sdk.a -lpthread
 
-all: $(LIB) $(PLUGIN) $(TEST_TARGETS) $(PF)
+default:   all
+
+all:	   libs test $(PF)
+
+libs:	   $(LIB) $(PLUGIN)
+
+test:	   libs $(TEST_TARGETS)
 	for t in $(TEST_TARGETS); do echo; echo "Running $$t"; $(VALGRIND) ./"$$t" || exit 1; done && echo && $(VALGRIND) "./test/test-inverse.sh" && echo 'Tests complete'
 
 $(PLUGIN):	$(OBJECTS)
@@ -103,8 +112,8 @@ $(PF):	$(PF_OBJECTS)
 	$(CXX) -o $@ $^ $(LIBS) $(PF_LDFLAGS)
 
 $(LIB):	$(LIB_OBJECTS)
-	ar cr $@ $^
-	ranlib $@
+	$(AR) cr $@ $^
+	$(RANLIB) $@
 
 Test%:	Test%.o
 	$(CXX) -o $@ $^ $(LIB) $(LIBS) $(TEST_LDFLAGS)
