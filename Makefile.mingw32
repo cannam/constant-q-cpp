@@ -1,0 +1,19 @@
+
+TOOLPREFIX     ?= i586-mingw32msvc-
+CXX		= $(TOOLPREFIX)g++
+CC		= $(TOOLPREFIX)gcc
+LD		= $(TOOLPREFIX)g++
+AR		= $(TOOLPREFIX)ar
+RANLIB		= $(TOOLPREFIX)ranlib
+
+CFLAGS		+= -DNDEBUG -O3 -msse -msse2 -ffast-math -mfpmath=sse -Wall -Wextra 
+LDFLAGS		+= -static
+
+CXXFLAGS 	+= $(CFLAGS)
+PLUGIN_LDFLAGS 	:= $(LDFLAGS) -shared -Wl,--version-script=vamp/vamp-plugin.map
+
+VAMPSDK_DIR 	:= ../vamp-plugin-sdk
+PLUGIN_EXT 	:= .dll
+
+include Makefile.inc
+
