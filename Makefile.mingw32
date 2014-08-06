@@ -10,7 +10,7 @@ CFLAGS		+= -DNDEBUG -O3 -msse -msse2 -ffast-math -mfpmath=sse -Wall -Wextra
 LDFLAGS		+= -static
 
 CXXFLAGS 	+= $(CFLAGS)
-PLUGIN_LDFLAGS 	:= $(LDFLAGS) -shared -Wl,--version-script=vamp/vamp-plugin.map
+PLUGIN_LDFLAGS 	:= $(LDFLAGS) -shared -Wl,--retain-symbols-file=vamp/vamp-plugin.list
 
 VAMPSDK_DIR 	:= ../vamp-plugin-sdk
 PLUGIN_EXT 	:= .dll
