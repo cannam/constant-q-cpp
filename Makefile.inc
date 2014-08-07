@@ -112,6 +112,7 @@ $(PF):	$(PF_OBJECTS)
 	$(CXX) -o $@ $^ $(LIBS) $(PF_LDFLAGS)
 
 $(LIB):	$(LIB_OBJECTS)
+	$(RM) -f $@
 	$(AR) cr $@ $^
 	$(RANLIB) $@
 
