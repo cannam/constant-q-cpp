@@ -19,6 +19,15 @@ This library provides:
    magnitude spectrogram
  * Inverse transform: complex Constant-Q bins to time domain
 
+The Vamp plugin provides:
+
+ * Constant-Q magnitude spectrogram with high and low frequency
+   extents defined in Hz
+ * Constant-Q magnitude spectrogram with high and low frequency
+   extents defined as MIDI pitch values
+ * Pitch chromagram obtained by folding a Constant-Q spectrogram
+   around into a single-octave range
+
 The method is drawn from Christian Schörkhuber and Anssi Klapuri,
 "Constant-Q transform toolbox for music processing", SMC 2010. See the
 file CITATION for details. If you use this code in research work,
