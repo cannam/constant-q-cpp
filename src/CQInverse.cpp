@@ -39,6 +39,8 @@
 #include <iostream>
 #include <stdexcept>
 
+#include <cmath>
+
 using std::vector;
 using std::cerr;
 using std::endl;
@@ -86,7 +88,7 @@ CQInverse::getBinFrequency(double bin) const
 void
 CQInverse::initialise()
 {
-    m_octaves = int(ceil(log2(m_maxFrequency / m_minFrequency)));
+    m_octaves = int(ceil(log(m_maxFrequency / m_minFrequency) / log(2)));
 
     if (m_octaves < 1) {
         m_kernel = 0; // incidentally causing isValid() to return false

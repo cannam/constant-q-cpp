@@ -41,6 +41,8 @@
 #include <iostream>
 #include <algorithm>
 
+#include <cmath>
+
 using std::vector;
 using std::complex;
 using std::cerr;
@@ -126,10 +128,10 @@ CQKernel::generateKernel()
     m_p.minFrequency = (m_p.maxFrequency / 2) * pow(2, 1.0/bpo);
     m_p.Q = q / (pow(2, 1.0/bpo) - 1.0);
 
-    double maxNK = round(m_p.Q * m_p.sampleRate / m_p.minFrequency);
-    double minNK = round
+    double maxNK = int(m_p.Q * m_p.sampleRate / m_p.minFrequency + 0.5);
+    double minNK = int
         (m_p.Q * m_p.sampleRate /
-         (m_p.minFrequency * pow(2, (bpo - 1.0) / bpo)));
+         (m_p.minFrequency * pow(2, (bpo - 1.0) / bpo)) + 0.5);
 
     if (minNK == 0 || maxNK == 0) {
         // most likely pathological parameters of some sort
@@ -143,7 +145,7 @@ CQKernel::generateKernel()
         return false;
     }
 
-    m_p.atomSpacing = round(minNK * atomHopFactor);
+    m_p.atomSpacing = int(minNK * atomHopFactor + 0.5);
     m_p.firstCentre = m_p.atomSpacing * ceil(ceil(maxNK / 2.0) / m_p.atomSpacing);
     m_p.fftSize = MathUtilities::nextPowerOfTwo
         (m_p.firstCentre + ceil(maxNK / 2.0));
@@ -167,8 +169,8 @@ CQKernel::generateKernel()
 
     for (int k = 1; k <= m_p.binsPerOctave; ++k) {
         
-        int nk = round(m_p.Q * m_p.sampleRate /
-                       (m_p.minFrequency * pow(2, ((k-1.0) / bpo))));
+        int nk = int(m_p.Q * m_p.sampleRate /
+                     (m_p.minFrequency * pow(2, ((k-1.0) / bpo))) + 0.5);
 
         vector<double> win = makeWindow(nk);
 
@@ -295,7 +297,7 @@ CQKernel::finaliseKernel()
 
     vector<double> wK;
     double q = m_inparams.q;
-    for (int i = round(1.0/q); i < ncols - round(1.0/q) - 2; ++i) {
+    for (int i = int(1.0/q + 0.5); i < ncols - int(1.0/q + 0.5) - 2; ++i) {
         wK.push_back(abs(square[i][i]));
     }
 
