@@ -180,13 +180,13 @@ void
 CQChromaVamp::setParameter(std::string param, float value)
 {
     if (param == "lowestoct") {
-        m_lowestOctave = lrintf(value);
+        m_lowestOctave = int(value + 0.5f);
     } else if (param == "octaves") {
-        m_octaveCount = lrintf(value);
+        m_octaveCount = int(value + 0.5f);
     } else if (param == "tuning") {
         m_tuningFrequency = value;
     } else if (param == "bpo") {
-        m_bpo = lrintf(value);
+        m_bpo = int(value + 0.5f);
     } else {
         std::cerr << "WARNING: CQChromaVamp::setParameter: unknown parameter \""
                   << param << "\"" << std::endl;

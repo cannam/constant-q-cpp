@@ -248,15 +248,15 @@ void
 CQVamp::setParameter(std::string param, float value)
 {
     if (param == "minpitch" && m_midiPitchParameters) {
-        m_minMIDIPitch = lrintf(value);
+        m_minMIDIPitch = int(value + 0.5f);
     } else if (param == "maxpitch" && m_midiPitchParameters) {
-        m_maxMIDIPitch = lrintf(value);
+        m_maxMIDIPitch = int(value + 0.5f);
     } else if (param == "tuning" && m_midiPitchParameters) {
         m_tuningFrequency = value;
     } else if (param == "bpo") {
-        m_bpo = lrintf(value);
+        m_bpo = int(value + 0.5f);
     } else if (param == "interpolation") {
-        m_interpolation = (CQSpectrogram::Interpolation)lrintf(value);
+        m_interpolation = (CQSpectrogram::Interpolation)int(value + 0.5f);
     } else if (param == "minfreq" && !m_midiPitchParameters) {
         m_minFrequency = value;
     } else if (param == "maxfreq" && !m_midiPitchParameters) {

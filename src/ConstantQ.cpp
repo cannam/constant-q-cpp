@@ -41,6 +41,8 @@
 #include <iostream>
 #include <stdexcept>
 
+#include <cmath>
+
 using std::vector;
 using std::cerr;
 using std::endl;
@@ -89,7 +91,7 @@ ConstantQ::getBinFrequency(double bin) const
 void
 ConstantQ::initialise()
 {
-    m_octaves = int(ceil(log2(m_maxFrequency / m_minFrequency)));
+    m_octaves = int(ceil(log(m_maxFrequency / m_minFrequency) / log(2)));
 
     if (m_octaves < 1) {
         m_kernel = 0; // incidentally causing isValid() to return false
@@ -198,9 +200,9 @@ ConstantQ::initialise()
     double finalOctLat = latencies[m_octaves-1];
     double finalOctFact = pow(2, m_octaves-1);
     totalLatency =
-        int(round(finalOctLat +
-                  finalOctFact *
-                  ceil((totalLatency - finalOctLat) / finalOctFact)));
+        int(finalOctLat +
+            finalOctFact *
+            ceil((totalLatency - finalOctLat) / finalOctFact) + .5);
 
 #ifdef DEBUG_CQ
     cerr << "total latency = " << totalLatency << endl;
@@ -248,7 +250,7 @@ ConstantQ::initialise()
 #endif
 
         m_buffers.push_back
-            (RealSequence(int(round(octaveLatency)), 0.0));
+            (RealSequence(int(octaveLatency + 0.5), 0.0));
     }
 
     m_fft = new FFTReal(m_p.fftSize);

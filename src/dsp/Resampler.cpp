@@ -40,8 +40,6 @@
 #include <map>
 #include <cassert>
 
-#include <pthread.h>
-
 using std::vector;
 using std::map;
 using std::cerr;
@@ -70,13 +68,6 @@ Resampler::~Resampler()
     delete[] m_phaseData;
 }
 
-// peakToPole -> length -> beta -> window
-static map<double, map<int, map<double, vector<double> > > >
-knownFilters;
-
-static pthread_mutex_t
-knownFilterMutex = PTHREAD_MUTEX_INITIALIZER;
-
 void
 Resampler::initialise(double snr, double bandwidth)
 {
@@ -104,26 +95,14 @@ Resampler::initialise(double snr, double bandwidth)
 
     vector<double> filter;
 
-    pthread_mutex_lock(&knownFilterMutex);
+    KaiserWindow kw(params);
+    SincWindow sw(m_filterLength, m_peakToPole * 2);
 
-    if (knownFilters[m_peakToPole][m_filterLength].find(params.beta) ==
-	knownFilters[m_peakToPole][m_filterLength].end()) {
-
-	KaiserWindow kw(params);
-	SincWindow sw(m_filterLength, m_peakToPole * 2);
-
-	filter = vector<double>(m_filterLength, 0.0);
-	for (int i = 0; i < m_filterLength; ++i) filter[i] = 1.0;
-	sw.cut(filter.data());
-	kw.cut(filter.data());
-
-	knownFilters[m_peakToPole][m_filterLength][params.beta] = filter;
-    }
-
-    filter = knownFilters[m_peakToPole][m_filterLength][params.beta];
+    filter = vector<double>(m_filterLength, 0.0);
+    for (int i = 0; i < m_filterLength; ++i) filter[i] = 1.0;
+    sw.cut(filter.data());
+    kw.cut(filter.data());
     
-    pthread_mutex_unlock(&knownFilterMutex);
-
     int inputSpacing = m_targetRate / m_gcd;
     int outputSpacing = m_sourceRate / m_gcd;
 
@@ -315,8 +294,16 @@ Resampler::reconstructOne()
 
     assert(n + m_bufferOrigin <= (int)m_buffer.size());
 
-    const double *const __restrict__ buf = m_buffer.data() + m_bufferOrigin;
-    const double *const __restrict__ filt = pd.filter.data();
+#if defined(__MSVC__)
+#define R__ __restrict
+#elif defined(__GNUC__)
+#define R__ __restrict__
+#else
+#define R__
+#endif
+
+    const double *const R__ buf(m_buffer.data() + m_bufferOrigin);
+    const double *const R__ filt(pd.filter.data());
 
     for (int i = 0; i < n; ++i) {
 	// NB gcc can only vectorize this with -ffast-math
