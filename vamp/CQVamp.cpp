@@ -351,7 +351,7 @@ CQVamp::getOutputDescriptors() const
     if (m_cq) {
         char name[20];
         for (int i = 0; i < (int)d.binCount; ++i) {
-            float freq = m_cq->getBinFrequency(i);
+            float freq = m_cq->getBinFrequency(d.binCount - i - 1);
             sprintf(name, "%.1f Hz", freq);
             int note = Pitch::getPitchForFrequency(freq, 0, m_tuningFrequency);
             float nearestFreq =

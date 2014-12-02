@@ -282,7 +282,7 @@ CQChromaVamp::getOutputDescriptors() const
     if (m_cq) {
         char name[20];
         for (int i = 0; i < (int)d.binCount; ++i) {
-            float freq = m_cq->getBinFrequency(i);
+            float freq = m_cq->getBinFrequency(d.binCount - i - 1);
             int note = Pitch::getPitchForFrequency(freq, 0, m_tuningFrequency);
             float nearestFreq =
                 Pitch::getFrequencyForPitch(note, 0, m_tuningFrequency);

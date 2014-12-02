@@ -116,7 +116,7 @@ $(LIB):	$(LIB_OBJECTS)
 	$(AR) cr $@ $^
 	$(RANLIB) $@
 
-Test%:	Test%.o
+$(TEST_DIR)/Test%:	$(TEST_DIR)/Test%.o
 	$(CXX) -o $@ $^ $(LIB) $(LIBS) $(TEST_LDFLAGS)
 
 clean:		
@@ -156,14 +156,15 @@ vamp/CQChromaVamp.o: cq/CQBase.h cq/CQParameters.h cq/CQKernel.h vamp/Pitch.h
 vamp/libmain.o: vamp/CQVamp.h cq/CQSpectrogram.h cq/ConstantQ.h cq/CQBase.h
 vamp/libmain.o: cq/CQParameters.h cq/CQKernel.h vamp/CQChromaVamp.h
 vamp/Pitch.o: vamp/Pitch.h
-test/TestCQFrequency.o: cq/CQSpectrogram.h cq/ConstantQ.h cq/CQBase.h
-test/TestCQFrequency.o: cq/CQParameters.h cq/CQKernel.h src/dsp/Window.h
-test/TestCQTime.o: cq/CQSpectrogram.h cq/ConstantQ.h cq/CQBase.h
-test/TestCQTime.o: cq/CQParameters.h cq/CQKernel.h src/dsp/Window.h
 test/TestFFT.o: src/dsp/FFT.h
 test/TestMathUtilities.o: src/dsp/MathUtilities.h src/dsp/nan-inf.h
 test/TestResampler.o: src/dsp/Resampler.h src/dsp/Window.h src/dsp/FFT.h
 test/TestWindow.o: src/dsp/Window.h
+test/TestCQKernel.o: cq/CQKernel.h cq/CQParameters.h
+test/TestCQFrequency.o: cq/CQSpectrogram.h cq/ConstantQ.h cq/CQBase.h
+test/TestCQFrequency.o: cq/CQParameters.h cq/CQKernel.h src/dsp/Window.h
+test/TestCQTime.o: cq/CQSpectrogram.h cq/ConstantQ.h cq/CQBase.h
+test/TestCQTime.o: cq/CQParameters.h cq/CQKernel.h src/dsp/Window.h
 test/processfile.o: cq/ConstantQ.h cq/CQBase.h cq/CQParameters.h
 test/processfile.o: cq/CQKernel.h
 cq/CQKernel.o: cq/CQParameters.h
