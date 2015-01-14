@@ -98,7 +98,7 @@ LIBS	:= $(VAMPSDK_DIR)/libvamp-sdk.a -lpthread
 
 default:   all
 
-all:	   libs test $(PF)
+all:	   libs $(PF) test
 
 libs:	   $(LIB) $(PLUGIN)
 

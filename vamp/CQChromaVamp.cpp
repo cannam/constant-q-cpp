@@ -76,7 +76,7 @@ CQChromaVamp::getIdentifier() const
 string
 CQChromaVamp::getName() const
 {
-    return "Chromagram";
+    return "CQ Chromagram";
 }
 
 string

@@ -89,9 +89,9 @@ string
 CQVamp::getName() const
 {
     if (m_midiPitchParameters) {
-        return "Constant-Q Spectrogram (MIDI pitch range)";
+        return "CQ Constant-Q Spectrogram (MIDI pitch range)";
     } else {
-        return "Constant-Q Spectrogram (Hz range)";
+        return "CQ Constant-Q Spectrogram (Hz range)";
     }
 }
 
