@@ -1,7 +1,7 @@
 /* -*- c-basic-offset: 4 indent-tabs-mode: nil -*-  vi:set ts=8 sts=4 sw=4: */
 /*
     Constant-Q library
-    Copyright (c) 2013-2014 Queen Mary, University of London
+    Copyright (c) 2013-2015 Queen Mary, University of London
 
     Permission is hereby granted, free of charge, to any person
     obtaining a copy of this software and associated documentation
@@ -29,61 +29,54 @@
     authorization.
 */
 
-#ifndef CQCHROMAVAMP_H
-#define CQCHROMAVAMP_H
+#ifndef CQCHROMAGRAM_H
+#define CQCHROMAGRAM_H
 
-#include <vamp-sdk/Plugin.h>
+#include "CQBase.h"
 
-class Chromagram;
+class CQSpectrogram;
 
-class CQChromaVamp : public Vamp::Plugin
+class Chromagram
 {
 public:
-    CQChromaVamp(float inputSampleRate);
-    virtual ~CQChromaVamp();
+    struct Parameters {
+	Parameters(double sr) :
+	    sampleRate(sr),
+	    lowestOctave(0),
+	    octaves(7),
+	    bpo(36),
+	    tuningFrequency(440.) { }
+	double sampleRate;
+	int lowestOctave;
+	int octaves;
+	int bpo;
+	double tuningFrequency;
+    };
 
-    bool initialise(size_t channels, size_t stepSize, size_t blockSize);
-    void reset();
+    Chromagram(Parameters params);
+    virtual ~Chromagram();
 
-    InputDomain getInputDomain() const { return TimeDomain; }
+    CQBase::RealBlock process(const CQBase::RealSequence &);
+    CQBase::RealBlock getRemainingOutput();
 
-    std::string getIdentifier() const;
-    std::string getName() const;
-    std::string getDescription() const;
-    std::string getMaker() const;
-    int getPluginVersion() const;
-    std::string getCopyright() const;
+    double getMinFrequency() const { return m_minFrequency; }
+    double getMaxFrequency() const { return m_maxFrequency; }
 
-    ParameterList getParameterDescriptors() const;
-    float getParameter(std::string) const;
-    void setParameter(std::string, float);
-
-    size_t getPreferredStepSize() const;
-    size_t getPreferredBlockSize() const;
-
-    OutputList getOutputDescriptors() const;
-
-    FeatureSet process(const float *const *inputBuffers,
-                       Vamp::RealTime timestamp);
-
-    FeatureSet getRemainingFeatures();
-
-protected:
-    int m_lowestOctave;
-    int m_octaveCount;
-    float m_tuningFrequency;
-    int m_bpo;
-
-    Chromagram *m_chroma;
-    int m_stepSize;
-    int m_blockSize;
-
-    Vamp::RealTime m_startTime;
-    bool m_haveStartTime;
-    int m_columnCount;
-
-    FeatureSet convertToFeatures(const std::vector<std::vector<double> > &);
+    std::string getBinName(int bin) const;
+    
+    bool isValid() const;
+    int getColumnHop() const;
+    int getLatency() const;
+    
+private:
+    Parameters m_params;
+    CQSpectrogram *m_cq;
+    double m_minFrequency;
+    double m_maxFrequency;
+    CQBase::RealBlock convert(const CQBase::RealBlock &);
 };
 
-
 #endif
+
+
+    
