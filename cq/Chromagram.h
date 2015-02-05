@@ -33,6 +33,7 @@
 #define CQCHROMAGRAM_H
 
 #include "CQBase.h"
+#include "CQParameters.h"
 
 class CQSpectrogram;
 
@@ -43,14 +44,25 @@ public:
 	Parameters(double sr) :
 	    sampleRate(sr),
 	    lowestOctave(0),
-	    octaves(7),
-	    bpo(36),
-	    tuningFrequency(440.) { }
+	    octaveCount(7),
+	    binsPerOctave(36),
+	    tuningFrequency(440.),
+            q(1.0),                    // Q scaling factor
+            atomHopFactor(0.25),       // hop size of shortest temporal atom
+            threshold(0.0005),         // sparsity threshold for resulting kernel
+            window(CQParameters::SqrtBlackmanHarris) // window shape
+        { }
+        
 	double sampleRate;
 	int lowestOctave;
-	int octaves;
-	int bpo;
+	int octaveCount;
+	int binsPerOctave;
+
 	double tuningFrequency;
+        double q;
+        double atomHopFactor;
+        double threshold;
+        CQParameters::WindowType window;
     };
 
     Chromagram(Parameters params);

@@ -218,8 +218,8 @@ CQChromaVamp::reset()
     delete m_chroma;
     Chromagram::Parameters p(m_inputSampleRate);
     p.lowestOctave = m_lowestOctave;
-    p.octaves = m_octaveCount;
-    p.bpo = m_bpo;
+    p.octaveCount = m_octaveCount;
+    p.binsPerOctave = m_bpo;
     p.tuningFrequency = m_tuningFrequency;
 
     m_chroma = new Chromagram(p);

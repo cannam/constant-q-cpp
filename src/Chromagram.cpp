@@ -41,7 +41,7 @@ Chromagram::Chromagram(Parameters params) :
     m_params(params),
     m_cq(0)
 {
-    int highestOctave = m_params.lowestOctave + m_params.octaves - 1;
+    int highestOctave = m_params.lowestOctave + m_params.octaveCount - 1;
 
     int midiPitchLimit = (1 + highestOctave) * 12 + 12; // C just beyond top
     double midiPitchLimitFreq = Pitch::getFrequencyForPitch
@@ -50,17 +50,22 @@ Chromagram::Chromagram(Parameters params) :
     // Max frequency is frequency of the MIDI pitch just beyond the
     // top octave range (midiPitchLimit) minus one bin, then minus
     // floor(bins per semitone / 2)
-    int bps = m_params.bpo / 12;
+    int bps = m_params.binsPerOctave / 12;
     m_maxFrequency = midiPitchLimitFreq /
-        pow(2, (1.0 + floor(bps/2)) / m_params.bpo);
+        pow(2, (1.0 + floor(bps/2)) / m_params.binsPerOctave);
 
     // Min frequency is frequency of midiPitchLimit lowered by the
-    // appropriate number of octaves.
+    // appropriate number of octaveCount.
     m_minFrequency = midiPitchLimitFreq /
-        pow(2, m_params.octaves + 1);
+        pow(2, m_params.octaveCount + 1);
 
     CQParameters p
-        (params.sampleRate, m_minFrequency, m_maxFrequency, params.bpo);
+        (params.sampleRate, m_minFrequency, m_maxFrequency, params.binsPerOctave);
+
+    p.q = params.q;
+    p.atomHopFactor = params.atomHopFactor;
+    p.threshold = params.threshold;
+    p.window = params.window;
     
     m_cq = new CQSpectrogram(p, CQSpectrogram::InterpolateLinear);
 }
@@ -95,7 +100,7 @@ Chromagram::getBinName(int bin) const
         "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"
     };
 
-    float freq = m_cq->getBinFrequency(m_params.bpo - bin - 1);
+    float freq = m_cq->getBinFrequency(m_params.binsPerOctave - bin - 1);
     int note = Pitch::getPitchForFrequency(freq, 0, m_params.tuningFrequency);
     float nearestFreq =
         Pitch::getFrequencyForPitch(note, 0, m_params.tuningFrequency);
@@ -130,14 +135,15 @@ Chromagram::convert(const CQBase::RealBlock &cqout)
 
     for (int i = 0; i < width; ++i) {
 
-        CQBase::RealSequence column(m_params.bpo, 0.);
+        CQBase::RealSequence column(m_params.binsPerOctave, 0.);
 
         // fold and invert to put low frequencies at the start
 
         int thisHeight = cqout[i].size();
 
 	for (int j = 0; j < thisHeight; ++j) {
-	    column[m_params.bpo - (j % m_params.bpo) - 1] += cqout[i][j];
+	    column[m_params.binsPerOctave - (j % m_params.binsPerOctave) - 1]
+                += cqout[i][j];
 	}
 
         chroma.push_back(column);
