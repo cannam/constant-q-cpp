@@ -31,12 +31,9 @@
 
 #include "CQChromaVamp.h"
 
-#include "cq/CQSpectrogram.h"
-
-#include "Pitch.h"
+#include "cq/Chromagram.h"
 
 #include <algorithm>
-#include <cstdio>
 
 using std::string;
 using std::vector;
@@ -54,9 +51,7 @@ CQChromaVamp::CQChromaVamp(float inputSampleRate) :
     m_octaveCount(defaultOctaveCount),
     m_tuningFrequency(defaultTuningFrequency),
     m_bpo(defaultBPO),
-    m_cq(0),
-    m_maxFrequency(0),
-    m_minFrequency(0),
+    m_chroma(0),
     m_haveStartTime(false),
     m_columnCount(0)
 {
@@ -64,7 +59,7 @@ CQChromaVamp::CQChromaVamp(float inputSampleRate) :
 
 CQChromaVamp::~CQChromaVamp()
 {
-    delete m_cq;
+    delete m_chroma;
 }
 
 string
@@ -196,9 +191,9 @@ CQChromaVamp::setParameter(std::string param, float value)
 bool
 CQChromaVamp::initialise(size_t channels, size_t stepSize, size_t blockSize)
 {
-    if (m_cq) {
-	delete m_cq;
-        m_cq = 0;
+    if (m_chroma) {
+	delete m_chroma;
+        m_chroma = 0;
     }
 
     if (channels < getMinChannelCount() ||
@@ -207,30 +202,9 @@ CQChromaVamp::initialise(size_t channels, size_t stepSize, size_t blockSize)
     m_stepSize = stepSize;
     m_blockSize = blockSize;
 
-    int highestOctave = m_lowestOctave + m_octaveCount - 1;
-
-    int midiPitchLimit = (1 + highestOctave) * 12 + 12; // C just beyond top
-    double midiPitchLimitFreq = 
-        Pitch::getFrequencyForPitch(midiPitchLimit, 0, m_tuningFrequency);
-
-    // Max frequency is frequency of the MIDI pitch just beyond the
-    // top octave range (midiPitchLimit) minus one bin, then minus
-    // floor(bins per semitone / 2)
-    int bps = m_bpo / 12;
-    m_maxFrequency = midiPitchLimitFreq / pow(2, (1.0 + floor(bps/2)) / m_bpo);
-
-    // Min frequency is frequency of midiPitchLimit lowered by the
-    // appropriate number of octaves.
-    m_minFrequency = midiPitchLimitFreq / pow(2, m_octaveCount + 1);
-
-//    cerr << "lowest octave: " << m_lowestOctave << ", highest octave: "
-//         << highestOctave << ", limit midi pitch: " << midiPitchLimit
-//         << ", min freq " << m_minFrequency << ", max freq " << m_maxFrequency
-//         << endl;
-
     reset();
 
-    if (!m_cq || !m_cq->isValid()) {
+    if (!m_chroma || !m_chroma->isValid()) {
         cerr << "CQVamp::initialise: Constant-Q parameters not valid! Not initialising" << endl;
         return false;
     }
@@ -241,9 +215,14 @@ CQChromaVamp::initialise(size_t channels, size_t stepSize, size_t blockSize)
 void
 CQChromaVamp::reset()
 {
-    delete m_cq;
-    CQParameters p(m_inputSampleRate, m_minFrequency, m_maxFrequency, m_bpo);
-    m_cq = new CQSpectrogram(p, CQSpectrogram::InterpolateLinear);
+    delete m_chroma;
+    Chromagram::Parameters p(m_inputSampleRate);
+    p.lowestOctave = m_lowestOctave;
+    p.octaveCount = m_octaveCount;
+    p.binsPerOctave = m_bpo;
+    p.tuningFrequency = m_tuningFrequency;
+
+    m_chroma = new Chromagram(p);
 
     m_haveStartTime = false;
     m_startTime = Vamp::RealTime::zeroTime;
@@ -265,10 +244,6 @@ CQChromaVamp::getPreferredBlockSize() const
 CQChromaVamp::OutputList
 CQChromaVamp::getOutputDescriptors() const
 {
-    static const char *names[] = {
-        "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"
-    };
-
     OutputList list;
 
     OutputDescriptor d;
@@ -279,26 +254,16 @@ CQChromaVamp::getOutputDescriptors() const
     d.hasFixedBinCount = true;
     d.binCount = m_bpo;
 
-    if (m_cq) {
-        char name[20];
+    if (m_chroma) {
         for (int i = 0; i < (int)d.binCount; ++i) {
-            float freq = m_cq->getBinFrequency(d.binCount - i - 1);
-            int note = Pitch::getPitchForFrequency(freq, 0, m_tuningFrequency);
-            float nearestFreq =
-                Pitch::getFrequencyForPitch(note, 0, m_tuningFrequency);
-            sprintf(name, "%d", i);
-            if (fabs(freq - nearestFreq) < 0.01) {
-                d.binNames.push_back(name + std::string(" ") + names[note % 12]);
-            } else {
-                d.binNames.push_back(name);
-            }
+            d.binNames.push_back(m_chroma->getBinName(i));
         }
     }
 
     d.hasKnownExtents = false;
     d.isQuantized = false;
     d.sampleType = OutputDescriptor::FixedSampleRate;
-    d.sampleRate = m_inputSampleRate / (m_cq ? m_cq->getColumnHop() : 256);
+    d.sampleRate = m_inputSampleRate / (m_chroma ? m_chroma->getColumnHop() : 256);
     list.push_back(d);
 
     return list;
@@ -308,7 +273,7 @@ CQChromaVamp::FeatureSet
 CQChromaVamp::process(const float *const *inputBuffers,
                       Vamp::RealTime timestamp)
 {
-    if (!m_cq) {
+    if (!m_chroma) {
 	cerr << "ERROR: CQChromaVamp::process: "
 	     << "Plugin has not been initialised"
 	     << endl;
@@ -323,40 +288,32 @@ CQChromaVamp::process(const float *const *inputBuffers,
     vector<double> data;
     for (int i = 0; i < m_blockSize; ++i) data.push_back(inputBuffers[0][i]);
     
-    vector<vector<double> > cqout = m_cq->process(data);
-    return convertToFeatures(cqout);
+    vector<vector<double> > chromaout = m_chroma->process(data);
+    return convertToFeatures(chromaout);
 }
 
 CQChromaVamp::FeatureSet
 CQChromaVamp::getRemainingFeatures()
 {
-    vector<vector<double> > cqout = m_cq->getRemainingOutput();
-    return convertToFeatures(cqout);
+    vector<vector<double> > chromaout = m_chroma->getRemainingOutput();
+    return convertToFeatures(chromaout);
 }
 
 CQChromaVamp::FeatureSet
-CQChromaVamp::convertToFeatures(const vector<vector<double> > &cqout)
+CQChromaVamp::convertToFeatures(const vector<vector<double> > &chromaout)
 {
     FeatureSet returnFeatures;
 
-    int width = cqout.size();
+    int width = chromaout.size();
 
     for (int i = 0; i < width; ++i) {
 
-	vector<float> column(m_bpo, 0.f);
-
-        // fold and invert to put low frequencies at the start
-
-        int thisHeight = cqout[i].size();
-
-	for (int j = 0; j < thisHeight; ++j) {
-	    column[m_bpo - (j % m_bpo) - 1] += cqout[i][j];
-	}
+	vector<float> column(chromaout[i].begin(), chromaout[i].end());
 
 	Feature feature;
 	feature.hasTimestamp = true;
         feature.timestamp = m_startTime + Vamp::RealTime::frame2RealTime
-            (m_columnCount * m_cq->getColumnHop() - m_cq->getLatency(),
+            (m_columnCount * m_chroma->getColumnHop() - m_chroma->getLatency(),
              m_inputSampleRate);
 	feature.values = column;
 	feature.label = "";

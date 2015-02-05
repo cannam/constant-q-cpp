@@ -34,7 +34,7 @@
 
 #include <vamp-sdk/Plugin.h>
 
-class CQSpectrogram;
+class Chromagram;
 
 class CQChromaVamp : public Vamp::Plugin
 {
@@ -74,9 +74,7 @@ protected:
     float m_tuningFrequency;
     int m_bpo;
 
-    CQSpectrogram *m_cq;
-    float m_maxFrequency;
-    float m_minFrequency;
+    Chromagram *m_chroma;
     int m_stepSize;
     int m_blockSize;
 
