@@ -52,16 +52,59 @@ public:
             threshold(0.0005),         // sparsity threshold for resulting kernel
             window(CQParameters::SqrtBlackmanHarris) // window shape
         { }
-        
+
+        /**
+         * Sampling rate of input signal.
+         */
 	double sampleRate;
+
+        /**
+         * Octave number of lowest octave to include in the
+         * chromagram. Numbering is per ASA standard with -1 as the
+         * first octave in the MIDI range and middle-C being C4. The
+         * octave starts at C.
+         */
 	int lowestOctave;
+
+        /**
+         * Number of source constant-Q octaves to wrap around into the
+         * single-octave chroma output.
+         */
 	int octaveCount;
+
+        /**
+         * Number of constant-Q transform bins per octave and the
+         * number of bins in the chroma output.
+         */
 	int binsPerOctave;
 
+        /**
+         * Frequency of concert A, used when mapping the note-based
+         * octave extents into frequency extents for the constant-Q
+         * transform.
+         */
 	double tuningFrequency;
+
+        /**
+         * Spectral atom bandwidth scaling factor.
+         */
         double q;
+        
+        /**
+         * Hop size between temporal atoms, where 1 == no overlap and
+         * smaller values indicate overlapping atoms.
+         */
         double atomHopFactor;
+        
+        /**
+         * Sparsity threshold for Constant-Q kernel: values with
+         * magnitude smaller than this are truncated to zero.
+         */
         double threshold;
+
+        /**
+         * Window shape to use for the Constant-Q kernel atoms.
+         */
         CQParameters::WindowType window;
     };
 
