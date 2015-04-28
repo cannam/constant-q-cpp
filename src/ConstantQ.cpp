@@ -122,8 +122,15 @@ ConstantQ::initialise()
 
         int factor = pow(2, i);
 
-        Resampler *r = new Resampler
-            (sourceRate, sourceRate / factor, 50, 0.05);
+        Resampler *r;
+
+        if (m_inparams.decimator == CQParameters::BetterDecimator) {
+            r = new Resampler
+                (sourceRate, sourceRate / factor, 50, 0.05);
+        } else {
+            r = new Resampler
+                (sourceRate, sourceRate / factor, 25, 0.3);
+        }                
 
 #ifdef DEBUG_CQ
         cerr << "forward: octave " << i << ": resample from " << sourceRate << " to " << sourceRate / factor << endl;
