@@ -344,15 +344,12 @@ ConstantQ::processOctaveBlock(int octave)
 
     m_fft->forward(m_buffers[octave].data(), ro.data(), io.data());
 
-    RealSequence shifted;
-    shifted.insert(shifted.end(), 
-                   m_buffers[octave].begin() + m_p.fftHop,
-                   m_buffers[octave].end());
-    m_buffers[octave] = shifted;
+    m_buffers[octave] = RealSequence(m_buffers[octave].begin() + m_p.fftHop,
+                                     m_buffers[octave].end());
 
-    ComplexSequence cv;
+    ComplexSequence cv(m_p.fftSize);
     for (int i = 0; i < m_p.fftSize; ++i) {
-        cv.push_back(Complex(ro[i], io[i]));
+        cv[i] = Complex(ro[i], io[i]);
     }
 
     ComplexSequence cqrowvec = m_kernel->processForward(cv);
