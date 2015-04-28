@@ -2,7 +2,7 @@
 CFLAGS := -Wall -O3 -ffast-math -msse -msse2 -mfpmath=sse -fPIC -I../vamp-plugin-sdk/
 #CFLAGS := -g -fPIC -I../vamp-plugin-sdk
 
-CXXFLAGS := $(CFLAGS)
+CXXFLAGS := $(CFLAGS) -std=c++11
 
 PLUGIN_LDFLAGS := -shared -Wl,--version-script=vamp/vamp-plugin.map
 
