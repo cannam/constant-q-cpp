@@ -122,8 +122,15 @@ ConstantQ::initialise()
 
         int factor = pow(2, i);
 
-        Resampler *r = new Resampler
-            (sourceRate, sourceRate / factor, 50, 0.05);
+        Resampler *r;
+
+        if (m_inparams.decimator == CQParameters::BetterDecimator) {
+            r = new Resampler
+                (sourceRate, sourceRate / factor, 50, 0.05);
+        } else {
+            r = new Resampler
+                (sourceRate, sourceRate / factor, 25, 0.3);
+        }                
 
 #ifdef DEBUG_CQ
         cerr << "forward: octave " << i << ": resample from " << sourceRate << " to " << sourceRate / factor << endl;
@@ -337,15 +344,12 @@ ConstantQ::processOctaveBlock(int octave)
 
     m_fft->forward(m_buffers[octave].data(), ro.data(), io.data());
 
-    RealSequence shifted;
-    shifted.insert(shifted.end(), 
-                   m_buffers[octave].begin() + m_p.fftHop,
-                   m_buffers[octave].end());
-    m_buffers[octave] = shifted;
+    m_buffers[octave] = RealSequence(m_buffers[octave].begin() + m_p.fftHop,
+                                     m_buffers[octave].end());
 
-    ComplexSequence cv;
+    ComplexSequence cv(m_p.fftSize);
     for (int i = 0; i < m_p.fftSize; ++i) {
-        cv.push_back(Complex(ro[i], io[i]));
+        cv[i] = Complex(ro[i], io[i]);
     }
 
     ComplexSequence cqrowvec = m_kernel->processForward(cv);

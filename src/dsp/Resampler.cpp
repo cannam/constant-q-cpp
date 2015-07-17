@@ -318,9 +318,7 @@ Resampler::reconstructOne()
 int
 Resampler::process(const double *src, double *dst, int n)
 {
-    for (int i = 0; i < n; ++i) {
-	m_buffer.push_back(src[i]);
-    }
+    m_buffer.insert(m_buffer.end(), src, src + n);
 
     int maxout = int(ceil(double(n) * m_targetRate / m_sourceRate));
     int outidx = 0;

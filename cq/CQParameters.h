@@ -48,6 +48,11 @@ public:
 	Hann,
     };
 
+    enum DecimatorType {
+        BetterDecimator,
+        FasterDecimator
+    };
+    
     /**
      * Construct a set of parameters with the given input signal
      * sample rate, frequency range, and number of bins per
@@ -63,10 +68,11 @@ public:
 	minFrequency(_minFrequency),
 	maxFrequency(_maxFrequency),
 	binsPerOctave(_binsPerOctave),
-	q(1.0),                    // Q scaling factor
-	atomHopFactor(0.25),       // hop size of shortest temporal atom
-	threshold(0.0005),         // sparsity threshold for resulting kernel
-	window(SqrtBlackmanHarris) // window shape
+	q(1.0),                     // Q scaling factor
+	atomHopFactor(0.25),        // hop size of shortest temporal atom
+	threshold(0.0005),          // sparsity threshold for resulting kernel
+	window(SqrtBlackmanHarris), // window shape
+        decimator(BetterDecimator)  // decimator quality setting
     { }
 
     /**
@@ -114,6 +120,11 @@ public:
      * Window shape to use for the Constant-Q kernel atoms.
      */
     WindowType window;
+
+    /**
+     * Quality setting for the sample rate decimator.
+     */
+    DecimatorType decimator;
 };
 
 #endif
