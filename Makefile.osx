@@ -1,8 +1,8 @@
 
-ARCHFLAGS	?= -mmacosx-version-min=10.6 -arch x86_64 -arch i386
+ARCHFLAGS	?= -mmacosx-version-min=10.7 -arch x86_64 -arch i386 -stdlib=libc++
 
 CFLAGS 		:= $(ARCHFLAGS) -Wall -O3 -ftree-vectorize
-CXXFLAGS  	:= $(CFLAGS)
+CXXFLAGS  	:= $(CFLAGS) 
 
 LDFLAGS		:= $(ARCHFLAGS)
 PLUGIN_LDFLAGS	  := -dynamiclib -exported_symbols_list vamp/vamp-plugin.list
