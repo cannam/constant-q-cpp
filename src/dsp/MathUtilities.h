@@ -35,6 +35,7 @@
 #include <vector>
 
 #include "nan-inf.h"
+#include "pi.h"
 
 /**
  * Static helper functions for simple mathematical calculations.

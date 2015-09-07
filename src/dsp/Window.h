@@ -29,13 +29,15 @@
     authorization.
 */
 
-#ifndef _WINDOW_H_
-#define _WINDOW_H_
+#ifndef WINDOW_H
+#define WINDOW_H
 
 #include <cmath>
 #include <iostream>
 #include <map>
 #include <vector>
+
+#include "pi.h"
 
 enum WindowType {
     RectangularWindow,

@@ -35,6 +35,8 @@
 #include <vector>
 #include <cmath>
 
+#include "pi.h"
+
 /**
  * Kaiser window: A windower whose bandwidth and sidelobe height
  * (signal-noise ratio) can be specified. These parameters are traded
