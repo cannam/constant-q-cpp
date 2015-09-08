@@ -40,8 +40,8 @@ output at a higher time resolution than some other implementations,
 using multiple kernel atoms per time block. The inverse transform is
 approximate rather than exact (see the paper for details).
 
-The C++ implementation is by Chris Cannam, Copyright 2014 Queen Mary,
-University of London.
+The C++ implementation is by Chris Cannam, Copyright 2014-2015 Queen
+Mary, University of London.
 
 The library is provided under a liberal BSD/MIT-style open source
 licence. See the file COPYING for more information.
