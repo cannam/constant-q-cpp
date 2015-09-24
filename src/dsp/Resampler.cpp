@@ -52,6 +52,9 @@ Resampler::Resampler(int sourceRate, int targetRate) :
     m_sourceRate(sourceRate),
     m_targetRate(targetRate)
 {
+#ifdef DEBUG_RESAMPLER
+    cerr << "Resampler::Resampler(" <<  sourceRate << "," << targetRate << ")" << endl;
+#endif
     initialise(100, 0.02);
 }
 
@@ -292,7 +295,11 @@ Resampler::reconstructOne()
     double v = 0.0;
     int n = pd.filter.size();
 
-    assert(n + m_bufferOrigin <= (int)m_buffer.size());
+    if (n + m_bufferOrigin > (int)m_buffer.size()) {
+        cerr << "ERROR: n + m_bufferOrigin > m_buffer.size() [" << n << " + "
+             << m_bufferOrigin << " > " << m_buffer.size() << "]" << endl;
+        throw std::logic_error("n + m_bufferOrigin > m_buffer.size()");
+    }
 
 #if defined(__MSVC__)
 #define R__ __restrict
@@ -333,6 +340,12 @@ Resampler::process(const double *src, double *dst, int n)
 	   m_buffer.size() >= m_phaseData[m_phase].filter.size() + m_bufferOrigin) {
 	dst[outidx] = scaleFactor * reconstructOne();
 	outidx++;
+    }
+
+    if (m_bufferOrigin > (int)m_buffer.size()) {
+        cerr << "ERROR: m_bufferOrigin > m_buffer.size() [" 
+             << m_bufferOrigin << " > " << m_buffer.size() << "]" << endl;
+        throw std::logic_error("m_bufferOrigin > m_buffer.size()");
     }
 
     m_buffer = vector<double>(m_buffer.begin() + m_bufferOrigin, m_buffer.end());
