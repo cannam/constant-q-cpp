@@ -52,12 +52,12 @@ Chromagram::Chromagram(Parameters params) :
     // floor(bins per semitone / 2)
     int bps = m_params.binsPerOctave / 12;
     m_maxFrequency = midiPitchLimitFreq /
-        pow(2, (1.0 + floor(bps/2)) / m_params.binsPerOctave);
+        pow(2.0, (1.0 + floor(bps/2)) / m_params.binsPerOctave);
 
     // Min frequency is frequency of midiPitchLimit lowered by the
     // appropriate number of octaveCount.
     m_minFrequency = midiPitchLimitFreq /
-        pow(2, m_params.octaveCount + 1);
+        pow(2.0, m_params.octaveCount + 1);
 
     CQParameters p
         (params.sampleRate, m_minFrequency, m_maxFrequency, params.binsPerOctave);

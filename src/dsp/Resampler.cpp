@@ -39,6 +39,7 @@
 #include <vector>
 #include <map>
 #include <cassert>
+#include <algorithm>
 
 using std::vector;
 using std::map;
