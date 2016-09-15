@@ -96,7 +96,6 @@ private:
     int m_targetRate;
     int m_gcd;
     int m_filterLength;
-    int m_bufferLength;
     int m_latency;
     double m_peakToPole;
     
