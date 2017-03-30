@@ -61,6 +61,8 @@ CQVamp::CQVamp(float inputSampleRate, bool midiPitchParameters) :
     m_maxMIDIPitch(defaultMaxMIDIPitch),
     m_tuningFrequency(defaultTuningFrequency),
     m_bpo(defaultBPO),
+    m_atomOverlap(4),
+    m_useDraftDecimator(false),
     m_interpolation(CQSpectrogram::InterpolateLinear),
     m_cq(0),
     m_maxFrequency(defaultMaxFrequency),
@@ -114,13 +116,13 @@ CQVamp::getMaker() const
 int
 CQVamp::getPluginVersion() const
 {
-    return 2;
+    return 3;
 }
 
 string
 CQVamp::getCopyright() const
 {
-    return "Plugin by Chris Cannam. Method by Christian Schörkhuber and Anssi Klapuri. Copyright (c) 2015 QMUL. BSD/MIT licence.";
+    return "Plugin by Chris Cannam. Method by Christian Schörkhuber and Anssi Klapuri. Copyright (c) 2015-2017 QMUL. BSD/MIT licence.";
 }
 
 CQVamp::ParameterList
@@ -198,6 +200,28 @@ CQVamp::getParameterDescriptors() const
     desc.quantizeStep = 1;
     list.push_back(desc);
 
+    desc.identifier = "atomoverlap";
+    desc.name = "Overlap";
+    desc.unit = "";
+    desc.description = "Overlap factor for CQ kernel atoms (higher = more output values per unit time)";
+    desc.minValue = 1;
+    desc.maxValue = 8;
+    desc.defaultValue = 4;
+    desc.isQuantized = true;
+    desc.quantizeStep = 1;
+    list.push_back(desc);
+
+    desc.identifier = "draftdecimator";
+    desc.name = "Use Draft Decimator";
+    desc.unit = "";
+    desc.description = "Trade off some decimator quality for faster speed";
+    desc.minValue = 0;
+    desc.maxValue = 1;
+    desc.defaultValue = 0;
+    desc.isQuantized = true;
+    desc.quantizeStep = 1;
+    list.push_back(desc);
+    
     desc.identifier = "interpolation";
     desc.name = "Interpolation";
     desc.unit = "";
@@ -239,6 +263,12 @@ CQVamp::getParameter(std::string param) const
     if (param == "maxfreq" && !m_midiPitchParameters) {
         return m_maxFrequency;
     }
+    if (param == "atomoverlap") {
+        return m_atomOverlap;
+    }
+    if (param == "draftdecimator") {
+        return m_useDraftDecimator ? 1.f : 0.f;
+    }
     std::cerr << "WARNING: CQVamp::getParameter: unknown parameter \""
               << param << "\"" << std::endl;
     return 0.0;
@@ -261,6 +291,10 @@ CQVamp::setParameter(std::string param, float value)
         m_minFrequency = value;
     } else if (param == "maxfreq" && !m_midiPitchParameters) {
         m_maxFrequency = value;
+    } else if (param == "atomoverlap") {
+        m_atomOverlap = int(value + 0.5f);
+    } else if (param == "draftdecimator") {
+        m_useDraftDecimator = (value > 0.5f);
     } else {
         std::cerr << "WARNING: CQVamp::setParameter: unknown parameter \""
                   << param << "\"" << std::endl;
@@ -303,6 +337,10 @@ CQVamp::reset()
 {
     delete m_cq;
     CQParameters p(m_inputSampleRate, m_minFrequency, m_maxFrequency, m_bpo);
+    p.atomHopFactor = 1.0 / double(m_atomOverlap);
+    p.decimator = (m_useDraftDecimator ?
+                   CQParameters::FasterDecimator :
+                   CQParameters::BetterDecimator);
     m_cq = new CQSpectrogram(p, m_interpolation);
     m_haveStartTime = false;
     m_columnCount = 0;

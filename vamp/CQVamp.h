@@ -76,6 +76,8 @@ protected:
     int m_maxMIDIPitch;
     float m_tuningFrequency;
     int m_bpo;
+    int m_atomOverlap;
+    bool m_useDraftDecimator;
     CQSpectrogram::Interpolation m_interpolation;
 
     CQSpectrogram *m_cq;
