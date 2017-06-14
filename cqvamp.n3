@@ -99,9 +99,7 @@ plugbase:cqchromavamp_output_chromagram a  vamp:DenseOutput ;
     vamp:fixed_bin_count  "true" ;
     vamp:unit             "" ;
     vamp:bin_count        36 ;
-#   vamp:computes_event_type   <Place event type URI here and uncomment> ;
-#   vamp:computes_feature      <Place feature attribute URI here and uncomment> ;
-#   vamp:computes_signal_type  <Place signal type URI here and uncomment> ;
+    vamp:computes_signal_type  af:Chromagram ;
     .
 plugbase:cqvamp a   vamp:Plugin ;
     dc:title              "Constant-Q Spectrogram (Hz range)" ;
@@ -171,9 +169,7 @@ plugbase:cqvamp_output_constantq a  vamp:DenseOutput ;
     vamp:fixed_bin_count  "true" ;
     vamp:unit             "" ;
     vamp:bin_count        216 ;
-#   vamp:computes_event_type   <Place event type URI here and uncomment> ;
-#   vamp:computes_feature      <Place feature attribute URI here and uncomment> ;
-#   vamp:computes_signal_type  <Place signal type URI here and uncomment> ;
+    vamp:computes_signal_type  af:Spectrogram ;
     .
 plugbase:cqvampmidi a   vamp:Plugin ;
     dc:title              "Constant-Q Spectrogram (MIDI pitch range)" ;
@@ -256,8 +252,6 @@ plugbase:cqvampmidi_output_constantq a  vamp:DenseOutput ;
     vamp:fixed_bin_count  "true" ;
     vamp:unit             "" ;
     vamp:bin_count        216 ;
-#   vamp:computes_event_type   <Place event type URI here and uncomment> ;
-#   vamp:computes_feature      <Place feature attribute URI here and uncomment> ;
-#   vamp:computes_signal_type  <Place signal type URI here and uncomment> ;
+    vamp:computes_signal_type  af:Spectrogram ;
     .
 
