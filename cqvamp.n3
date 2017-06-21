@@ -19,7 +19,7 @@
     foaf:logo <http://vamp-plugins.org/rdf/plugins/makers/qm.png> ;
     foaf:page <http://c4dm.eecs.qmul.ac.uk/> .
 
-:cqvamp a  vamp:PluginLibrary ;
+plugbase:library a  vamp:PluginLibrary ;
     vamp:identifier "cqvamp"  ; 
     dc:title "Constant-Q" ;
     dc:description "A plugin implementing the Constant-Q transform of a time-domain signal." ;
@@ -28,6 +28,7 @@
     vamp:available_plugin plugbase:cqvamp ; 
     vamp:available_plugin plugbase:cqvampmidi ; 
     foaf:page <http://code.soundsoftware.ac.uk/projects/constant-q-cpp> ;
+    doap:download-page     <http://code.soundsoftware.ac.uk/projects/constant-q-cpp/files> ;
     .
 
 plugbase:cqchromavamp a   vamp:Plugin ;
