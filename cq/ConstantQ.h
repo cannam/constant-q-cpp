@@ -124,6 +124,10 @@ private:
 
     void initialise();
     ComplexBlock processOctaveBlock(int octave);
+
+    // Not provided
+    ConstantQ(const ConstantQ &);
+    ConstantQ &operator=(const ConstantQ &);
 };
 
 #endif

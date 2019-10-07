@@ -117,6 +117,10 @@ private:
     RealBlock fetchLinear(bool insist);
     RealBlock linearInterpolated(const RealBlock &, int, int);
     RealColumn m_prevColumn;
+
+    // Not provided (because ConstantQ isn't copyable)
+    CQSpectrogram(const CQSpectrogram &);
+    CQSpectrogram &operator=(const CQSpectrogram &);
 };
 
 #endif
