@@ -1,0 +1,9 @@
+*~
+*.o
+*.so
+*.a
+*.dylib
+*.dll
+*.class
+doc/
+o
