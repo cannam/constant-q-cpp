@@ -40,7 +40,7 @@ plugbase:cqchromavamp a   vamp:Plugin ;
 #   cc:license            <Place plugin license URI here and uncomment> ; 
     vamp:identifier       "cqchromavamp" ;
     vamp:vamp_API_version vamp:api_version_2 ;
-    owl:versionInfo       "1" ;
+    owl:versionInfo       "2" ;
     vamp:input_domain     vamp:TimeDomain ;
 
     vamp:parameter   plugbase:cqchromavamp_param_lowestoct ;
@@ -111,7 +111,7 @@ plugbase:cqvamp a   vamp:Plugin ;
 #   cc:license            <Place plugin license URI here and uncomment> ; 
     vamp:identifier       "cqvamp" ;
     vamp:vamp_API_version vamp:api_version_2 ;
-    owl:versionInfo       "1" ;
+    owl:versionInfo       "3" ;
     vamp:input_domain     vamp:TimeDomain ;
 
     vamp:parameter   plugbase:cqvamp_param_minfreq ;
@@ -181,7 +181,7 @@ plugbase:cqvampmidi a   vamp:Plugin ;
 #   cc:license            <Place plugin license URI here and uncomment> ; 
     vamp:identifier       "cqvampmidi" ;
     vamp:vamp_API_version vamp:api_version_2 ;
-    owl:versionInfo       "1" ;
+    owl:versionInfo       "3" ;
     vamp:input_domain     vamp:TimeDomain ;
 
     vamp:parameter   plugbase:cqvampmidi_param_minpitch ;
